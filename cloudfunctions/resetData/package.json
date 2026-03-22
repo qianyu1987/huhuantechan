@@ -1,0 +1,9 @@
+{
+  "name": "resetData",
+  "version": "1.0.0",
+  "description": "一次性清空所有业务数据（保留system_config）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

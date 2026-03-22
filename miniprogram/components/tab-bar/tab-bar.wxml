@@ -1,0 +1,17 @@
+<!-- components/tab-bar/tab-bar.wxml - 统一底部导航组件 -->
+<view class="tab-bar-container" style="padding-bottom: {{safeAreaBottom}}px;">
+  <view class="tab-bar">
+    <block wx:for="{{tabs}}" wx:key="page">
+      <view 
+        class="tab-item {{active === item.page ? 'active' : ''}} {{item.isSpecial ? 'special' : ''}}"
+        bindtap="switchTab"
+        data-page="{{item.page}}"
+      >
+        <view class="tab-icon-wrap {{item.isSpecial ? 'special-icon' : ''}}">
+          <view class="{{item.icon}} {{active === item.page ? 'active' : ''}}"></view>
+        </view>
+        <text class="tab-label">{{item.text}}</text>
+      </view>
+    </block>
+  </view>
+</view>

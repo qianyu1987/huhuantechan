@@ -1,0 +1,11 @@
+{
+  "navigationBarTitleText": "发现特产",
+  "navigationBarBackgroundColor": "#000000",
+  "navigationBarTextStyle": "white",
+  "enablePullDownRefresh": true,
+  "backgroundColor": "#000000",
+  "onReachBottomDistance": 200,
+  "usingComponents": {
+    "tab-bar": "/components/tab-bar/tab-bar"
+  }
+}

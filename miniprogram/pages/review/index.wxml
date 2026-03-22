@@ -1,0 +1,138 @@
+<!-- pages/review/index.wxml - 评价页面 -->
+<view class="review-page">
+
+  <!-- 顶部装饰 -->
+  <view class="top-decoration">
+    <view class="decoration-circle circle-1"></view>
+    <view class="decoration-circle circle-2"></view>
+    <view class="decoration-circle circle-3"></view>
+  </view>
+
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="loading-state">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 评价内容 -->
+  <block wx:else>
+    <!-- 标题区 -->
+    <view class="header-section">
+      <view class="header-icon">🎉</view>
+      <text class="header-title">评价体验</text>
+      <text class="header-subtitle">分享你的体验，帮助其他小伙伴</text>
+    </view>
+
+    <!-- 订单信息 - 互换特产展示 -->
+    <view class="card exchange-card" wx:if="{{order}}">
+      <view class="exchange-label">本次分享</view>
+      <view class="exchange-products">
+        <view class="product-box">
+          <block wx:if="{{order.initiatorProduct.isMystery}}">
+            <view class="product-mystery {{order.initiatorProduct.colorClass || 'color-1'}}">
+              <text class="mystery-emoji">{{order.initiatorProduct.mysteryEmoji || '🎁'}}</text>
+            </view>
+          </block>
+          <block wx:else>
+            <image class="product-img" src="{{order.initiatorProduct.coverUrl || order.initiatorProduct.images[0]}}" mode="aspectFill"/>
+          </block>
+          <view class="product-name">{{order.initiatorProduct.isMystery ? '神秘特产' : order.initiatorProduct.name}}</view>
+        </view>
+        <view class="exchange-arrow">
+          <text>⇄</text>
+        </view>
+        <view class="product-box">
+          <block wx:if="{{order.receiverProduct.isMystery}}">
+            <view class="product-mystery {{order.receiverProduct.colorClass || 'color-2'}}">
+              <text class="mystery-emoji">{{order.receiverProduct.mysteryEmoji || '🎁'}}</text>
+            </view>
+          </block>
+          <block wx:else>
+            <image class="product-img" src="{{order.receiverProduct.coverUrl || order.receiverProduct.images[0]}}" mode="aspectFill"/>
+          </block>
+          <view class="product-name">{{order.receiverProduct.isMystery ? '神秘特产' : order.receiverProduct.name}}</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 评分 - iOS 风格打分 -->
+    <view class="card rating-card">
+      <view class="card-header">
+        <text class="card-icon">💫</text>
+        <text class="card-title">体验评分</text>
+      </view>
+      <view class="ios-star-container">
+        <view wx:for="{{[1,2,3,4,5]}}" wx:key="*this"
+              class="ios-star-item"
+              bindtap="onRatingChange"
+              data-value="{{item}}">
+          <view class="ios-star {{rating >= item ? 'active' : ''}}">
+            <view class="star-fill" style="width: {{rating >= item ? '100%' : '0%'}}">
+              <text>★</text>
+            </view>
+            <text class="star-empty">★</text>
+          </view>
+        </view>
+      </view>
+      <view class="rating-hint">
+        <view class="rating-pill {{rating >= 4 ? 'good' : rating >= 3 ? 'normal' : 'bad'}}">
+          <text>{{rating === 5 ? '✨ 超级满意' : rating === 4 ? '😊 满意' : rating === 3 ? '😐 一般' : rating === 2 ? '😔 不满意' : '😞 非常差'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 评价标签 - 彩色标签选择 -->
+    <view class="card tags-card">
+      <view class="card-header">
+        <text class="card-icon">🏷️</text>
+        <text class="card-title">评价标签</text>
+        <text class="card-subtitle">选择1-4个标签</text>
+      </view>
+      <view class="tags-grid">
+        <block wx:for="{{tags}}" wx:key="*this" wx:for-index="tagIndex">
+          <view class="tag-item {{item.selected ? 'tag-selected' : ''}}"
+                bindtap="toggleTag"
+                data-index="{{tagIndex}}">
+            <text class="tag-icon">{{tagIcons[tagIndex]}}</text>
+            <text class="tag-text">{{item.name}}</text>
+          </view>
+        </block>
+      </view>
+    </view>
+
+    <!-- 匿名评价开关 -->
+    <view class="card anonymous-card">
+      <view class="anonymous-toggle">
+        <text class="anonymous-icon">🔒</text>
+        <text class="anonymous-label">匿名评价</text>
+      </view>
+      <switch class="anonymous-switch" checked="{{isAnonymous}}" bindchange="onAnonymousChange" color="#2D6A4F"/>
+    </view>
+
+    <!-- 提交按钮 -->
+    <view class="submit-section">
+      <button class="btn-submit {{submitting ? 'disabled' : ''}}" bindtap="submitReview">
+        <text class="btn-icon">{{submitting ? '⏳' : '🚀'}}</text>
+        <text class="btn-text">{{submitting ? '提交中...' : '提交评价'}}</text>
+      </button>
+    </view>
+
+    <!-- 感谢语 -->
+    <view class="thanks-section">
+      <text>感谢你的评价 ❤️</text>
+    </view>
+  </block>
+
+  <!-- 成功弹窗 -->
+  <view class="success-modal" wx:if="{{showSuccess}}">
+    <view class="success-content">
+      <view class="success-icon">🎊</view>
+      <view class="success-title">评价成功！</view>
+      <view class="success-desc">感谢你的真诚评价</view>
+      <view class="success-stats">
+        <text>好评+10 积分已到账</text>
+      </view>
+    </view>
+  </view>
+
+</view>

@@ -1,0 +1,607 @@
+/* pages/credit/index.wxss - 信用中心 - iOS 26 毛玻璃风格 */
+
+.credit-page {
+  min-height: 100vh;
+  background: #000000;
+  position: relative;
+}
+
+/* 动态背景 */
+.bg-gradient {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(ellipse 80% 50% at 20% 0%, rgba(10, 132, 255, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(48, 209, 88, 0.1) 0%, transparent 50%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 导航栏 */
+.glass-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 20rpx 32rpx;
+  padding-top: calc(20rpx + env(safe-area-inset-top));
+  background: rgba(30, 30, 32, 0.7);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.06);
+}
+
+.nav-back {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44rpx;
+  color: #0A84FF;
+  font-weight: 300;
+}
+
+.nav-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.nav-placeholder {
+  width: 60rpx;
+}
+
+/* 滚动区域 */
+.credit-scroll {
+  position: relative;
+  z-index: 1;
+  padding: 0 24rpx;
+}
+
+/* ========== 信用分英雄区 ========== */
+.credit-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48rpx 0 32rpx;
+  gap: 16rpx;
+}
+
+.credit-circle {
+  width: 260rpx;
+  height: 260rpx;
+  border-radius: 50%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.credit-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  mask: radial-gradient(transparent 56%, #000 57%);
+  -webkit-mask: radial-gradient(transparent 56%, #000 57%);
+}
+
+.credit-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 1;
+}
+
+.credit-score {
+  font-size: 76rpx;
+  font-weight: 700;
+  color: #FFFFFF;
+  line-height: 1;
+}
+
+.credit-label {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 8rpx;
+}
+
+.credit-tier-badge {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 12rpx 28rpx;
+  border-radius: 32rpx;
+  border: 1rpx solid;
+}
+
+.tier-icon {
+  font-size: 28rpx;
+}
+
+.tier-name {
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.credit-desc {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* ========== 升级进度 ========== */
+.upgrade-section {
+  margin-top: 24rpx;
+}
+
+.upgrade-card {
+  background: rgba(60, 60, 64, 0.3);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  padding: 28rpx;
+}
+
+.upgrade-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+}
+
+.upgrade-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.upgrade-target {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.target-icon {
+  font-size: 28rpx;
+}
+
+.target-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.progress-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.progress-bar-bg {
+  flex: 1;
+  height: 12rpx;
+  background: rgba(120, 120, 128, 0.2);
+  border-radius: 6rpx;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 6rpx;
+  transition: width 0.6s ease;
+}
+
+.progress-text {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+}
+
+/* ========== 等级一览 ========== */
+.tiers-section {
+  margin-top: 40rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-bottom: 20rpx;
+}
+
+.tiers-timeline {
+  display: flex;
+  flex-direction: column;
+}
+
+.tier-row {
+  display: flex;
+  gap: 20rpx;
+}
+
+.tier-line-dot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 56rpx;
+  flex-shrink: 0;
+}
+
+.tier-dot {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  flex-shrink: 0;
+}
+
+.dot-lock {
+  font-size: 18rpx;
+}
+
+.tier-line {
+  width: 4rpx;
+  flex: 1;
+  min-height: 20rpx;
+}
+
+.tier-card {
+  flex: 1;
+  background: rgba(60, 60, 64, 0.25);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16rpx;
+  border: 1rpx solid;
+  padding: 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.tier-card-current {
+  background: rgba(60, 60, 64, 0.4);
+}
+
+.tier-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 12rpx;
+}
+
+.tier-card-name {
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.tier-card-range {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.tier-card-tag-current {
+  font-size: 20rpx;
+  font-weight: 600;
+  padding: 4rpx 14rpx;
+  border-radius: 12rpx;
+  margin-left: auto;
+}
+
+.tier-benefits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx 16rpx;
+}
+
+.benefit-item {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+}
+
+.benefit-check {
+  font-size: 22rpx;
+}
+
+.benefit-text {
+  font-size: 22rpx;
+}
+
+/* ========== 我的权益 ========== */
+.benefits-section {
+  margin-top: 40rpx;
+}
+
+.benefits-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16rpx;
+}
+
+.benefit-grid-item {
+  background: rgba(60, 60, 64, 0.3);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  padding: 20rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  position: relative;
+}
+
+.benefit-grid-item.unlocked {
+  border-color: rgba(48, 209, 88, 0.2);
+}
+
+.benefit-grid-item.locked-item {
+  opacity: 0.5;
+}
+
+.benefit-grid-icon {
+  font-size: 28rpx;
+}
+
+.benefit-grid-text {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+}
+
+.benefit-grid-tag {
+  font-size: 18rpx;
+  color: #FF9F0A;
+  background: rgba(255, 159, 10, 0.12);
+  padding: 2rpx 10rpx;
+  border-radius: 8rpx;
+  align-self: flex-start;
+}
+
+/* ========== 积分卡片 ========== */
+.points-card {
+  margin-top: 24rpx;
+  background: rgba(60, 60, 64, 0.3);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20rpx;
+  border: 1rpx solid rgba(255, 159, 10, 0.2);
+  padding: 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.points-card-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.points-card-label {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.points-card-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6rpx;
+}
+
+.points-card-value {
+  font-size: 56rpx;
+  font-weight: 700;
+  color: #FF9F0A;
+  line-height: 1.1;
+}
+
+.points-card-unit {
+  font-size: 24rpx;
+  color: rgba(255, 159, 10, 0.7);
+}
+
+.points-card-hint {
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.points-card-right {
+  flex-shrink: 0;
+}
+
+.points-earn-btn {
+  padding: 16rpx 32rpx;
+  background: linear-gradient(135deg, #FF9F0A, #FF6B00);
+  border-radius: 32rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* ========== 明细记录 Tab ========== */
+.detail-section {
+  margin-top: 40rpx;
+}
+
+.detail-tabs {
+  display: flex;
+  gap: 8rpx;
+  margin-bottom: 20rpx;
+}
+
+.detail-tab {
+  flex: 1;
+  text-align: center;
+  padding: 18rpx 0;
+  font-size: 28rpx;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.4);
+  border-radius: 14rpx;
+  background: rgba(60, 60, 64, 0.2);
+  border: 1rpx solid rgba(255, 255, 255, 0.06);
+}
+
+.detail-tab.active {
+  color: #FFFFFF;
+  background: rgba(60, 60, 64, 0.5);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* ========== 信用/积分记录 ========== */
+.record-section {
+  margin-top: 40rpx;
+}
+
+.record-list {
+  background: rgba(60, 60, 64, 0.3);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.record-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.06);
+}
+
+.record-item:last-child {
+  border-bottom: none;
+}
+
+.record-left {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.record-icon {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 14rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.record-icon.positive {
+  background: rgba(48, 209, 88, 0.15);
+}
+
+.record-icon.negative {
+  background: rgba(255, 69, 58, 0.15);
+}
+
+.record-icon text {
+  font-size: 26rpx;
+}
+
+.record-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.record-title {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #FFFFFF;
+}
+
+.record-title-text {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #FFFFFF;
+}
+
+.record-time {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.record-change {
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.record-change.positive {
+  color: #30D158;
+}
+
+.record-change.negative {
+  color: #FF453A;
+}
+
+.empty-records {
+  padding: 60rpx 0;
+  text-align: center;
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.35);
+  background: rgba(60, 60, 64, 0.3);
+  border-radius: 20rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+}
+
+/* ========== 信用规则 ========== */
+.credit-tips {
+  margin-top: 40rpx;
+}
+
+.tips-card {
+  background: rgba(60, 60, 64, 0.3);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  padding: 24rpx;
+}
+
+.tip-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+  padding: 14rpx 0;
+}
+
+.tip-item:not(:last-child) {
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.06);
+}
+
+.tip-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  margin-top: 10rpx;
+  flex-shrink: 0;
+}
+
+.tip-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.tip-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.tip-desc {
+  font-size: 23rpx;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.5;
+}

@@ -1,0 +1,363 @@
+/* pages/my-products/index.wxss - iOS 26 深色玻璃风 */
+
+.container {
+  background: var(--color-bg);
+  min-height: 100vh;
+}
+
+/* ===== 标签栏 - 玻璃效果 ===== */
+.tabs-bar {
+  background: rgba(30, 30, 32, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 0 24rpx;
+  border-bottom: 1rpx solid var(--color-divider);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.tabs-scroll {
+  white-space: nowrap;
+}
+
+.tabs-list {
+  display: flex;
+  padding: 20rpx 0;
+  gap: 16rpx;
+}
+
+.tab-item {
+  padding: 14rpx 32rpx;
+  border-radius: var(--radius-full);
+  background: rgba(120, 120, 128, 0.16);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tab-item:active {
+  transform: scale(0.95);
+}
+
+.tab-item.active {
+  background: var(--color-primary);
+  box-shadow: 0 4rpx 16rpx rgba(10, 132, 255, 0.35);
+}
+
+.tab-label {
+  font-size: 26rpx;
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+}
+
+.tab-item.active .tab-label {
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+/* ===== 统计栏 ===== */
+.stats-bar {
+  padding: 24rpx 32rpx 8rpx;
+}
+
+.stats-text {
+  font-size: 24rpx;
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+}
+
+/* ===== 产品列表 ===== */
+.products-list {
+  padding: 16rpx 24rpx 40rpx;
+}
+
+.product-card {
+  background: rgba(120, 120, 128, 0.16);
+  border-radius: var(--radius-2xl);
+  margin-bottom: 24rpx;
+  overflow: hidden;
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow:
+    0 4rpx 24rpx rgba(0, 0, 0, 0.2),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.2s ease;
+}
+
+.product-card:active {
+  transform: scale(0.98);
+}
+
+/* ===== 产品图片 ===== */
+.product-image-wrap {
+  position: relative;
+  width: 100%;
+  height: 400rpx;
+}
+
+.product-image {
+  width: 100%;
+  height: 100%;
+}
+
+/* ===== 状态标签 - 玻璃胶囊 ===== */
+.status-badge {
+  position: absolute;
+  top: 20rpx;
+  right: 20rpx;
+  padding: 8rpx 24rpx;
+  border-radius: var(--radius-full);
+  font-size: 22rpx;
+  font-weight: 600;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1rpx solid rgba(255, 255, 255, 0.15);
+  letter-spacing: 1rpx;
+}
+
+.status-active {
+  background: rgba(48, 209, 88, 0.2);
+  color: #30D158;
+  border-color: rgba(48, 209, 88, 0.3);
+  box-shadow: 0 4rpx 12rpx rgba(48, 209, 88, 0.2);
+}
+
+.status-in_swap {
+  background: rgba(255, 159, 10, 0.2);
+  color: #FF9F0A;
+  border-color: rgba(255, 159, 10, 0.3);
+  box-shadow: 0 4rpx 12rpx rgba(255, 159, 10, 0.2);
+}
+
+.status-swapped {
+  background: rgba(88, 86, 214, 0.2);
+  color: #8E8AFF;
+  border-color: rgba(88, 86, 214, 0.3);
+  box-shadow: 0 4rpx 12rpx rgba(88, 86, 214, 0.2);
+}
+
+.status-removed {
+  background: rgba(255, 69, 58, 0.2);
+  color: #FF453A;
+  border-color: rgba(255, 69, 58, 0.3);
+  box-shadow: 0 4rpx 12rpx rgba(255, 69, 58, 0.2);
+}
+
+/* ===== 产品信息 - 居中 ===== */
+.product-info {
+  padding: 24rpx 28rpx 20rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.product-name {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--color-text);
+  display: block;
+  text-align: center;
+  letter-spacing: -0.2rpx;
+  line-height: 1.3;
+}
+
+/* 标签行 */
+.product-tags {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  flex-wrap: wrap;
+}
+
+.info-tag {
+  padding: 6rpx 18rpx;
+  border-radius: var(--radius-full);
+  font-size: 22rpx;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.location-tag {
+  background: rgba(10, 132, 255, 0.1);
+  color: var(--color-primary);
+  border: 1rpx solid rgba(10, 132, 255, 0.15);
+}
+
+.category-tag {
+  background: rgba(48, 209, 88, 0.1);
+  color: #30D158;
+  border: 1rpx solid rgba(48, 209, 88, 0.15);
+}
+
+/* 底栏：数据 + 时间 */
+.product-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding-top: 4rpx;
+}
+
+.product-stats {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.stat-item {
+  font-size: 22rpx;
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+}
+
+.product-time {
+  font-size: 22rpx;
+  color: var(--color-text-quaternary);
+  font-weight: 500;
+}
+
+/* ===== 操作按钮 - 玻璃风格 ===== */
+.product-actions {
+  display: flex;
+  justify-content: center;
+  padding: 20rpx 28rpx;
+  border-top: 1rpx solid var(--color-divider);
+  gap: 16rpx;
+}
+
+.action-btn {
+  min-width: 160rpx;
+  height: 68rpx;
+  line-height: 68rpx;
+  text-align: center;
+  border-radius: var(--radius-full);
+  font-size: 26rpx;
+  font-weight: 600;
+  background: rgba(120, 120, 128, 0.16);
+  color: var(--color-text-secondary);
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  margin: 0;
+  padding: 0 32rpx;
+  transition: all 0.2s ease;
+}
+
+.action-btn:active {
+  transform: scale(0.95);
+  background: rgba(120, 120, 128, 0.32);
+}
+
+.action-btn::after {
+  border: none;
+}
+
+.action-btn.primary {
+  background: rgba(10, 132, 255, 0.15);
+  color: var(--color-primary);
+  border-color: rgba(10, 132, 255, 0.2);
+}
+
+.action-btn.primary:active {
+  background: rgba(10, 132, 255, 0.3);
+}
+
+.action-btn.danger {
+  background: rgba(255, 69, 58, 0.1);
+  color: #FF453A;
+  border-color: rgba(255, 69, 58, 0.15);
+}
+
+.action-btn.danger:active {
+  background: rgba(255, 69, 58, 0.25);
+}
+
+/* ===== 加载更多 ===== */
+.loading-more, .no-more {
+  text-align: center;
+  padding: 40rpx;
+  color: var(--color-text-tertiary);
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+}
+
+.loading-spinner {
+  width: 32rpx;
+  height: 32rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 12rpx;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===== 空状态 ===== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120rpx 60rpx;
+}
+
+.empty-icon {
+  width: 180rpx;
+  height: 180rpx;
+  margin-bottom: 32rpx;
+  opacity: 0.4;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: var(--color-text-tertiary);
+  margin-bottom: 40rpx;
+  font-weight: 500;
+}
+
+.empty-btn {
+  background: linear-gradient(180deg, #0A84FF 0%, #0066CC 100%);
+  color: #fff;
+  font-size: 28rpx;
+  font-weight: 600;
+  padding: 24rpx 56rpx;
+  border-radius: var(--radius-full);
+  border: none;
+  box-shadow: 0 4rpx 16rpx rgba(10, 132, 255, 0.3);
+}
+
+.empty-btn::after {
+  border: none;
+}
+
+.empty-btn:active {
+  transform: scale(0.97);
+}
+
+/* ===== 加载中 ===== */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 200rpx;
+}
+
+.loading-state .loading-spinner {
+  width: 56rpx;
+  height: 56rpx;
+  margin-bottom: 20rpx;
+  margin-right: 0;
+}
+
+.loading-state text {
+  font-size: 26rpx;
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+}

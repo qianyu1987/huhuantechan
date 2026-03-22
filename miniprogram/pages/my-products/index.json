@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "我的特产",
+  "navigationBarBackgroundColor": "#000000",
+  "navigationBarTextStyle": "white",
+  "enablePullDownRefresh": true,
+  "onReachBottomDistance": 50,
+  "backgroundColor": "#000000",
+  "usingComponents": {}
+}

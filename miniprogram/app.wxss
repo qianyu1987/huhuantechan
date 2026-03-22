@@ -1,0 +1,716 @@
+/* app.wxss - 全局样式 - iOS 26 深色玻璃拟态风格 */
+
+/* ============================================
+   TDesign 图标字体 - 覆盖 npm 包内的多格式声明
+   只保留 ttf 格式，避免 woff/eot 加载报错
+   ============================================ */
+@font-face {
+  font-family: t;
+  src: url('https://tdesign.gtimg.com/icon/0.4.1/fonts/t.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+
+
+/* ============================================
+   1. CSS 变量系统 - iOS 26 设计令牌
+   ============================================ */
+page {
+  
+  /* --- iOS 26 主色调 --- */
+  --color-primary: #0A84FF;
+  --color-primary-light: #64D2FF;
+  --color-secondary: #30D158;
+  --color-warning: #FF9F0A;
+  --color-danger: #FF453A;
+  --color-purple: #BF5AF2;
+  --color-indigo: #5E5CE6;
+  --color-pink: #FF375F;
+  --color-teal: #64D2FF;
+  --color-yellow: #FFD60A;
+  
+  /* --- iOS 26 深色背景系统 --- */
+  --color-bg: #000000;
+  --color-bg-secondary: #1C1C1E;
+  --color-bg-tertiary: #2C2C2E;
+  --color-bg-elevated: #1C1C1E;
+  
+  /* --- iOS 26 玻璃表面色 --- */
+  --color-surface: rgba(120, 120, 128, 0.24);
+  --color-surface-solid: #1C1C1E;
+  --color-surface-hover: rgba(120, 120, 128, 0.32);
+  --color-surface-active: rgba(120, 120, 128, 0.40);
+  
+  /* --- iOS 26 深色玻璃 --- */
+  --glass-dark: rgba(30, 30, 32, 0.85);
+  --glass-dark-hover: rgba(44, 44, 46, 0.90);
+  --glass-dark-border: rgba(255, 255, 255, 0.08);
+  
+  /* --- iOS 26 文字色 --- */
+  --color-text: #FFFFFF;
+  --color-text-secondary: rgba(255, 255, 255, 0.85);
+  --color-text-tertiary: rgba(255, 255, 255, 0.55);
+  --color-text-quaternary: rgba(255, 255, 255, 0.30);
+  --color-text-light: #8E8E93;
+  --color-text-inverse: #000000;
+  
+  /* --- iOS 26 分割线 --- */
+  --color-divider: rgba(255, 255, 255, 0.10);
+  --color-divider-strong: rgba(255, 255, 255, 0.20);
+  
+  /* --- 圆角系统 --- */
+  --radius-xs: 4rpx;
+  --radius-sm: 8rpx;
+  --radius-md: 12rpx;
+  --radius-lg: 16rpx;
+  --radius-xl: 20rpx;
+  --radius-2xl: 24rpx;
+  --radius-3xl: 32rpx;
+  --radius-full: 9999rpx;
+  
+  /* --- 阴影系统 --- */
+  --shadow-xs: 0 1rpx 2rpx rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8rpx 32rpx rgba(0, 0, 0, 0.12);
+  --shadow-xl: 0 16rpx 48rpx rgba(0, 0, 0, 0.16);
+  --shadow-glass: 0 8rpx 32rpx rgba(0, 0, 0, 0.08), inset 0 1rpx 0 rgba(255, 255, 255, 0.5);
+  --shadow-glass-dark: 0 8rpx 32rpx rgba(0, 0, 0, 0.2), inset 0 1rpx 0 rgba(255, 255, 255, 0.1);
+  
+  /* --- 间距系统 --- */
+  --space-1: 4rpx;
+  --space-2: 8rpx;
+  --space-3: 12rpx;
+  --space-4: 16rpx;
+  --space-5: 20rpx;
+  --space-6: 24rpx;
+  --space-8: 32rpx;
+  --space-10: 40rpx;
+  --space-12: 48rpx;
+  --space-16: 64rpx;
+  
+  /* --- 字体系统 --- */
+  --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'SF Mono', SFMono-Regular, Consolas, monospace;
+  
+  /* --- 玻璃效果强度 --- */
+  --blur-sm: blur(10px);
+  --blur-md: blur(20px);
+  --blur-lg: blur(40px);
+  
+  /* 页面基础 */
+  background-color: var(--color-bg);
+  font-family: var(--font-family);
+  color: var(--color-text);
+  font-size: 28rpx;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================
+   2. 全局重置
+   ============================================ */
+view, text, image, navigator, input, textarea, button, scroll-view, 
+swiper, swiper-item, picker, picker-view, picker-view-column {
+  box-sizing: border-box;
+}
+
+/* 去除按钮默认样式 */
+button::after {
+  border: none;
+}
+
+button {
+  margin: 0;
+  padding: 0;
+  background: none;
+  line-height: inherit;
+}
+
+/* ============================================
+   3. 玻璃拟态基础类
+   ============================================ */
+
+/* 标准玻璃效果 */
+.glass {
+  background: var(--color-surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1rpx solid rgba(255, 255, 255, 0.5);
+}
+
+/* 玻璃卡片 */
+.glass-card {
+  background: var(--color-surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: var(--radius-xl);
+  border: 1rpx solid rgba(255, 255, 255, 0.5);
+  box-shadow: var(--shadow-glass);
+}
+
+.glass-card-hover {
+  background: var(--color-surface-hover);
+  transform: translateY(-2rpx);
+  box-shadow: var(--shadow-md);
+}
+
+/* 深色玻璃 */
+.glass-dark {
+  background: var(--glass-dark);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1rpx solid var(--glass-dark-border);
+}
+
+/* 轻薄玻璃 */
+.glass-thin {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* 玻璃按钮 */
+.glass-btn {
+  background: var(--color-surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1rpx solid rgba(255, 255, 255, 0.5);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.glass-btn:active {
+  background: var(--color-surface-active);
+  transform: scale(0.96);
+}
+
+/* ============================================
+   4. 卡片组件
+   ============================================ */
+.card {
+  background: var(--color-surface-solid);
+  border-radius: var(--radius-xl);
+  border: 1rpx solid rgba(255, 255, 255, 0.5);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.card-elevated {
+  box-shadow: var(--shadow-md);
+}
+
+.card-flat {
+  box-shadow: none;
+  border: 1rpx solid var(--color-divider);
+}
+
+/* ============================================
+   5. 按钮组件
+   ============================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-xl);
+  font-size: 28rpx;
+  font-weight: 600;
+  border: none;
+  padding: 0 40rpx;
+  height: 88rpx;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-full {
+  width: 100%;
+}
+
+.btn-sm {
+  height: 64rpx;
+  padding: 0 24rpx;
+  font-size: 26rpx;
+}
+
+.btn-lg {
+  height: 104rpx;
+  padding: 0 48rpx;
+  font-size: 30rpx;
+}
+
+/* 主要按钮 */
+.btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+  box-shadow: 0 4rpx 16rpx rgba(0, 122, 255, 0.35);
+}
+
+.btn-primary:active {
+  transform: scale(0.96);
+  box-shadow: 0 2rpx 8rpx rgba(0, 122, 255, 0.25);
+}
+
+/* 次要按钮 */
+.btn-secondary {
+  background: rgba(0, 122, 255, 0.1);
+  color: var(--color-primary);
+}
+
+.btn-secondary:active {
+  background: rgba(0, 122, 255, 0.2);
+}
+
+/* 幽灵按钮 */
+.btn-ghost {
+  background: rgba(120, 120, 128, 0.12);
+  color: var(--color-text);
+}
+
+.btn-ghost:active {
+  background: rgba(120, 120, 128, 0.2);
+}
+
+/* 危险按钮 */
+.btn-danger {
+  background: rgba(255, 59, 48, 0.1);
+  color: var(--color-danger);
+}
+
+.btn-danger:active {
+  background: rgba(255, 59, 48, 0.2);
+}
+
+/* 成功按钮 */
+.btn-success {
+  background: var(--color-secondary);
+  color: #fff;
+  box-shadow: 0 4rpx 16rpx rgba(52, 199, 89, 0.35);
+}
+
+.btn-success:active {
+  transform: scale(0.96);
+  box-shadow: 0 2rpx 8rpx rgba(52, 199, 89, 0.25);
+}
+
+/* ============================================
+   6. 标签组件
+   ============================================ */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 6rpx 16rpx;
+  border-radius: var(--radius-sm);
+  font-size: 22rpx;
+  font-weight: 500;
+}
+
+.tag-blue { background: rgba(0, 122, 255, 0.12); color: var(--color-primary); }
+.tag-green { background: rgba(52, 199, 89, 0.12); color: var(--color-secondary); }
+.tag-orange { background: rgba(255, 149, 0, 0.12); color: var(--color-warning); }
+.tag-red { background: rgba(255, 59, 48, 0.12); color: var(--color-danger); }
+.tag-purple { background: rgba(175, 82, 222, 0.12); color: var(--color-purple); }
+.tag-gray { background: rgba(120, 120, 128, 0.12); color: var(--color-text-tertiary); }
+
+/* 胶囊标签 */
+.tag-pill {
+  border-radius: var(--radius-full);
+  padding: 8rpx 20rpx;
+}
+
+/* ============================================
+   7. 输入框组件
+   ============================================ */
+.input {
+  width: 100%;
+  height: 88rpx;
+  padding: 0 24rpx;
+  background: var(--color-bg);
+  border: 2rpx solid transparent;
+  border-radius: var(--radius-lg);
+  font-size: 28rpx;
+  color: var(--color-text);
+  transition: all 0.2s ease;
+}
+
+.input::placeholder {
+  color: var(--color-text-quaternary);
+}
+
+.input:focus {
+  background: var(--color-surface-solid);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4rpx rgba(0, 122, 255, 0.1);
+}
+
+/* 玻璃输入框 */
+.input-glass {
+  background: var(--color-surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1rpx solid rgba(255, 255, 255, 0.5);
+}
+
+/* ============================================
+   8. 工具类 - Flexbox
+   ============================================ */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-row { flex-direction: row; }
+.flex-wrap { flex-wrap: wrap; }
+.flex-nowrap { flex-wrap: nowrap; }
+
+.items-start { align-items: flex-start; }
+.items-center { align-items: center; }
+.items-end { align-items: flex-end; }
+.items-stretch { align-items: stretch; }
+
+.justify-start { justify-content: flex-start; }
+.justify-center { justify-content: center; }
+.justify-end { justify-content: flex-end; }
+.justify-between { justify-content: space-between; }
+.justify-around { justify-content: space-around; }
+.justify-evenly { justify-content: space-evenly; }
+
+.flex-1 { flex: 1; }
+.flex-auto { flex: 1 1 auto; }
+.flex-none { flex: none; }
+
+.gap-1 { gap: 4rpx; }
+.gap-2 { gap: 8rpx; }
+.gap-3 { gap: 12rpx; }
+.gap-4 { gap: 16rpx; }
+.gap-5 { gap: 20rpx; }
+.gap-6 { gap: 24rpx; }
+.gap-8 { gap: 32rpx; }
+
+/* ============================================
+   9. 工具类 - 间距
+   ============================================ */
+.m-0 { margin: 0; }
+.m-1 { margin: 4rpx; }
+.m-2 { margin: 8rpx; }
+.m-3 { margin: 12rpx; }
+.m-4 { margin: 16rpx; }
+.m-5 { margin: 20rpx; }
+.m-6 { margin: 24rpx; }
+.m-8 { margin: 32rpx; }
+
+.mx-4 { margin-left: 16rpx; margin-right: 16rpx; }
+.mx-6 { margin-left: 24rpx; margin-right: 24rpx; }
+.mx-8 { margin-left: 32rpx; margin-right: 32rpx; }
+
+.my-4 { margin-top: 16rpx; margin-bottom: 16rpx; }
+.my-6 { margin-top: 24rpx; margin-bottom: 24rpx; }
+
+.mt-2 { margin-top: 8rpx; }
+.mt-4 { margin-top: 16rpx; }
+.mt-6 { margin-top: 24rpx; }
+.mt-8 { margin-top: 32rpx; }
+
+.mb-2 { margin-bottom: 8rpx; }
+.mb-4 { margin-bottom: 16rpx; }
+.mb-6 { margin-bottom: 24rpx; }
+.mb-8 { margin-bottom: 32rpx; }
+
+.p-0 { padding: 0; }
+.p-4 { padding: 16rpx; }
+.p-6 { padding: 24rpx; }
+.p-8 { padding: 32rpx; }
+
+.px-4 { padding-left: 16rpx; padding-right: 16rpx; }
+.px-6 { padding-left: 24rpx; padding-right: 24rpx; }
+.px-8 { padding-left: 32rpx; padding-right: 32rpx; }
+
+.py-4 { padding-top: 16rpx; padding-bottom: 16rpx; }
+.py-6 { padding-top: 24rpx; padding-bottom: 24rpx; }
+
+/* ============================================
+   10. 工具类 - 文字
+   ============================================ */
+.text-xs { font-size: 22rpx; }
+.text-sm { font-size: 24rpx; }
+.text-base { font-size: 28rpx; }
+.text-lg { font-size: 32rpx; }
+.text-xl { font-size: 36rpx; }
+.text-2xl { font-size: 44rpx; }
+
+.text-regular { font-weight: 400; }
+.text-medium { font-weight: 500; }
+.text-semibold { font-weight: 600; }
+.text-bold { font-weight: 700; }
+
+.text-left { text-align: left; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+
+.text-primary { color: var(--color-primary); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-tertiary { color: var(--color-text-tertiary); }
+.text-light { color: var(--color-text-light); }
+.text-success { color: var(--color-secondary); }
+.text-warning { color: var(--color-warning); }
+.text-danger { color: var(--color-danger); }
+.text-inverse { color: var(--color-text-inverse); }
+
+/* 文字截断 */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ============================================
+   11. 工具类 - 其他
+   ============================================ */
+.rounded-sm { border-radius: var(--radius-sm); }
+.rounded-md { border-radius: var(--radius-md); }
+.rounded-lg { border-radius: var(--radius-lg); }
+.rounded-xl { border-radius: var(--radius-xl); }
+.rounded-full { border-radius: var(--radius-full); }
+
+.divider {
+  height: 1rpx;
+  background: var(--color-divider);
+}
+
+.divider-v {
+  width: 1rpx;
+  background: var(--color-divider);
+}
+
+/* 安全区 */
+.safe-bottom {
+  height: constant(safe-area-inset-bottom);
+  height: env(safe-area-inset-bottom);
+}
+
+.safe-top {
+  height: constant(safe-area-inset-top);
+  height: env(safe-area-inset-top);
+}
+
+/* ============================================
+   12. 状态样式
+   ============================================ */
+
+/* 信用分颜色 */
+.credit-high { color: var(--color-secondary); }
+.credit-mid { color: var(--color-warning); }
+.credit-low { color: var(--color-danger); }
+
+.credit-bg-high { background: rgba(52, 199, 89, 0.12); }
+.credit-bg-mid { background: rgba(255, 149, 0, 0.12); }
+.credit-bg-low { background: rgba(255, 59, 48, 0.12); }
+
+/* ============================================
+   13. 空状态
+   ============================================ */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120rpx 40rpx;
+  color: var(--color-text-tertiary);
+}
+
+.empty-state image {
+  width: 200rpx;
+  height: 200rpx;
+  margin-bottom: 32rpx;
+  opacity: 0.5;
+}
+
+.empty-state text {
+  font-size: 28rpx;
+}
+
+/* ============================================
+   14. 加载状态
+   ============================================ */
+.loading-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60rpx;
+  color: var(--color-text-tertiary);
+  font-size: 26rpx;
+}
+
+.loading-spinner {
+  width: 48rpx;
+  height: 48rpx;
+  border: 4rpx solid var(--color-divider);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20rpx;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   15. 动画系统
+   ============================================ */
+
+/* 淡入 */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* 滑入 */
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(20rpx);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+
+/* 缩放 */
+@keyframes scaleIn {
+  from { 
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to { 
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out;
+}
+
+/* 脉冲 */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* 弹跳 */
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10rpx); }
+}
+
+.animate-bounce {
+  animation: bounce 2s ease-in-out infinite;
+}
+
+/* 悬停效果 */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:active {
+  transform: translateY(-2rpx);
+  box-shadow: var(--shadow-md);
+}
+
+/* 按压效果 */
+.press-scale {
+  transition: transform 0.15s ease;
+}
+
+.press-scale:active {
+  transform: scale(0.96);
+}
+
+/* ============================================
+   16. 页面容器
+   ============================================ */
+.page {
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+.page-with-tabbar {
+  padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
+}
+
+/* ============================================
+   17. 导航栏
+   ============================================ */
+.nav-bar {
+  background: var(--color-surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1rpx solid var(--color-divider);
+}
+
+/* ============================================
+   18. 底部标签栏
+   ============================================ */
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(100rpx + env(safe-area-inset-bottom));
+  background: var(--color-surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1rpx solid var(--color-divider);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 100;
+}
+
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4rpx;
+  height: 100rpx;
+}
+
+.tab-icon {
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tab-label {
+  font-size: 20rpx;
+  color: var(--color-text-tertiary);
+}
+
+.tab-item.active .tab-label {
+  color: var(--color-primary);
+  font-weight: 600;
+}

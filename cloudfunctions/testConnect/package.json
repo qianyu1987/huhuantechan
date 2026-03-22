@@ -1,0 +1,9 @@
+{
+  "name": "testConnect",
+  "version": "1.0.0",
+  "description": "测试云函数连接",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

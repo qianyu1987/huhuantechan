@@ -1,0 +1,328 @@
+/* pages/about/index.wxss - 关于我们 - iOS 26 毛玻璃风格 */
+
+.about-page {
+  min-height: 100vh;
+  background: #000000;
+  position: relative;
+}
+
+.bg-gradient {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(10, 132, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 20% 100%, rgba(191, 90, 242, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 30% at 80% 80%, rgba(48, 209, 88, 0.06) 0%, transparent 50%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 导航栏 */
+.glass-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 20rpx 32rpx;
+  padding-top: calc(20rpx + env(safe-area-inset-top));
+  background: rgba(30, 30, 32, 0.7);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.06);
+}
+
+.nav-back {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44rpx;
+  color: #0A84FF;
+  font-weight: 300;
+}
+
+.nav-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.nav-placeholder {
+  width: 60rpx;
+}
+
+/* 滚动区域 */
+.about-scroll {
+  position: relative;
+  z-index: 1;
+  padding: 40rpx 24rpx;
+}
+
+/* Logo区 */
+.logo-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40rpx 0;
+}
+
+.logo-circle {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 36rpx;
+  background: linear-gradient(135deg, rgba(10, 132, 255, 0.2) 0%, rgba(191, 90, 242, 0.2) 100%);
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24rpx;
+}
+
+.logo-icon {
+  font-size: 72rpx;
+}
+
+.app-name {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-bottom: 8rpx;
+}
+
+.app-version {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.app-slogan {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 12rpx;
+  letter-spacing: 2rpx;
+}
+
+/* 简介卡片 */
+.intro-card {
+  background: rgba(60, 60, 64, 0.35);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-radius: 24rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  padding: 32rpx;
+  margin-top: 32rpx;
+}
+
+.intro-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-bottom: 16rpx;
+}
+
+.intro-text {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.8;
+}
+
+/* 功能区 */
+.features-section {
+  margin-top: 40rpx;
+}
+
+.section-title {
+  font-size: 24rpx;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 16rpx;
+  padding-left: 8rpx;
+  text-transform: uppercase;
+  letter-spacing: 1rpx;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16rpx;
+}
+
+.feature-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  padding: 24rpx 12rpx;
+  background: rgba(60, 60, 64, 0.3);
+  border-radius: 20rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.06);
+}
+
+.feature-icon {
+  font-size: 40rpx;
+}
+
+.feature-name {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* 平台亮点 */
+.highlights-section {
+  margin-top: 40rpx;
+}
+
+.highlights-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.highlight-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 20rpx;
+  background: rgba(60, 60, 64, 0.3);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.06);
+  padding: 28rpx;
+}
+
+.highlight-icon-wrap {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 18rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hl-green { background: rgba(48, 209, 88, 0.15); }
+.hl-blue { background: rgba(10, 132, 255, 0.15); }
+.hl-purple { background: rgba(191, 90, 242, 0.15); }
+.hl-orange { background: rgba(255, 159, 10, 0.15); }
+
+.highlight-icon {
+  font-size: 36rpx;
+}
+
+.highlight-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.highlight-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.highlight-desc {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.6;
+}
+
+/* 联系方式 */
+.contact-section {
+  margin-top: 40rpx;
+}
+
+.contact-list {
+  background: rgba(60, 60, 64, 0.3);
+  border-radius: 24rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28rpx 24rpx;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.06);
+}
+
+.contact-item:last-child {
+  border-bottom: none;
+}
+
+.contact-label {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.contact-value {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.contact-value text {
+  font-size: 26rpx;
+  color: #FFFFFF;
+}
+
+.copy-btn {
+  padding: 6rpx 16rpx;
+  background: rgba(10, 132, 255, 0.15);
+  color: #0A84FF !important;
+  border-radius: 12rpx;
+  font-size: 22rpx !important;
+}
+
+/* 链接 */
+.links-section {
+  margin-top: 40rpx;
+  background: rgba(60, 60, 64, 0.3);
+  border-radius: 24rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.link-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28rpx 24rpx;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.06);
+}
+
+.link-item:last-child {
+  border-bottom: none;
+}
+
+.link-item text:first-child {
+  font-size: 28rpx;
+  color: #FFFFFF;
+}
+
+.link-arrow {
+  font-size: 32rpx;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* 版权 */
+.copyright {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  margin-top: 60rpx;
+  padding: 32rpx 0;
+}
+
+.copyright text {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.3);
+}

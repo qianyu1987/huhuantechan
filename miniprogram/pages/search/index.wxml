@@ -1,0 +1,139 @@
+<!--pages/search/index.wxml-->
+<view class="search-page">
+  <!-- 搜索头部 -->
+  <view class="search-header">
+    <view class="search-input-wrap">
+      <view class="icon-search"></view>
+      <input 
+        class="search-input" 
+        type="text" 
+        placeholder="搜索特产、省份..." 
+        value="{{keyword}}"
+        bindinput="onInput"
+        bindconfirm="onSearch"
+        focus
+      />
+      <view class="clear-btn" wx:if="{{keyword}}" bindtap="clearKeyword">
+        <view class="icon-close"></view>
+      </view>
+    </view>
+    <view class="cancel-btn" bindtap="goBack">取消</view>
+  </view>
+
+  <!-- 搜索历史 -->
+  <view class="search-section" wx:if="{{!keyword && history.length > 0}}">
+    <view class="section-header">
+      <text class="section-title">搜索历史</text>
+      <view class="clear-history" bindtap="clearHistory">
+        <view class="icon-trash"></view>
+        <text>清空</text>
+      </view>
+    </view>
+    <view class="history-list">
+      <view 
+        class="history-item" 
+        wx:for="{{history}}" 
+        wx:key="*this"
+        bindtap="onHistoryTap"
+        data-keyword="{{item}}"
+      >
+        <view class="icon-clock"></view>
+        <text>{{item}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 热门搜索 -->
+  <view class="search-section" wx:if="{{!keyword && hotKeywords.length > 0}}">
+    <view class="section-header">
+      <text class="section-title">热门搜索</text>
+    </view>
+    <view class="hot-list">
+      <view 
+        class="hot-item {{index < 3 ? 'hot-top' : ''}}" 
+        wx:for="{{hotKeywords}}" 
+        wx:key="*this"
+        bindtap="onHistoryTap"
+        data-keyword="{{item}}"
+      >
+        <text class="hot-rank">{{index + 1}}</text>
+        <text class="hot-text">{{item}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 搜索结果 -->
+  <view class="search-result" wx:if="{{keyword}}">
+    <!-- 筛选栏 -->
+    <view class="filter-bar">
+      <view class="filter-item {{activeFilter === 'all' ? 'active' : ''}}" bindtap="changeFilter" data-type="all">
+        <text>综合</text>
+      </view>
+      <view class="filter-item {{activeFilter === 'newest' ? 'active' : ''}}" bindtap="changeFilter" data-type="newest">
+        <text>最新</text>
+      </view>
+      <view class="filter-item {{activeFilter === 'province' ? 'active' : ''}}" bindtap="changeFilter" data-type="province">
+        <text>按省份</text>
+      </view>
+    </view>
+
+    <!-- 加载状态 -->
+    <view wx:if="{{loading && products.length === 0}}" class="loading-wrap">
+      <view class="loading-spinner"></view>
+      <text>搜索中...</text>
+    </view>
+
+    <!-- 空状态 -->
+    <view wx:elif="{{!loading && products.length === 0}}" class="empty-state">
+      <view class="icon-search-empty"></view>
+      <text>未找到相关特产</text>
+      <text class="empty-tip">换个关键词试试</text>
+    </view>
+
+    <!-- 结果列表 -->
+    <scroll-view 
+      wx:else
+      class="result-scroll"
+      scroll-y
+      bindscrolltolower="loadMore"
+    >
+      <view class="product-list">
+        <view 
+          class="product-item" 
+          wx:for="{{products}}" 
+          wx:key="_id"
+          bindtap="goToDetail"
+          data-id="{{item._id}}"
+        >
+          <image class="product-img" src="{{item.coverUrl || item.images[0]}}" mode="aspectFill" lazy-load/>
+          <view class="product-info">
+            <view class="product-name">{{item.name}}</view>
+            <view class="product-meta">
+              <view class="province-tag" style="background:{{item.provinceColor}}1a;color:{{item.provinceColor}}">
+                {{item.provinceName}}
+              </view>
+              <text class="product-time">{{item.timeLabel}}</text>
+            </view>
+            <view class="product-user">
+              <image class="user-avatar-sm" src="{{item.userAvatar}}" mode="aspectFill"/>
+              <text class="user-credit {{item.creditClass}}">{{item.creditScore}}分</text>
+            </view>
+            <view class="want-tag" wx:if="{{item.wantCategory}}">
+              <text>想换：{{item.wantLabel}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 加载更多 -->
+      <view class="load-more" wx:if="{{loadingMore}}">
+        <text>加载更多...</text>
+      </view>
+      <view class="load-more" wx:if="{{noMore && products.length > 0}}">
+        <text>— 已经到底啦 —</text>
+      </view>
+
+      <view class="safe-bottom" style="height:40rpx"></view>
+    </scroll-view>
+  </view>
+</view>

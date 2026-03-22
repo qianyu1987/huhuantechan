@@ -1,0 +1,267 @@
+<!-- pages/mine/index.wxml - 个人中心 -->
+<view class="mine-page">
+
+  <!-- 顶部用户卡片 -->
+  <view class="user-hero">
+    <view class="user-hero-bg"/>
+    <view class="user-hero-content">
+      <view class="user-info-row">
+        <block wx:if="{{userInfo && userInfo.avatarUrl && userInfo.nickName}}">
+          <image class="user-avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill" binderror="onAvatarError"/>
+          <view class="user-info-text">
+            <view class="user-name-row">
+              <view class="user-name">{{userInfo.nickName || '特产达人'}}</view>
+              <view class="admin-badge" wx:if="{{isAdmin}}" bindtap="goToAdmin">
+                <text class="admin-badge-icon">🔑</text>
+                <text class="admin-badge-text">管理员</text>
+              </view>
+            </view>
+            <view class="user-province">
+              <view class="icon-location-w"></view>
+              <text>{{provinceName || '未设置省份'}}</text>
+            </view>
+          </view>
+        </block>
+        <block wx:else>
+          <!-- 新版头像昵称填写组件 -->
+          <button class="avatar-nickname-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+            <image class="user-avatar" src="{{userInfo.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"/>
+            <view class="avatar-mask">
+              <view class="icon-camera-w"></view>
+            </view>
+          </button>
+          <view class="user-info-text">
+            <input class="nickname-input" type="nickname" placeholder="点击设置昵称" placeholder-class="nickname-placeholder" value="{{userInfo.nickName || ''}}" bindinput="onNicknameInput" bindblur="saveUserProfile"/>
+            <view class="nickname-tip" wx:if="{{!userInfo.nickName}}">点击头像和昵称完成设置</view>
+            <view class="user-province" wx:else>
+              <view class="icon-location-w"></view>
+              <text>{{provinceName || '未设置省份'}}</text>
+            </view>
+          </view>
+        </block>
+        <!-- 编辑资料入口 -->
+        <view class="edit-btn" bindtap="editProfile">
+          <view class="icon-edit-w"></view>
+        </view>
+      </view>
+
+      <!-- 信用分+统计 -->
+      <view class="stats-row">
+        <view class="stat-item credit-stat" bindtap="goToCredit">
+          <view class="credit-score-big {{creditClass}}">{{creditScore}}</view>
+          <view class="stat-label">信用分</view>
+        </view>
+        <view class="stat-divider"/>
+        <view class="stat-item" bindtap="goToMyProducts">
+          <view class="stat-num">{{publishCount}}</view>
+          <view class="stat-label">发布</view>
+        </view>
+        <view class="stat-divider"/>
+        <view class="stat-item" bindtap="goToOrders">
+          <view class="stat-num">{{swapCount}}</view>
+          <view class="stat-label">分享次数</view>
+        </view>
+        <view class="stat-divider"/>
+        <view class="stat-item">
+          <view class="stat-num">{{badgeCount}}</view>
+          <view class="stat-label">集章数</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <scroll-view scroll-y class="mine-scroll">
+
+    <!-- 省份集章 - 折叠设计 -->
+    <view class="section card mx-md mt-md">
+      <view class="section-hd" bindtap="toggleBadgeExpand">
+        <text class="section-title">省份集章</text>
+        <view class="badge-header-right">
+          <text class="section-sub-text">{{badgeCount}}/34</text>
+          <view class="expand-icon {{badgeExpanded ? 'expanded' : ''}}"></view>
+        </view>
+      </view>
+      <view class="badge-grid {{badgeExpanded ? 'expanded' : 'collapsed'}}">
+        <block wx:for="{{provinces}}" wx:key="code">
+          <view class="badge-item {{item.collected ? 'collected' : 'uncollected'}}" wx:if="{{badgeExpanded || item.collected}}">
+            <view class="badge-circle" style="{{item.collected ? 'background:' + item.color + '22;border-color:' + item.color : ''}}">
+              <text class="badge-name">{{item.name}}</text>
+            </view>
+          </view>
+        </block>
+      </view>
+      <view class="badge-collapse-hint" wx:if="{{!badgeExpanded && badgeCount > 0}}" bindtap="toggleBadgeExpand">
+        <text>已收集 {{badgeCount}} 个省份，点击展开全部</text>
+      </view>
+    </view>
+
+    <!-- 我的特产 -->
+    <view class="section card mx-md mt-md">
+      <view class="section-hd" bindtap="goToMyProducts">
+        <text class="section-title">我的特产</text>
+        <view class="more-btn">
+          <text class="text-light text-sm">查看全部</text>
+          <view class="icon-arrow-r-sm"></view>
+        </view>
+      </view>
+      <scroll-view scroll-x enable-flex class="my-product-preview">
+        <view wx:if="{{myProducts.length === 0}}" class="empty-inline">
+          <text class="text-light text-sm">还没有发布特产</text>
+        </view>
+        <block wx:for="{{myProducts}}" wx:key="_id">
+          <view class="preview-item" bindtap="goToDetail" data-id="{{item._id}}">
+            <view class="preview-cover">
+              <block wx:if="{{item.isMystery}}">
+                <view class="preview-mystery-card {{item.colorClass}}">
+                  <text class="mystery-emoji">{{item.emoji}}</text>
+                  <text class="mystery-province">{{item.provinceName}}</text>
+                </view>
+              </block>
+              <block wx:else>
+                <image class="preview-img" src="{{item.coverUrl}}" mode="aspectFill" binderror="onImageError" data-index="{{index}}"/>
+              </block>
+            </view>
+            <view class="preview-name">{{item.isMystery ? '神秘特产' : item.name}}</view>
+            <view class="preview-status {{item.statusClass}}">{{item.statusLabel}}</view>
+          </view>
+        </block>
+      </scroll-view>
+    </view>
+
+    <!-- 快捷功能 - 宫格布局 -->
+    <view class="section card mx-md mt-md">
+      <view class="section-hd">
+        <text class="section-title">快捷服务</text>
+      </view>
+      <view class="quick-grid">
+        <view class="quick-grid-item" bindtap="goToAddress">
+          <view class="quick-grid-icon qg-teal">
+            <view class="qi qi-pin"></view>
+          </view>
+          <text class="quick-grid-label">收货地址</text>
+        </view>
+        <view class="quick-grid-item" bindtap="goToFavorites">
+          <view class="quick-grid-icon qg-pink">
+            <view class="qi qi-heart"></view>
+          </view>
+          <text class="quick-grid-label">我的收藏</text>
+        </view>
+        <view class="quick-grid-item" bindtap="goToMystery">
+          <view class="quick-grid-icon qg-purple">
+            <view class="qi qi-mystery"></view>
+          </view>
+          <text class="quick-grid-label">神秘特产</text>
+        </view>
+        <view class="quick-grid-item" bindtap="goToInvite">
+          <view class="quick-grid-icon qg-orange">
+            <view class="qi qi-people"></view>
+          </view>
+          <text class="quick-grid-label">邀请好友</text>
+        </view>
+        <view class="quick-grid-item" bindtap="goToOrders">
+          <view class="quick-grid-icon qg-blue">
+            <view class="qi qi-swap"></view>
+          </view>
+          <text class="quick-grid-label">我的记录</text>
+        </view>
+        <view class="quick-grid-item" bindtap="goToReview">
+          <view class="quick-grid-icon qg-green">
+            <view class="qi qi-comment"></view>
+          </view>
+          <text class="quick-grid-label">我的评价</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 功能菜单 -->
+    <view class="section card mx-md mt-md">
+      <view class="section-hd">
+        <text class="section-title">更多服务</text>
+      </view>
+      <view class="menu-pills">
+        <view class="menu-pill" bindtap="goToCredit">
+          <view class="pill-icon pill-ic-credit"></view>
+          <text class="pill-label">信用中心</text>
+        </view>
+        <view class="menu-pill" bindtap="goToHelp">
+          <view class="pill-icon pill-ic-guide"></view>
+          <text class="pill-label">使用指南</text>
+        </view>
+        <view class="menu-pill" bindtap="showService">
+          <view class="pill-icon pill-ic-ai"></view>
+          <text class="pill-label">智能客服</text>
+        </view>
+        <view class="menu-pill" bindtap="goToSettings">
+          <view class="pill-icon pill-ic-gear"></view>
+          <text class="pill-label">系统设置</text>
+        </view>
+        <view class="menu-pill" bindtap="goToAbout">
+          <view class="pill-icon pill-ic-about"></view>
+          <text class="pill-label">关于我们</text>
+        </view>
+      </view>
+    </view>
+
+    <view style="height: calc(180rpx + env(safe-area-inset-bottom))"/>
+  </scroll-view>
+
+  <!-- 底部导航 -->
+  <tab-bar active="mine" />
+
+  <!-- AI 客服底部弹窗 -->
+  <view class="service-overlay {{showServicePanel ? 'show' : ''}}" bindtap="hideService">
+    <view class="service-sheet" catchtap="noop" style="bottom: {{keyboardHeight}}px;">
+      <!-- 拖拽条 -->
+      <view class="service-handle"><view class="service-handle-bar"/></view>
+      <!-- 头部 -->
+      <view class="service-header">
+        <view class="service-header-left">
+          <view class="service-ai-dot"></view>
+          <text class="service-title">智能客服</text>
+        </view>
+        <view class="service-close" bindtap="hideService">
+          <text class="service-close-icon">×</text>
+        </view>
+      </view>
+
+      <!-- 消息区域 -->
+      <scroll-view scroll-y class="service-msg-list" style="height: {{keyboardHeight ? '360rpx' : '680rpx'}};" scroll-into-view="{{scrollToView}}" scroll-with-animation>
+        <block wx:for="{{serviceMessages}}" wx:key="index">
+          <view class="msg-row {{item.type}}" id="msg-{{index}}">
+            <view class="msg-avatar-wrap" wx:if="{{item.type === 'ai'}}">
+              <view class="msg-avatar ai-avatar">
+                <text class="avatar-icon">🤖</text>
+              </view>
+            </view>
+            <view class="msg-bubble {{item.type}}">
+              <text class="msg-text">{{item.content}}</text>
+              <view class="human-service-btn" wx:if="{{item.showHumanBtn}}" bindtap="contactHuman">
+                <text>联系人工客服</text>
+              </view>
+            </view>
+          </view>
+        </block>
+        <view style="height:20rpx"/>
+      </scroll-view>
+
+      <!-- 快捷问题 - 键盘弹出时隐藏 -->
+      <scroll-view scroll-x enable-flex class="service-quick-wrap" wx:if="{{!keyboardHeight}}">
+        <block wx:for="{{quickQuestions}}" wx:key="index">
+          <view class="quick-chip" bindtap="selectQuickQuestion" data-index="{{index}}">
+            <text>{{item}}</text>
+          </view>
+        </block>
+      </scroll-view>
+
+      <!-- 输入区 -->
+      <view class="service-input-bar">
+        <input class="service-input" placeholder="输入你的问题..." value="{{serviceInput}}" bindinput="onServiceInput" bindconfirm="sendMessage" confirm-type="send" adjust-position="{{false}}"/>
+        <view class="service-send-btn {{serviceInput ? 'active' : ''}}" bindtap="sendMessage">
+          <text class="send-icon">↑</text>
+        </view>
+      </view>
+      <view class="service-safe-area" wx:if="{{!keyboardHeight}}"/>
+    </view>
+  </view>
+
+</view>

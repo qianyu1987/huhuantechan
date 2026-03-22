@@ -1,0 +1,270 @@
+<!-- pages/match/index.wxml - 互换匹配页 -->
+<view class="match-page">
+  
+  <!-- 规则提示入口 -->
+  <view class="rules-entry" bindtap="showRules">
+    <text class="rules-entry-icon">💡</text>
+    <text class="rules-entry-text">匹配规则</text>
+    <text class="rules-entry-arrow">›</text>
+  </view>
+
+  <!-- 我的特产选择区 -->
+  <view class="my-section">
+    <view class="section-hd">
+      <view class="section-title-row">
+        <text class="section-icon">🎒</text>
+        <text class="section-title">我要拿去换</text>
+      </view>
+      <text class="section-sub">选择你的特产</text>
+    </view>
+    
+    <view wx:if="{{myProducts.length === 0}}" class="empty-my">
+      <text class="empty-my-icon">📦</text>
+      <text class="empty-my-text">你还没有发布特产</text>
+      <button class="empty-my-btn" bindtap="goToPublish">去发布</button>
+    </view>
+    
+    <scroll-view scroll-x enable-flex class="my-product-scroll" wx:else>
+      <block wx:for="{{myProducts}}" wx:key="_id">
+        <view 
+          class="my-product-item {{selectedMyId === item._id ? 'selected' : ''}}"
+          bindtap="selectMine"
+          data-id="{{item._id}}"
+        >
+          <!-- 神秘特产：渐变+emoji -->
+          <view wx:if="{{item.isMystery}}" class="my-product-mystery {{item.colorClass}}">
+            <text class="mystery-mini-emoji">{{item.emoji || '🎁'}}</text>
+          </view>
+          <!-- 普通特产：缩略图 -->
+          <image wx:else class="my-product-img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load/>
+          
+          <view class="my-product-name">{{item.name}}</view>
+          <view class="selected-check" wx:if="{{selectedMyId === item._id}}">✓</view>
+        </view>
+      </block>
+    </scroll-view>
+  </view>
+
+  <!-- 分隔 -->
+  <view class="swap-divider">
+    <view class="divider-line"/>
+    <view class="swap-icon-wrap">
+      <text class="swap-icon-text">⇄</text>
+    </view>
+    <view class="divider-line"/>
+  </view>
+
+  <!-- 推荐列表 -->
+  <view class="recommend-section">
+    <view class="section-hd rec-hd">
+      <view class="section-title-row">
+        <text class="section-icon">🔄</text>
+        <text class="section-title rec-title">可兑换特产</text>
+      </view>
+      <text wx:if="{{selectedProduct}}" class="filter-hint">{{selectedProduct.isMystery ? '匹配神秘特产' : '按兑换规则匹配'}}</text>
+      <text wx:else class="filter-hint hint-default">选择上方特产开始匹配</text>
+    </view>
+
+    <scroll-view 
+      scroll-y 
+      class="recommend-scroll"
+      bindscrolltolower="loadMore"
+      refresher-enabled
+      bindrefresherrefresh="onRefresh"
+      refresher-triggered="{{refreshing}}"
+    >
+      <!-- 加载中 -->
+      <view wx:if="{{loading && recommends.length === 0}}" class="loading-wrap">
+        <view class="loading-spinner"></view>
+        <text class="loading-text">正在匹配...</text>
+      </view>
+      
+      <!-- 空状态 -->
+      <view wx:elif="{{recommends.length === 0 && !loading}}" class="empty-wrap">
+        <text class="empty-icon">🔍</text>
+        <text class="empty-desc">{{selectedMyId ? (selectedProduct.isMystery ? '暂无匹配的神秘特产' : '暂无匹配的特产，试试其他') : '选择你的特产，开始匹配'}}</text>
+      </view>
+
+      <!-- 网格列表 -->
+      <view class="recommend-grid" wx:else>
+        <block wx:for="{{recommends}}" wx:key="_id">
+          <view class="grid-card" bindtap="goToDetail" data-id="{{item._id}}">
+            <!-- 图片区 -->
+            <view wx:if="{{item.isMystery}}" class="grid-img-wrap mystery-grid-wrap {{item.colorClass}}">
+              <view class="mystery-grid-content">
+                <text class="mystery-grid-emoji">{{item.emoji}}</text>
+                <text class="mystery-grid-province">{{item.provinceName}}</text>
+              </view>
+            </view>
+            <view wx:else class="grid-img-wrap">
+              <image class="grid-img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load/>
+              <!-- 省份角标 -->
+              <view class="province-badge" style="background:{{item.provinceColor}}">
+                <text class="province-badge-emoji">{{item.provinceEmoji}}</text>
+                <text class="province-badge-name">{{item.provinceName}}</text>
+              </view>
+              <!-- 价值标签 -->
+              <view wx:if="{{item.valueLabel}}" class="grid-value-tag">{{item.valueLabel}}</view>
+            </view>
+            <!-- 信息区 -->
+            <view class="grid-info">
+              <view class="grid-name">{{item.isMystery ? '神秘特产' : item.name}}</view>
+              <view class="grid-meta">
+                <text class="grid-province-tag" style="background:{{item.provinceColor}}22;color:{{item.provinceColor}}">{{item.provinceEmoji}} {{item.provinceName}}</text>
+              </view>
+              <view class="grid-action">
+                <button class="grid-btn" catchtap="initiateSwap" data-id="{{item._id}}" data-name="{{item.isMystery ? '神秘特产' : item.name}}">换它</button>
+              </view>
+            </view>
+          </view>
+        </block>
+      </view>
+      
+      <view class="load-more" wx:if="{{noMore && recommends.length > 0}}">
+        <text class="text-light text-sm">-- 已经到底啦 --</text>
+      </view>
+      <view style="height:120rpx"/>
+    </scroll-view>
+  </view>
+
+  <!-- 底部导航 -->
+  <tab-bar active="match" />
+
+  <!-- 互换规则弹窗 -->
+  <view class="rules-overlay {{showRulesPopup ? 'show' : ''}}" catchtap="hideRules">
+    <view class="rules-sheet" catchtap="">
+      <!-- 顶部拖拽条 -->
+      <view class="rules-handle"><view class="rules-handle-bar"/></view>
+
+      <!-- 标题 -->
+      <view class="rules-header">
+        <text class="rules-header-icon">📖</text>
+        <text class="rules-header-title">智能匹配规则</text>
+      </view>
+
+      <!-- 规则内容 -->
+      <scroll-view scroll-y class="rules-body">
+
+        <!-- 基本流程 -->
+        <view class="rules-card">
+          <view class="rules-card-title">
+            <text class="rules-card-num">1</text>
+            <text>基本流程</text>
+          </view>
+          <view class="rules-steps">
+            <view class="rules-step">
+              <text class="step-emoji">📦</text>
+              <text class="step-text">发布你的特产</text>
+            </view>
+            <text class="step-arrow">→</text>
+            <view class="rules-step">
+              <text class="step-emoji">👆</text>
+              <text class="step-text">选择要换的</text>
+            </view>
+            <text class="step-arrow">→</text>
+            <view class="rules-step">
+              <text class="step-emoji">🔄</text>
+              <text class="step-text">智能匹配</text>
+            </view>
+            <text class="step-arrow">→</text>
+            <view class="rules-step">
+              <text class="step-emoji">🤝</text>
+              <text class="step-text">发起请求</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 智能匹配 -->
+        <view class="rules-card">
+          <view class="rules-card-title">
+            <text class="rules-card-num">2</text>
+            <text>智能匹配优先级</text>
+          </view>
+          <view class="rules-card-desc">选择你的特产后，系统按以下优先级推荐</view>
+          <view class="rules-level-list">
+            <view class="rules-level high">
+              <view class="level-badge">优</view>
+              <view class="level-info">
+                <text class="level-title">双向完美匹配</text>
+                <text class="level-desc">你想要的 = 对方有的，对方想要的 = 你有的，且价值相当</text>
+              </view>
+            </view>
+            <view class="rules-level high">
+              <view class="level-badge">高</view>
+              <view class="level-info">
+                <text class="level-title">你的意愿匹配</text>
+                <text class="level-desc">对方特产的省份、品类和你的期望一致</text>
+              </view>
+            </view>
+            <view class="rules-level mid">
+              <view class="level-badge">中</view>
+              <view class="level-info">
+                <text class="level-title">对方意愿匹配你</text>
+                <text class="level-desc">对方想要你所在省份和品类的特产</text>
+              </view>
+            </view>
+            <view class="rules-level mid">
+              <view class="level-badge">中</view>
+              <view class="level-info">
+                <text class="level-title">省份匹配 + 价值相当</text>
+                <text class="level-desc">单向省份意愿匹配，价值区间相同</text>
+              </view>
+            </view>
+            <view class="rules-level low">
+              <view class="level-badge">低</view>
+              <view class="level-info">
+                <text class="level-title">跨省同价值 / 跨省任意</text>
+                <text class="level-desc">不同省份但价值接近，或所有可换特产</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 神秘特产 -->
+        <view class="rules-card">
+          <view class="rules-card-title">
+            <text class="rules-card-num">3</text>
+            <text>神秘特产</text>
+          </view>
+          <view class="rules-mystery-row">
+            <text class="mystery-box-emoji">🎁</text>
+            <view class="mystery-box-info">
+              <text class="mystery-box-title">盲盒模式</text>
+              <text class="mystery-box-desc">神秘特产只显示来自哪个省份，不透露具体内容。只能与其他神秘特产配对，配对后双方同时揭晓。</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 小贴士 -->
+        <view class="rules-card tips-card">
+          <view class="rules-card-title">
+            <text class="rules-card-num tips-num">💡</text>
+            <text>小贴士</text>
+          </view>
+          <view class="rules-tips">
+            <view class="tip-item">
+              <text class="tip-dot">&#x2022;</text>
+              <text>填写「想要的省份和品类」能大幅提高匹配精度</text>
+            </view>
+            <view class="tip-item">
+              <text class="tip-dot">&#x2022;</text>
+              <text>价值区间相近的特产更容易被推荐</text>
+            </view>
+            <view class="tip-item">
+              <text class="tip-dot">&#x2022;</text>
+              <text>不选择特产时，展示所有可兑换的特产</text>
+            </view>
+          </view>
+        </view>
+
+        <view style="height:60rpx"/>
+      </scroll-view>
+
+      <!-- 底部按钮 -->
+      <view class="rules-footer">
+        <button class="rules-close-btn" bindtap="hideRules">我知道了</button>
+      </view>
+    </view>
+  </view>
+
+</view>

@@ -1,0 +1,675 @@
+/* pages/publish/index.wxss - 发布特产 - iOS 26 顶级玻璃风格 */
+
+@import '../../styles/lib/ani.wxss';
+
+.publish-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--color-bg);
+}
+
+/* ===== 神秘特产开关 ===== */
+.mystery-toggle-section {
+  background: linear-gradient(135deg, rgba(191, 90, 242, 0.15) 0%, rgba(98, 40, 215, 0.15) 100%) !important;
+  border: 1rpx solid rgba(191, 90, 242, 0.3) !important;
+}
+
+.mystery-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mystery-toggle-left {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.mystery-icon-wrapper {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 20rpx;
+  background: linear-gradient(135deg, #BF5AF2 0%, #6228D7 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 16rpx rgba(191, 90, 242, 0.4);
+}
+
+.icon-mystery {
+  width: 36rpx;
+  height: 36rpx;
+  background: url('https://img.icons8.com/ios-filled/100/ffffff/mystery.png') no-repeat center;
+  background-size: contain;
+}
+
+.mystery-toggle-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.mystery-toggle-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.mystery-toggle-desc {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.mystery-switch {
+  transform: scale(0.9);
+}
+
+.label-hint {
+  font-size: 20rpx;
+  color: rgba(191, 90, 242, 0.8);
+  font-weight: 400;
+  margin-left: 8rpx;
+}
+
+/* ===== 页面头部 - 玻璃效果 ===== */
+.page-header {
+  padding: 32rpx 32rpx 20rpx;
+  background: var(--color-surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1rpx solid var(--color-divider);
+}
+
+.page-title {
+  display: block;
+  font-size: 40rpx;
+  font-weight: 800;
+  color: var(--color-text);
+  letter-spacing: -0.5rpx;
+}
+
+.page-sub {
+  display: block;
+  font-size: 24rpx;
+  color: var(--color-text-tertiary);
+  margin-top: 8rpx;
+  font-weight: 500;
+}
+
+.form-scroll { flex: 1; }
+.form-wrap { padding-top: 24rpx; }
+
+/* ===== 区块 - iOS 26 深色玻璃卡片 ===== */
+.section {
+  background: rgba(120, 120, 128, 0.16);
+  border-radius: var(--radius-xl);
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 
+    0 4rpx 24rpx rgba(0, 0, 0, 0.2),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.05);
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.section-label {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 20rpx;
+  letter-spacing: -0.2rpx;
+}
+
+.section-sub {
+  font-size: 24rpx;
+  color: var(--color-text-tertiary);
+  margin-top: -12rpx;
+  margin-bottom: 20rpx;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.required { 
+  color: var(--color-danger);
+  margin-left: 4rpx;
+}
+
+/* ===== 图片上传 - 玻璃效果 ===== */
+.img-upload-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.img-item {
+  position: relative;
+  width: calc((100% - 32rpx) / 3);
+  padding-top: calc((100% - 32rpx) / 3);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.img-item:active {
+  transform: scale(0.95);
+}
+
+.img-preview {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: var(--color-bg);
+}
+
+.img-del {
+  position: absolute;
+  top: 8rpx;
+  right: 8rpx;
+  width: 44rpx;
+  height: 44rpx;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border: 1rpx solid rgba(255, 255, 255, 0.2);
+}
+
+.img-del:active {
+  background: rgba(255, 59, 48, 0.8);
+  transform: scale(0.9);
+}
+
+.img-add {
+  width: calc((100% - 32rpx) / 3);
+  aspect-ratio: 1;
+  background: rgba(120, 120, 128, 0.08);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  border: 2rpx dashed rgba(255, 255, 255, 0.15);
+  transition: all 0.2s ease;
+}
+
+.img-add:active {
+  background: rgba(10, 132, 255, 0.08);
+  border-color: var(--color-primary);
+  border-style: solid;
+}
+
+.img-add-icon { width: 48rpx; height: 48rpx; }
+.img-add-text { 
+  font-size: 22rpx; 
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+}
+
+/* ===== 输入框 - 玻璃风格 ===== */
+.form-input {
+  width: 100%;
+  height: 88rpx;
+  background: var(--color-bg);
+  border-radius: var(--radius-lg);
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  color: var(--color-text);
+  border: 2rpx solid transparent;
+  transition: all 0.2s ease;
+}
+
+.form-input:focus {
+  background: var(--color-surface-solid);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4rpx rgba(0, 122, 255, 0.1);
+}
+
+.form-textarea {
+  width: 100%;
+  min-height: 160rpx;
+  background: var(--color-bg);
+  border-radius: var(--radius-lg);
+  padding: 20rpx 24rpx;
+  font-size: 26rpx;
+  color: var(--color-text);
+  line-height: 1.6;
+  border: 2rpx solid transparent;
+  transition: all 0.2s ease;
+}
+
+.form-textarea:focus {
+  background: var(--color-surface-solid);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4rpx rgba(0, 122, 255, 0.1);
+}
+
+.input-counter {
+  text-align: right;
+  font-size: 22rpx;
+  color: var(--color-text-tertiary);
+  margin-top: 8rpx;
+  font-weight: 500;
+}
+
+/* ===== Picker字段 - 玻璃效果 - 修复居中 ===== */
+.picker-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: 0 32rpx;
+  transition: all 0.2s ease;
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  height: 96rpx;
+  box-sizing: border-box;
+}
+
+.picker-field text {
+  line-height: 96rpx;
+}
+
+.picker-field:active {
+  background: var(--color-bg-tertiary);
+}
+
+.picker-field.sm { 
+  padding: 0 24rpx; 
+  border-radius: var(--radius-md); 
+  flex: 1; 
+  height: 80rpx;
+}
+
+.picker-field.sm .picker-text {
+  font-size: 26rpx;
+}
+
+.picker-text.placeholder { 
+  color: var(--color-text-tertiary); 
+  font-weight: 500;
+}
+
+.picker-text.text-dark { 
+  color: var(--color-text); 
+  font-weight: 600;
+}
+
+/* ===== 标签选择 - 玻璃胶囊 ===== */
+.tag-select-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.tag-select-item {
+  padding: 16rpx 32rpx;
+  background: var(--color-bg);
+  border-radius: var(--radius-full);
+  font-size: 26rpx;
+  color: var(--color-text-secondary);
+  border: 2rpx solid transparent;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 500;
+}
+
+.tag-select-item:active {
+  transform: scale(0.95);
+}
+
+.tag-select-item.selected {
+  background: rgba(0, 122, 255, 0.1);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  font-weight: 700;
+  box-shadow: 0 4rpx 12rpx rgba(0, 122, 255, 0.15);
+}
+
+.tag-select-item.sm { 
+  padding: 12rpx 24rpx; 
+  font-size: 24rpx; 
+}
+
+/* ===== 注意事项 - 玻璃警告 ===== */
+.notice-box {
+  display: flex;
+  gap: 16rpx;
+  background: rgba(255, 149, 0, 0.08);
+  border-radius: var(--radius-lg);
+  padding: 24rpx;
+  margin-bottom: 32rpx;
+  border: 1rpx solid rgba(255, 149, 0, 0.2);
+}
+
+.notice-icon { width: 36rpx; height: 36rpx; flex-shrink: 0; }
+.notice-text { 
+  font-size: 24rpx; 
+  color: var(--color-warning); 
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+/* ===== 提交按钮 - iOS 26 蓝色渐变 ===== */
+.submit-btn {
+  height: 104rpx;
+  font-size: 34rpx;
+  border-radius: var(--radius-xl);
+  background: linear-gradient(180deg, #0A84FF 0%, #0066CC 100%);
+  box-shadow: 
+    0 8rpx 32rpx rgba(10, 132, 255, 0.35),
+    inset 0 2rpx 4rpx rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-weight: 700;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 40rpx;
+}
+
+.submit-btn::after {
+  border: none;
+}
+
+.submit-btn:active {
+  transform: scale(0.98);
+  box-shadow: 
+    0 4rpx 16rpx rgba(10, 132, 255, 0.25),
+    inset 0 1rpx 2rpx rgba(255, 255, 255, 0.15);
+}
+
+.submit-btn[disabled] {
+  opacity: 0.5;
+  background: linear-gradient(180deg, #8E8E93 0%, #636366 100%);
+  box-shadow: none;
+}
+
+/* ===== 估值区间 - 网格卡片 ===== */
+.value-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.value-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: calc((100% - 48rpx) / 4);
+  height: 130rpx;
+  background: rgba(120, 120, 128, 0.08);
+  border-radius: var(--radius-lg);
+  border: 2rpx solid transparent;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  gap: 6rpx;
+  box-sizing: border-box;
+}
+
+.value-card:active {
+  transform: scale(0.95);
+}
+
+.value-card.selected {
+  background: rgba(0, 122, 255, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 4rpx 16rpx rgba(0, 122, 255, 0.2);
+}
+
+.value-emoji {
+  font-size: 36rpx;
+  line-height: 1;
+}
+
+.value-label {
+  font-size: 20rpx;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.value-card.selected .value-label {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+/* ===== 描述标签 - 绿色多选 ===== */
+.desc-tag.selected {
+  background: rgba(48, 209, 88, 0.12) !important;
+  color: #30D158 !important;
+  border-color: #30D158 !important;
+  font-weight: 700;
+  box-shadow: 0 4rpx 12rpx rgba(48, 209, 88, 0.15);
+}
+
+/* ===== 想换特产 - 装饰区块 ===== */
+.want-section {
+  background: linear-gradient(135deg, rgba(0, 122, 255, 0.08) 0%, rgba(88, 86, 214, 0.08) 100%) !important;
+  border: 1rpx solid rgba(0, 122, 255, 0.15) !important;
+  overflow: hidden;
+}
+
+.want-header {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin-bottom: 28rpx;
+}
+
+.want-header-icon {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 18rpx;
+  background: linear-gradient(135deg, #0A84FF 0%, #5856D6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  box-shadow: 0 4rpx 16rpx rgba(10, 132, 255, 0.3);
+}
+
+.want-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.want-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.want-sub {
+  font-size: 22rpx;
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+}
+
+.want-body {
+  padding-top: 4rpx;
+}
+
+.want-field {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.want-label {
+  font-size: 26rpx;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.want-tag.selected {
+  background: rgba(88, 86, 214, 0.12) !important;
+  color: #5856D6 !important;
+  border-color: #5856D6 !important;
+  box-shadow: 0 4rpx 12rpx rgba(88, 86, 214, 0.15);
+}
+
+/* ===== CSS 图标 ===== */
+.icon-close-w {
+  width: 20rpx;
+  height: 20rpx;
+  position: relative;
+}
+
+.icon-close-w::before, .icon-close-w::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 3rpx;
+  background: #fff;
+  border-radius: 2rpx;
+}
+
+.icon-close-w::before { transform: rotate(45deg); }
+.icon-close-w::after { transform: rotate(-45deg); }
+
+/* 加号图标 - 使用 iOS 风格 */
+.icon-plus-o {
+  width: 56rpx;
+  height: 56rpx;
+  position: relative;
+  border: 3rpx solid var(--color-text-tertiary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.icon-plus-o::before, .icon-plus-o::after {
+  content: '';
+  position: absolute;
+  background: var(--color-text-tertiary);
+  border-radius: 2rpx;
+}
+
+.icon-plus-o::before {
+  width: 3rpx;
+  height: 24rpx;
+}
+
+.icon-plus-o::after {
+  width: 24rpx;
+  height: 3rpx;
+}
+
+.img-add:active .icon-plus-o {
+  border-color: var(--color-primary);
+  transform: scale(0.95);
+}
+
+.img-add:active .icon-plus-o::before,
+.img-add:active .icon-plus-o::after {
+  background: var(--color-primary);
+}
+
+.icon-arrow-r, .icon-arrow-r-sm {
+  width: 24rpx;
+  height: 24rpx;
+  position: relative;
+}
+
+.icon-arrow-r::before, .icon-arrow-r-sm::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 4rpx;
+  width: 12rpx;
+  height: 12rpx;
+  border: 3rpx solid var(--color-text-tertiary);
+  border-width: 3rpx 3rpx 0 0;
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.icon-arrow-r-sm {
+  width: 20rpx;
+  height: 20rpx;
+}
+
+.icon-arrow-r-sm::before {
+  width: 10rpx;
+  height: 10rpx;
+  border-width: 2rpx 2rpx 0 0;
+}
+
+.icon-info {
+  width: 32rpx;
+  height: 32rpx;
+  border: 3rpx solid var(--color-warning);
+  border-radius: 50%;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.icon-info::before {
+  content: '';
+  position: absolute;
+  top: 6rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4rpx;
+  height: 4rpx;
+  background: var(--color-warning);
+  border-radius: 50%;
+}
+
+.icon-info::after {
+  content: '';
+  position: absolute;
+  bottom: 6rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4rpx;
+  height: 10rpx;
+  background: var(--color-warning);
+  border-radius: 2rpx;
+}
+
+.icon-check { 
+  width: 32rpx; 
+  height: 32rpx; 
+  position: relative;
+}
+
+.icon-check::after {
+  content: '';
+  position: absolute;
+  left: 8rpx;
+  top: 4rpx;
+  width: 12rpx;
+  height: 20rpx;
+  border: 4rpx solid var(--color-primary);
+  border-width: 0 4rpx 4rpx 0;
+  transform: rotate(45deg);
+}
+
+/* ===== 动画 ===== */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -1,0 +1,215 @@
+/* pages/help/index.wxss - 互换指南 - iOS 26 毛玻璃风格 */
+
+.help-page {
+  min-height: 100vh;
+  background: #000000;
+  position: relative;
+}
+
+.bg-gradient {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(10, 132, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(191, 90, 242, 0.08) 0%, transparent 50%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 导航栏 */
+.glass-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 20rpx 32rpx;
+  padding-top: calc(20rpx + env(safe-area-inset-top));
+  background: rgba(30, 30, 32, 0.7);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.06);
+}
+
+.nav-back {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44rpx;
+  color: #0A84FF;
+  font-weight: 300;
+}
+
+.nav-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.nav-placeholder {
+  width: 60rpx;
+}
+
+/* 滚动区域 */
+.help-scroll {
+  position: relative;
+  z-index: 1;
+  padding: 40rpx 24rpx;
+}
+
+/* 步骤容器 */
+.steps-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.step-item {
+  width: 100%;
+  max-width: 600rpx;
+  background: rgba(60, 60, 64, 0.35);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-radius: 24rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  padding: 24rpx;
+  display: flex;
+  align-items: flex-start;
+  gap: 20rpx;
+}
+
+.step-number {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0A84FF 0%, #0066CC 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #FFFFFF;
+  flex-shrink: 0;
+}
+
+.step-content {
+  flex: 1;
+}
+
+.step-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-bottom: 8rpx;
+}
+
+.step-desc {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.6;
+}
+
+.step-arrow {
+  display: flex;
+  justify-content: center;
+  padding: 8rpx 0;
+}
+
+.step-arrow text {
+  font-size: 32rpx;
+  color: rgba(10, 132, 255, 0.5);
+}
+
+/* FAQ */
+.faq-section {
+  margin-top: 48rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-bottom: 20rpx;
+  padding-left: 8rpx;
+}
+
+.faq-list {
+  background: rgba(60, 60, 64, 0.3);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 24rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.faq-item {
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.06);
+}
+
+.faq-item:last-child {
+  border-bottom: none;
+}
+
+.faq-question {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx;
+}
+
+.faq-question text {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #FFFFFF;
+  flex: 1;
+}
+
+.faq-icon {
+  font-size: 36rpx;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 300;
+  transition: transform 0.3s ease;
+}
+
+.faq-icon.expanded {
+  transform: rotate(45deg);
+  color: #0A84FF;
+}
+
+.faq-answer {
+  padding: 0 24rpx 24rpx;
+}
+
+.faq-answer text {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.6;
+}
+
+/* 温馨提示 */
+.tips-section {
+  margin-top: 48rpx;
+}
+
+.tips-card {
+  background: rgba(60, 60, 64, 0.3);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 24rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  padding: 24rpx;
+}
+
+.tip-row {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 2;
+  padding: 8rpx 0;
+}

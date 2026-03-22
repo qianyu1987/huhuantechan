@@ -1,0 +1,408 @@
+<view class="container">
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="loading-state">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 订单内容 -->
+  <block wx:elif="{{order}}">
+    <!-- 状态卡片 -->
+    <view class="status-card" style="background: linear-gradient(135deg, {{statusConfig.color}} 0%, {{statusConfig.color}}dd 100%)">
+      <view class="status-icon-wrap">
+        <text class="status-emoji">{{statusConfig.emoji || '📦'}}</text>
+      </view>
+      <view class="status-info">
+        <text class="status-label">{{statusConfig.label}}</text>
+        <text class="status-desc">{{statusConfig.desc}}</text>
+      </view>
+    </view>
+
+    <!-- 互换完成：对方信息卡片 -->
+    <block wx:if="{{order.status === 'completed'}}">
+      <view class="counterpart-card card">
+        <view class="counterpart-header">
+          <image class="counterpart-avatar" 
+            src="{{counterpart.avatarUrl || 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lxia07jQodd2SJFCMicVXGAsz0B1gLq1uA1gLq1uA1gLq1uA1gLq1uA1gLq1uA1g/0'}}" 
+            mode="aspectFill"
+            binderror="handleAvatarError"
+            bindtap="goToUserProfile"
+            data-openid="{{counterpart.openid}}"/>
+          <view class="counterpart-basic">
+            <text class="counterpart-name">{{counterpart.nickName || '未知用户'}}</text>
+            <view class="counterpart-credit {{counterpart.creditInfo.class}}">
+              <text class="credit-star">⭐</text>
+              <text class="credit-score">{{counterpart.creditScore || 100}}分</text>
+              <text class="credit-level">{{counterpart.creditInfo.level}}</text>
+            </view>
+          </view>
+          <view class="counterpart-badge">
+            <text class="badge-text">分享伙伴</text>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!-- 互换双方产品 -->
+    <view class="products-section card">
+      <view class="section-title">分享特产</view>
+      <view class="products-exchange">
+        <!-- 我的产品 -->
+        <view class="product-item">
+          <block wx:if="{{myProduct.isMystery}}">
+            <view class="product-mystery-card my-mystery">
+              <view class="mystery-shine"></view>
+              <text class="mystery-emoji">{{myProduct.mysteryEmoji || '🎁'}}</text>
+              <text class="mystery-province">{{myProduct.provinceName}}</text>
+              <view class="mystery-badge">我的</view>
+            </view>
+          </block>
+          <block wx:else>
+            <image class="product-img" src="{{myProduct.coverUrl}}" mode="aspectFill" bindtap="previewImage" data-url="{{myProduct.coverUrl}}"/>
+          </block>
+          <view class="product-info">
+            <text class="product-name">{{myProduct.isMystery ? '神秘特产' : myProduct.name}}</text>
+            <text class="product-tag mine">我的</text>
+          </view>
+        </view>
+        <view class="exchange-icon">
+          <text class="iconfont icon-exchange"></text>
+        </view>
+        <!-- 对方的产品 - 更神秘 -->
+        <view class="product-item">
+          <block wx:if="{{theirProduct.isMystery}}">
+            <view class="product-mystery-card their-mystery">
+              <view class="mystery-shine their-shine"></view>
+              <view class="mystery-question">?</view>
+              <text class="mystery-hint">对方的特产</text>
+              <view class="mystery-badge theirs">惊喜</view>
+            </view>
+          </block>
+          <block wx:else>
+            <image class="product-img" src="{{theirProduct.coverUrl}}" mode="aspectFill" bindtap="previewImage" data-url="{{theirProduct.coverUrl}}"/>
+          </block>
+          <view class="product-info">
+            <text class="product-name">{{theirProduct.isMystery ? '神秘特产' : theirProduct.name}}</text>
+            <text class="product-tag theirs">对方的</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 对方信息 / 收货信息 -->
+    <view class="counterpart-section card">
+      <view class="section-title">{{order.status === 'confirmed' || order.status === 'shipped_a' || order.status === 'shipped_b' || order.status === 'shipped' || order.status === 'received_a' || order.status === 'received_b' ? '收货信息' : '对方信息'}}</view>
+      
+      <!-- 已确认状态：显示双方收货信息 -->
+      <block wx:if="{{order.status === 'confirmed' || order.status === 'shipped_a' || order.status === 'shipped_b' || order.status === 'shipped' || order.status === 'received_a' || order.status === 'received_b'}}">
+        <!-- 我的收货信息 -->
+        <view class="shipping-card my-shipping">
+          <view class="shipping-header">
+            <text class="shipping-icon">📥</text>
+            <text class="shipping-title">你的收货信息</text>
+            <text class="shipping-desc">对方给你发货用</text>
+            <!-- 编辑按钮：双方未发货前可以编辑 -->
+            <text wx:if="{{order.status === 'confirmed' || order.status === 'shipped_a' || order.status === 'shipped_b'}}" class="edit-btn" bindtap="confirmOrder">编辑</text>
+          </view>
+          <view class="shipping-content">
+            <view class="shipping-row" wx:if="{{myShipping.contactName}}">
+              <text class="shipping-label">👤 收货人</text>
+              <text class="shipping-value">{{myShipping.contactName}}</text>
+            </view>
+            <view class="shipping-row" wx:if="{{myShipping.contactPhone}}">
+              <text class="shipping-label">📱 电话</text>
+              <text class="shipping-value">{{myShipping.contactPhone}}</text>
+            </view>
+            <view class="shipping-row" wx:if="{{myShipping.fullAddress}}">
+              <text class="shipping-label">📍 地址</text>
+              <text class="shipping-value">{{myShipping.fullAddress}}</text>
+            </view>
+            <view class="shipping-empty" wx:if="{{!myShipping.contactName}}">
+              <text class="empty-text">暂无收货信息</text>
+              <button class="btn-fill" bindtap="confirmOrder">填写收货信息</button>
+            </view>
+          </view>
+        </view>
+
+        <!-- 对方收货信息 -->
+        <view class="shipping-card their-shipping">
+          <view class="shipping-header">
+            <text class="shipping-icon">📤</text>
+            <text class="shipping-title">对方收货信息</text>
+            <text class="shipping-desc">你给对方发货用</text>
+          </view>
+          <view class="shipping-content">
+            <view class="shipping-row" wx:if="{{theirShipping.contactName}}">
+              <text class="shipping-label">👤 收货人</text>
+              <text class="shipping-value">{{theirShipping.contactName}}</text>
+            </view>
+            <view class="shipping-row" wx:if="{{theirShipping.contactPhone}}">
+              <text class="shipping-label">📱 电话</text>
+              <text class="shipping-value">{{theirShipping.contactPhone}}</text>
+            </view>
+            <view class="shipping-row" wx:if="{{theirShipping.fullAddress}}">
+              <text class="shipping-label">📍 地址</text>
+              <text class="shipping-value">{{theirShipping.fullAddress}}</text>
+            </view>
+            <view class="shipping-empty" wx:if="{{!theirShipping.contactName}}">
+              <text class="empty-text">对方未填写收货信息</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 填写快递单号按钮：双方收货信息都填写后才能触发 -->
+        <view class="ship-action" wx:if="{{canShip}}">
+          <button class="btn btn-primary btn-full" bindtap="showShipModal">填写快递单号</button>
+        </view>
+        <view class="ship-tip" wx:elif="{{order.status === 'confirmed' || order.status === 'shipped_a' || order.status === 'shipped_b'}}">
+          <text wx:if="{{!myShipping.contactName}}">请先填写你的收货信息</text>
+          <text wx:elif="{{!theirShipping.contactName}}">等待对方填写收货信息</text>
+          <text wx:else>请填写快递单号完成发货</text>
+        </view>
+      </block>
+      
+      <!-- 未确认状态：显示对方信息 -->
+      <block wx:else>
+        <view class="user-info">
+          <image class="user-avatar" src="{{counterpart.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill" bindtap="goToUserProfile" data-openid="{{counterpart.openid}}"/>
+          <view class="user-detail">
+            <text class="user-name">{{counterpart.nickName || '未知用户'}}</text>
+            <view class="user-credit {{counterpart.creditInfo.class}}">
+              <text class="credit-label">信用</text>
+              <text class="credit-score">{{counterpart.creditScore || 100}}分</text>
+              <text class="credit-level">· {{counterpart.creditInfo.level}}</text>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <!-- 物流信息 -->
+    <view wx:if="{{order.initiatorTracking || order.receiverTracking}}" class="tracking-section card">
+      <view class="section-title">物流信息</view>
+      <block wx:if="{{isInitiator}}">
+        <view wx:if="{{order.initiatorTracking && order.initiatorTracking.number}}" class="tracking-item">
+          <text class="tracking-label">我发的快递</text>
+          <view class="tracking-info">
+            <text class="tracking-company">{{order.initiatorTracking.company}}</text>
+            <text class="tracking-no" bindtap="copyTrackingNo" data-type="mine">{{order.initiatorTracking.number}}</text>
+          </view>
+        </view>
+        <view wx:if="{{order.receiverTracking && order.receiverTracking.number}}" class="tracking-item">
+          <text class="tracking-label">对方快递</text>
+          <view class="tracking-info">
+            <text class="tracking-company">{{order.receiverTracking.company}}</text>
+            <text class="tracking-no" bindtap="copyTrackingNo" data-type="theirs">{{order.receiverTracking.number}}</text>
+          </view>
+        </view>
+      </block>
+      <block wx:else>
+        <view wx:if="{{order.receiverTracking && order.receiverTracking.number}}" class="tracking-item">
+          <text class="tracking-label">我发的快递</text>
+          <view class="tracking-info">
+            <text class="tracking-company">{{order.receiverTracking.company}}</text>
+            <text class="tracking-no" bindtap="copyTrackingNo" data-type="mine">{{order.receiverTracking.number}}</text>
+          </view>
+        </view>
+        <view wx:if="{{order.initiatorTracking && order.initiatorTracking.number}}" class="tracking-item">
+          <text class="tracking-label">对方快递</text>
+          <view class="tracking-info">
+            <text class="tracking-company">{{order.initiatorTracking.company}}</text>
+            <text class="tracking-no" bindtap="copyTrackingNo" data-type="theirs">{{order.initiatorTracking.number}}</text>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <!-- 订单进度时间线 -->
+    <view class="timeline-section card">
+      <view class="section-title">进度跟踪</view>
+      <view class="timeline">
+        <block wx:for="{{timeline}}" wx:key="step">
+          <view wx:if="{{item.step > 0}}" class="timeline-item {{item.active ? 'active' : 'pending'}}">
+            <view class="timeline-line {{index > 0 && timeline[index-1].active ? 'active' : ''}}"></view>
+            <view class="timeline-dot">
+              <text wx:if="{{item.active}}" class="iconfont icon-{{item.icon}}"></text>
+              <text wx:else class="timeline-dot-num">{{item.step}}</text>
+            </view>
+            <view class="timeline-content">
+              <text class="timeline-title">{{item.title}}</text>
+              <text class="timeline-desc">{{item.desc}}</text>
+              <text wx:if="{{item.time}}" class="timeline-time">{{item.time}}</text>
+            </view>
+          </view>
+        </block>
+      </view>
+    </view>
+
+    <!-- 订单信息 -->
+    <view class="order-info-section card">
+      <view class="section-title">详细信息</view>
+      <view class="info-row">
+        <text class="info-label">记录编号</text>
+        <text class="info-value">{{order._id}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">创建时间</text>
+        <text class="info-value">{{order.createTime}}</text>
+      </view>
+      <view wx:if="{{order.completeTime}}" class="info-row">
+        <text class="info-label">完成时间</text>
+        <text class="info-value">{{order.completeTime}}</text>
+      </view>
+    </view>
+
+    <!-- 底部操作栏 -->
+    <view class="bottom-actions">
+      <!-- 待确认状态 -->
+      <block wx:if="{{order.status === 'pending'}}">
+        <block wx:if="{{!isInitiator}}">
+          <button class="btn btn-primary" bindtap="confirmOrder">确认</button>
+          <button class="btn btn-default" bindtap="rejectOrder">拒绝</button>
+        </block>
+        <block wx:else>
+          <button class="btn btn-default" bindtap="cancelOrder">取消请求</button>
+        </block>
+      </block>
+
+      <!-- 已确认，待发货 -->
+      <block wx:if="{{order.status === 'confirmed'}}">
+        <button class="btn btn-primary" bindtap="showShipModal">填写快递单号</button>
+      </block>
+
+      <!-- 等待我发货 -->
+      <block wx:if="{{(isInitiator && order.status === 'shipped_b') || (!isInitiator && order.status === 'shipped_a')}}">
+        <button class="btn btn-primary" bindtap="showShipModal">填写快递单号</button>
+      </block>
+
+      <!-- 等待我确认收货 -->
+      <block wx:if="{{(isInitiator && (order.status === 'received_b' || order.status === 'shipped')) || (!isInitiator && (order.status === 'received_a' || order.status === 'shipped'))}}">
+        <button class="btn btn-primary" bindtap="confirmReceive">确认收货</button>
+      </block>
+
+      <!-- 已完成，待评价 -->
+      <block wx:if="{{order.status === 'completed'}}">
+        <block wx:if="{{hasReviewed}}">
+          <button class="btn btn-default" disabled>已评价</button>
+        </block>
+        <block wx:else>
+          <button class="btn btn-primary" bindtap="goToReview">去评价</button>
+        </block>
+      </block>
+
+      <!-- 纠纷中 -->
+      <block wx:if="{{order.status === 'disputed'}}">
+        <button class="btn btn-primary" bindtap="contactService">联系客服</button>
+      </block>
+    </view>
+  </block>
+
+  <!-- 地址选择弹窗 -->
+  <view wx:if="{{showAddressModal}}" class="modal-mask" bindtap="hideAddressModal">
+    <view class="modal-content address-modal" catchtap="preventBubble">
+      <view class="modal-header">
+        <text class="modal-title">选择收货地址</text>
+        <text class="modal-close" bindtap="hideAddressModal">×</text>
+      </view>
+      
+      <view class="modal-body">
+        <!-- 已有地址列表 -->
+        <block wx:if="{{!isEditingAddress && addressList.length > 0}}">
+          <view class="address-select-list">
+            <view 
+              wx:for="{{addressList}}" 
+              wx:key="_id" 
+              class="address-select-item {{selectedAddressId === item._id ? 'selected' : ''}}"
+              bindtap="onAddressSelect"
+              data-id="{{item._id}}">
+              <view class="address-select-radio">
+                <view wx:if="{{selectedAddressId === item._id}}" class="radio-inner"></view>
+              </view>
+              <view class="address-select-info">
+                <view class="address-select-top">
+                  <text class="address-name">{{item.contactName}}</text>
+                  <text class="address-phone">{{item.contactPhone}}</text>
+                  <text wx:if="{{item.isDefault}}" class="address-default-tag">默认</text>
+                </view>
+                <text class="address-detail">{{item.province}}{{item.city}}{{item.district}}{{item.detailAddress}}</text>
+              </view>
+            </view>
+          </view>
+          
+          <view class="address-actions">
+            <button class="btn btn-outline" bindtap="switchToEditAddress">手动填写新地址</button>
+          </view>
+        </block>
+
+        <!-- 手动填写地址 -->
+        <block wx:if="{{isEditingAddress}}">
+          <button class="wechat-address-btn" bindtap="tryWechatAddress">
+            <text class="wechat-icon iconfont icon-location"></text>
+            <text>使用微信收货地址</text>
+          </button>
+          
+          <view class="address-or">或手动填写</view>
+          
+          <view class="form-item">
+            <text class="form-label">收货人</text>
+            <input class="form-input" placeholder="请输入收货人姓名" value="{{addressForm.name}}" bindinput="onAddressInput" data-field="name"/>
+          </view>
+          <view class="form-item">
+            <text class="form-label">联系电话</text>
+            <input class="form-input" placeholder="请输入联系电话" type="number" maxlength="11" value="{{addressForm.phone}}" bindinput="onAddressInput" data-field="phone"/>
+          </view>
+          <view class="form-item">
+            <text class="form-label">省市区</text>
+            <picker mode="region" value="{{region}}" bindchange="onRegionChange">
+              <view class="form-picker {{region.length > 0 ? '' : 'placeholder'}}">
+                {{region.length > 0 ? region[0] + ' ' + region[1] + ' ' + region[2] : '请选择省市区'}}
+              </view>
+            </picker>
+          </view>
+          <view class="form-item">
+            <text class="form-label">详细地址</text>
+            <input class="form-input" placeholder="请输入街道、楼栋等详细地址" value="{{addressForm.detailAddress}}" bindinput="onAddressInput" data-field="detailAddress"/>
+          </view>
+
+          <view class="address-actions">
+            <button class="btn btn-outline" bindtap="switchToSelectAddress" wx:if="{{addressList.length > 0}}">返回选择已有地址</button>
+          </view>
+        </block>
+      </view>
+      
+      <view class="modal-footer">
+        <button class="btn btn-default" bindtap="hideAddressModal">取消</button>
+        <button wx:if="{{!isEditingAddress}}" class="btn btn-primary" bindtap="submitAddressSelect">确认</button>
+        <button wx:else class="btn btn-primary" bindtap="submitAddressEdit">确认</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 发货弹窗 -->
+  <view wx:if="{{showShipModal}}" class="modal-mask" bindtap="hideShipModal">
+    <view class="modal-content" catchtap="preventBubble">
+      <view class="modal-header">
+        <text class="modal-title">填写物流信息</text>
+        <text class="modal-close" bindtap="hideShipModal">×</text>
+      </view>
+      <view class="modal-body">
+        <view class="form-item">
+          <text class="form-label">快递公司</text>
+          <picker mode="selector" range="{{expressCompanies}}" value="{{shipForm.companyIndex}}" bindchange="onCompanyChange">
+            <view class="form-picker {{shipForm.companyIndex >= 0 ? '' : 'placeholder'}}">
+              {{shipForm.companyIndex >= 0 ? expressCompanies[shipForm.companyIndex] : '请选择快递公司'}}
+            </view>
+          </picker>
+        </view>
+        <view class="form-item">
+          <text class="form-label">快递单号</text>
+          <input class="form-input" placeholder="请输入快递单号" value="{{shipForm.trackingNo}}" bindinput="onShipInput" data-field="trackingNo"/>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn btn-default" bindtap="hideShipModal">取消</button>
+        <button class="btn btn-primary" bindtap="submitShip">确认发货</button>
+      </view>
+    </view>
+  </view>
+</view>

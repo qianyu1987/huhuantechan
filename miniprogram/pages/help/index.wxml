@@ -1,0 +1,63 @@
+<!-- pages/help/index.wxml - 互换指南 -->
+<view class="help-page">
+  <view class="bg-gradient"></view>
+
+  <!-- 毛玻璃导航栏 -->
+  <view class="glass-nav">
+    <view class="nav-back" bindtap="goBack">
+      <text>‹</text>
+    </view>
+    <text class="nav-title">使用指南</text>
+    <view class="nav-placeholder"></view>
+  </view>
+
+  <scroll-view scroll-y class="help-scroll">
+    <!-- 步骤列表 -->
+    <view class="steps-container">
+      <block wx:for="{{steps}}" wx:key="index">
+        <view class="step-item">
+          <view class="step-number">{{index + 1}}</view>
+          <view class="step-content">
+            <view class="step-title">{{item.title}}</view>
+            <view class="step-desc">{{item.desc}}</view>
+          </view>
+        </view>
+        <view class="step-arrow" wx:if="{{index < steps.length - 1}}">
+          <text>↓</text>
+        </view>
+      </block>
+    </view>
+
+    <!-- 常见问题 -->
+    <view class="faq-section">
+      <view class="section-title">常见问题</view>
+      <view class="faq-list">
+        <block wx:for="{{faqs}}" wx:key="index">
+          <view class="faq-item" bindtap="toggleFaq" data-index="{{index}}">
+            <view class="faq-question">
+              <text>{{item.question}}</text>
+              <view class="faq-icon {{item.expanded ? 'expanded' : ''}}">+</view>
+            </view>
+            <view class="faq-answer" wx:if="{{item.expanded}}">
+              <text>{{item.answer}}</text>
+            </view>
+          </view>
+        </block>
+      </view>
+    </view>
+
+    <!-- 温馨提示 -->
+    <view class="tips-section">
+      <view class="section-title">温馨提示</view>
+      <view class="tips-card">
+        <view class="tip-row">• 双方需完善个人资料</view>
+        <view class="tip-row">• 发起请求后请及时确认</view>
+        <view class="tip-row">• 收到特产后尽快确认收货</view>
+        <view class="tip-row">• 完成后记得互相评价</view>
+        <view class="tip-row">• 保持良好信用可获得更多机会</view>
+      </view>
+    </view>
+
+    <view style="height: 60rpx"/>
+  </scroll-view>
+</view>

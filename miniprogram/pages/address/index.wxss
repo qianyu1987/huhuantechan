@@ -1,0 +1,636 @@
+/* pages/address/index.wxss - 绿色主题现代化设计 */
+
+/* 变量定义 */
+page {
+  --primary-green: #07c160;
+  --primary-green-light: #09ce7e;
+  --primary-green-dark: #059650;
+  --green-soft: rgba(7, 193, 96, 0.1);
+  --green-glow: rgba(7, 193, 96, 0.15);
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --text-tertiary: #999999;
+  --bg-page: #f0f2f5;
+  --bg-card: #ffffff;
+  --border-light: #e8e8e8;
+  --shadow-soft: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+  --shadow-card: 0 8rpx 32rpx rgba(7, 193, 96, 0.12);
+  --radius-lg: 24rpx;
+  --radius-md: 16rpx;
+  --radius-sm: 12rpx;
+}
+
+.address-page {
+  min-height: 100vh;
+  background: var(--bg-page);
+  padding: 0 24rpx;
+  position: relative;
+}
+
+/* 加载状态 */
+.loading-state {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-page);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 4rpx solid var(--green-soft);
+  border-top-color: var(--primary-green);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  margin-top: 20rpx;
+  font-size: 26rpx;
+  color: var(--text-tertiary);
+}
+
+/* 顶部装饰 */
+.top-decoration {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 400rpx;
+  background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-green-light) 50%, var(--primary-green) 100%);
+  border-radius: 0 0 60rpx 60rpx;
+  z-index: 0;
+}
+
+/* 页面标题 */
+.page-header {
+  position: relative;
+  z-index: 1;
+  padding: 100rpx 24rpx 40rpx;
+  text-align: center;
+}
+
+.page-title {
+  display: block;
+  font-size: 44rpx;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 8rpx;
+  letter-spacing: 2rpx;
+}
+
+.page-subtitle {
+  display: block;
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* 地址卡片 */
+.address-card {
+  position: relative;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  margin-bottom: 24rpx;
+}
+
+.card-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8rpx;
+  background: linear-gradient(90deg, var(--primary-green), var(--primary-green-light), var(--primary-green));
+}
+
+.card-content {
+  display: flex;
+  padding: 36rpx 32rpx;
+}
+
+/* 地址图标 */
+.address-icon-wrap {
+  flex-shrink: 0;
+  margin-right: 24rpx;
+}
+
+.address-icon {
+  width: 88rpx;
+  height: 88rpx;
+  background: linear-gradient(135deg, var(--primary-green), var(--primary-green-light));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba(7, 193, 96, 0.35);
+}
+
+.icon-location {
+  font-size: 40rpx;
+}
+
+/* 地址信息 */
+.address-main {
+  flex: 1;
+}
+
+.address-tag-wrap {
+  margin-bottom: 16rpx;
+}
+
+.address-tag {
+  display: inline-flex;
+  align-items: center;
+  background: var(--green-soft);
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+}
+
+.tag-dot {
+  width: 12rpx;
+  height: 12rpx;
+  background: var(--primary-green);
+  border-radius: 50%;
+  margin-right: 10rpx;
+}
+
+.tag-text {
+  font-size: 22rpx;
+  color: var(--primary-green);
+  font-weight: 500;
+}
+
+.address-name-phone {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.address-name-phone .name {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-right: 20rpx;
+}
+
+.address-name-phone .phone {
+  font-size: 30rpx;
+  color: var(--text-secondary);
+}
+
+.address-detail {
+  font-size: 28rpx;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.address-detail-sub {
+  font-size: 28rpx;
+  color: var(--text-primary);
+  line-height: 1.5;
+  margin-top: 6rpx;
+  font-weight: 500;
+}
+
+/* 卡片操作 */
+.card-actions {
+  display: flex;
+  border-top: 1rpx solid var(--border-light);
+}
+
+.action-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28rpx 0;
+}
+
+.action-item.primary {
+  background: var(--green-soft);
+}
+
+.action-icon {
+  font-size: 32rpx;
+  margin-right: 10rpx;
+}
+
+.action-text {
+  font-size: 28rpx;
+  color: var(--primary-green);
+  font-weight: 500;
+}
+
+.action-divider {
+  width: 1rpx;
+  background: var(--border-light);
+}
+
+/* 空状态卡片 */
+.empty-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 60rpx 40rpx;
+  text-align: center;
+  margin-bottom: 24rpx;
+  box-shadow: var(--shadow-soft);
+}
+
+.empty-illustration {
+  margin-bottom: 32rpx;
+}
+
+.illustration-circle {
+  width: 160rpx;
+  height: 160rpx;
+  background: linear-gradient(135deg, var(--green-soft), rgba(7, 193, 96, 0.05));
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.illustration-icon {
+  font-size: 72rpx;
+}
+
+.empty-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12rpx;
+}
+
+.empty-desc {
+  font-size: 28rpx;
+  color: var(--text-tertiary);
+}
+
+/* 导入卡片 */
+.import-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  margin-bottom: 24rpx;
+  overflow: hidden;
+}
+
+.import-content {
+  display: flex;
+  align-items: center;
+  padding: 32rpx;
+}
+
+.import-icon-wrap {
+  width: 80rpx;
+  height: 80rpx;
+  background: linear-gradient(135deg, #07c160, #09ce7e);
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 24rpx;
+  box-shadow: 0 6rpx 20rpx rgba(7, 193, 96, 0.3);
+}
+
+.import-icon {
+  font-size: 36rpx;
+}
+
+.import-text-wrap {
+  flex: 1;
+}
+
+.import-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6rpx;
+}
+
+.import-desc {
+  display: block;
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+}
+
+.import-arrow {
+  font-size: 40rpx;
+  color: var(--text-tertiary);
+  font-weight: 300;
+}
+
+/* 编辑卡片 */
+.edit-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 40rpx 32rpx;
+  margin-bottom: 24rpx;
+}
+
+.edit-header {
+  text-align: center;
+  margin-bottom: 40rpx;
+}
+
+.edit-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8rpx;
+}
+
+.edit-subtitle {
+  font-size: 26rpx;
+  color: var(--text-tertiary);
+}
+
+/* 表单项 */
+.form-group {
+  margin-bottom: 32rpx;
+}
+
+.form-item {
+  margin-bottom: 28rpx;
+}
+
+.form-label-wrap {
+  display: flex;
+  align-items: center;
+  margin-bottom: 14rpx;
+}
+
+.form-label-icon {
+  font-size: 28rpx;
+  margin-right: 10rpx;
+}
+
+.form-label {
+  font-size: 28rpx;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.form-input {
+  width: 100%;
+  height: 96rpx;
+  background: #f8f9fa;
+  border: 2rpx solid #eaeaea;
+  border-radius: var(--radius-md);
+  padding: 0 24rpx;
+  font-size: 30rpx;
+  color: var(--text-primary);
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+.form-input:focus {
+  border-color: var(--primary-green);
+  background: #ffffff;
+  box-shadow: 0 0 0 6rpx rgba(7, 193, 96, 0.1);
+}
+
+.form-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* 省市区选择器 */
+.region-picker {
+  width: 100%;
+  height: 96rpx;
+  background: #f8f9fa;
+  border: 2rpx solid #eaeaea;
+  border-radius: var(--radius-md);
+  padding: 0 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+.region-picker:active {
+  background: #f0f0f0;
+}
+
+.region-text {
+  font-size: 30rpx;
+  color: var(--text-primary);
+}
+
+.region-placeholder {
+  font-size: 30rpx;
+  color: var(--text-tertiary);
+}
+
+.region-arrow {
+  font-size: 32rpx;
+  color: var(--text-tertiary);
+  font-weight: 300;
+}
+
+/* 设为默认开关 */
+.switch-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 0;
+}
+
+.switch-label {
+  display: flex;
+  align-items: center;
+}
+
+.switch-icon {
+  font-size: 32rpx;
+  margin-right: 12rpx;
+}
+
+.switch-text {
+  font-size: 30rpx;
+  color: var(--text-primary);
+}
+
+/* 地址列表 */
+.address-list {
+  margin-bottom: 24rpx;
+}
+
+.address-card {
+  position: relative;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+  margin-bottom: 20rpx;
+}
+
+.address-card .card-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6rpx;
+  background: linear-gradient(90deg, var(--primary-green), var(--primary-green-light), var(--primary-green));
+}
+
+.address-icon.default {
+  background: linear-gradient(135deg, #ffa500, #ff8c00);
+  box-shadow: 0 8rpx 24rpx rgba(255, 165, 0, 0.35);
+}
+
+/* 操作按钮 - 3列 */
+.card-actions {
+  display: flex;
+  border-top: 1rpx solid var(--border-light);
+}
+
+.card-actions .action-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24rpx 0;
+}
+
+.card-actions .action-item.danger .action-text {
+  color: #ff4d4f;
+}
+
+.card-actions .action-icon {
+  font-size: 28rpx;
+  margin-right: 8rpx;
+}
+
+.card-actions .action-text {
+  font-size: 26rpx;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* 提示卡片 */
+.tip-card {
+  background: #fff7e6;
+  border-radius: var(--radius-md);
+  padding: 24rpx;
+  text-align: center;
+}
+
+.tip-text {
+  font-size: 26rpx;
+  color: #fa8c16;
+}
+
+/* 表单操作按钮 */
+.form-actions {
+  display: flex;
+  gap: 24rpx;
+  margin-top: 40rpx;
+}
+
+.cancel-btn, .submit-btn {
+  flex: 1;
+  height: 96rpx;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cancel-btn {
+  background: #f5f5f5;
+  border: 2rpx solid #e0e0e0;
+}
+
+.cancel-btn .btn-text {
+  color: var(--text-secondary);
+  font-size: 30rpx;
+  font-weight: 500;
+}
+
+.submit-btn {
+  background: linear-gradient(135deg, var(--primary-green), var(--primary-green-light));
+  box-shadow: 0 8rpx 24rpx rgba(7, 193, 96, 0.35);
+}
+
+.submit-btn .btn-text {
+  color: #ffffff;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+/* 添加按钮卡片 */
+.add-card {
+  background: linear-gradient(135deg, var(--primary-green), var(--primary-green-light));
+  border-radius: var(--radius-lg);
+  margin-bottom: 24rpx;
+  box-shadow: 0 8rpx 32rpx rgba(7, 193, 96, 0.35);
+}
+
+.add-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 36rpx;
+}
+
+.add-icon {
+  width: 56rpx;
+  height: 56rpx;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36rpx;
+  color: #ffffff;
+  margin-right: 16rpx;
+}
+
+.add-text {
+  font-size: 32rpx;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* 删除按钮 */
+.delete-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 32rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-soft);
+  margin-top: 16rpx;
+}
+
+.delete-icon {
+  font-size: 32rpx;
+  margin-right: 12rpx;
+}
+
+.delete-text {
+  font-size: 28rpx;
+  color: #ff4d4f;
+}
+
+/* 底部安全区域 */
+.bottom-safe {
+  height: 60rpx;
+}

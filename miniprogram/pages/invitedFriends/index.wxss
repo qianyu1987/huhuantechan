@@ -1,0 +1,310 @@
+/* pages/invitedFriends/index.wxss */
+.invite-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding: 20rpx;
+}
+
+.card {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+}
+
+/* 海报卡片 */
+.poster-card {
+  text-align: center;
+}
+
+.poster-header {
+  margin-bottom: 30rpx;
+}
+
+.poster-title {
+  display: block;
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.poster-desc {
+  display: block;
+  font-size: 26rpx;
+  color: #666;
+}
+
+/* 二维码区域 */
+.qrcode-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 30rpx 0;
+}
+
+.qrcode-img {
+  width: 300rpx;
+  height: 300rpx;
+}
+
+.qrcode-placeholder {
+  width: 300rpx;
+  height: 300rpx;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 26rpx;
+}
+
+/* 邀请码 */
+.invite-code-area {
+  margin-top: 20rpx;
+}
+
+.invite-code-label {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.invite-code-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16rpx;
+}
+
+.invite-code {
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #07c160;
+  letter-spacing: 4rpx;
+}
+
+.copy-btn {
+  margin-left: 20rpx;
+  padding: 10rpx 24rpx;
+  background: #07c160;
+  border-radius: 30rpx;
+}
+
+.copy-btn text {
+  color: #fff;
+  font-size: 24rpx;
+}
+
+/* 邀请记录 */
+.record-card {
+  padding: 20rpx 30rpx;
+}
+
+.record-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 20rpx;
+  border-bottom: 1rpx solid #eee;
+  margin-bottom: 20rpx;
+}
+
+.record-title {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.record-count {
+  font-size: 26rpx;
+  color: #07c160;
+}
+
+.invite-list {
+  max-height: 500rpx;
+  overflow-y: auto;
+}
+
+.invite-item {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #f5f5f5;
+}
+
+.invite-item:last-child {
+  border-bottom: none;
+}
+
+.invite-avatar {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+}
+
+.invite-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.invite-name {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.invite-time {
+  font-size: 22rpx;
+  color: #999;
+  margin-top: 6rpx;
+}
+
+.invite-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8rpx;
+  flex-shrink: 0;
+}
+
+.badge {
+  font-size: 20rpx;
+  padding: 4rpx 14rpx;
+  border-radius: 16rpx;
+  white-space: nowrap;
+}
+
+.badge-bound {
+  color: #07c160;
+  background: rgba(7, 193, 96, 0.1);
+}
+
+.badge-swapped {
+  color: #ff8f1f;
+  background: rgba(255, 143, 31, 0.1);
+}
+
+.badge-pending {
+  color: #999;
+  background: #f5f5f5;
+}
+
+.empty-invite {
+  text-align: center;
+  padding: 40rpx 0;
+  color: #999;
+  font-size: 26rpx;
+}
+
+/* 邀请按钮 */
+.invite-btn-card, .save-btn-card {
+  padding: 0;
+}
+
+.invite-btn, .save-btn {
+  text-align: center;
+  padding: 26rpx;
+}
+
+.invite-btn {
+  background: linear-gradient(135deg, #07c160, #06ad56);
+  border-radius: 16rpx;
+  color: #fff;
+  font-size: 32rpx;
+  font-weight: 500;
+  border: none;
+  line-height: 1.5;
+}
+
+.invite-btn::after {
+  border: none;
+}
+
+.save-btn {
+  background: #fff;
+  border: 1rpx solid #07c160;
+  border-radius: 16rpx;
+}
+
+.save-btn text {
+  color: #07c160;
+  font-size: 30rpx;
+}
+
+/* 活动说明 */
+.tips-card {
+  background: #f9f9f9;
+}
+
+.tips-title {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 16rpx;
+}
+
+.tips-item {
+  font-size: 24rpx;
+  color: #666;
+  line-height: 1.8;
+}
+
+/* 奖励总览卡片 */
+.reward-summary-card {
+  background: linear-gradient(135deg, #07c160, #06ad56);
+  color: #fff;
+}
+
+.reward-header {
+  text-align: center;
+  margin-bottom: 30rpx;
+}
+
+.reward-label {
+  display: block;
+  font-size: 26rpx;
+  opacity: 0.85;
+  margin-bottom: 10rpx;
+}
+
+.reward-total {
+  display: block;
+  font-size: 64rpx;
+  font-weight: bold;
+}
+
+.reward-detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 12rpx;
+  padding: 20rpx 0;
+}
+
+.reward-detail-item {
+  flex: 1;
+  text-align: center;
+}
+
+.reward-num {
+  display: block;
+  font-size: 32rpx;
+  font-weight: bold;
+}
+
+.reward-desc {
+  display: block;
+  font-size: 22rpx;
+  opacity: 0.8;
+  margin-top: 6rpx;
+}
+
+.reward-divider {
+  width: 1rpx;
+  height: 50rpx;
+  background: rgba(255, 255, 255, 0.3);
+}

@@ -1,0 +1,201 @@
+<!-- pages/credit/index.wxml - 信用记录 -->
+<view class="credit-page">
+  <view class="bg-gradient"></view>
+
+  <!-- 毛玻璃导航栏 -->
+  <view class="glass-nav">
+    <view class="nav-back" bindtap="goBack">
+      <text class="back-arrow">‹</text>
+    </view>
+    <text class="nav-title">信用中心</text>
+    <view class="nav-placeholder"></view>
+  </view>
+
+  <scroll-view scroll-y class="credit-scroll">
+    <!-- 信用分英雄区 -->
+    <view class="credit-hero">
+      <view class="credit-circle" style="border-color: {{creditInfo.color}}40">
+        <view class="credit-ring" style="background: conic-gradient({{creditInfo.color}} {{creditScore}}%, rgba(60,60,64,0.4) 0%)"></view>
+        <view class="credit-inner">
+          <text class="credit-score">{{creditScore}}</text>
+          <text class="credit-label">信用分</text>
+        </view>
+      </view>
+      <view class="credit-tier-badge" style="background: {{creditInfo.bgColor}}; border-color: {{creditInfo.color}}40">
+        <text class="tier-icon">{{creditInfo.icon}}</text>
+        <text class="tier-name" style="color: {{creditInfo.color}}">{{creditInfo.level}}</text>
+      </view>
+      <text class="credit-desc">{{creditInfo.desc}}</text>
+    </view>
+
+    <!-- 升级进度 -->
+    <view class="upgrade-section" wx:if="{{creditInfo.nextTier}}">
+      <view class="upgrade-card">
+        <view class="upgrade-header">
+          <text class="upgrade-title">距离升级</text>
+          <view class="upgrade-target">
+            <text class="target-icon">{{creditInfo.nextTier.icon}}</text>
+            <text class="target-name">{{creditInfo.nextTier.name}}</text>
+          </view>
+        </view>
+        <view class="progress-bar-wrap">
+          <view class="progress-bar-bg">
+            <view class="progress-bar-fill" style="width: {{creditInfo.progress}}%; background: {{creditInfo.color}}"></view>
+          </view>
+          <text class="progress-text">还需 {{creditInfo.nextTier.need}} 分</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 积分卡片 -->
+    <view class="points-card">
+      <view class="points-card-left">
+        <text class="points-card-label">我的积分</text>
+        <view class="points-card-value-row">
+          <text class="points-card-value">{{myPoints}}</text>
+          <text class="points-card-unit">分</text>
+        </view>
+        <text class="points-card-hint">通过邀请好友、完成分享等方式获取</text>
+      </view>
+      <view class="points-card-right" bindtap="goInvite">
+        <view class="points-earn-btn">赚积分</view>
+      </view>
+    </view>
+
+    <!-- 等级一览 -->
+    <view class="tiers-section">
+      <view class="section-title">等级体系</view>
+      <view class="tiers-timeline">
+        <view class="tier-row {{item.isCurrent ? 'current' : ''}} {{item.isAchieved ? 'achieved' : 'locked'}}"
+              wx:for="{{allTiers}}" wx:key="id">
+          <view class="tier-line-dot">
+            <view class="tier-dot" style="background: {{item.isAchieved ? item.color : 'rgba(120,120,128,0.3)'}}">
+              <text wx:if="{{item.isAchieved}}">{{item.icon}}</text>
+              <text wx:else class="dot-lock">🔒</text>
+            </view>
+            <view class="tier-line" wx:if="{{index < allTiers.length - 1}}"
+                  style="background: {{item.isAchieved ? item.color + '40' : 'rgba(120,120,128,0.15)'}}"></view>
+          </view>
+          <view class="tier-card {{item.isCurrent ? 'tier-card-current' : ''}}"
+                style="border-color: {{item.isCurrent ? item.color + '60' : 'rgba(255,255,255,0.08)'}}">
+            <view class="tier-card-head">
+              <text class="tier-card-name" style="color: {{item.isAchieved ? item.color : 'rgba(255,255,255,0.4)'}}">{{item.name}}</text>
+              <text class="tier-card-range">{{item.minScore}}-{{item.maxScore}}分</text>
+              <text class="tier-card-tag-current" wx:if="{{item.isCurrent}}" style="color: {{item.color}}; background: {{item.bgColor}}">当前</text>
+            </view>
+            <view class="tier-benefits">
+              <view class="benefit-item" wx:for="{{item.benefits}}" wx:for-item="b" wx:key="*this">
+                <text class="benefit-check" style="color: {{item.isAchieved ? '#30D158' : 'rgba(120,120,128,0.4)'}}">{{item.isAchieved ? '✓' : '○'}}</text>
+                <text class="benefit-text" style="color: {{item.isAchieved ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.3)'}}">{{b}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 已解锁权益 -->
+    <view class="benefits-section">
+      <view class="section-title">我的权益</view>
+      <view class="benefits-grid">
+        <view class="benefit-grid-item unlocked" wx:for="{{creditInfo.benefits}}" wx:key="*this">
+          <text class="benefit-grid-icon">✅</text>
+          <text class="benefit-grid-text">{{item}}</text>
+        </view>
+        <view class="benefit-grid-item locked-item" wx:for="{{creditInfo.locked}}" wx:key="*this">
+          <text class="benefit-grid-icon">🔒</text>
+          <text class="benefit-grid-text">{{item}}</text>
+          <text class="benefit-grid-tag">后期开发</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 明细记录（Tab切换） -->
+    <view class="detail-section">
+      <view class="detail-tabs">
+        <view class="detail-tab {{activeTab === 'credit' ? 'active' : ''}}" bindtap="switchTab" data-tab="credit">
+          <text>信用明细</text>
+        </view>
+        <view class="detail-tab {{activeTab === 'points' ? 'active' : ''}}" bindtap="switchTab" data-tab="points">
+          <text>积分明细</text>
+        </view>
+      </view>
+
+      <!-- 信用明细 -->
+      <view class="record-list" wx:if="{{activeTab === 'credit'}}">
+        <block wx:if="{{records.length > 0}}">
+          <view class="record-item" wx:for="{{records}}" wx:key="index">
+            <view class="record-left">
+              <view class="record-icon {{item.change > 0 ? 'positive' : 'negative'}}">
+                <text>{{item.icon || (item.change > 0 ? '📈' : '📉')}}</text>
+              </view>
+              <view class="record-info">
+                <text class="record-title-text">{{item.title || item.reason}}</text>
+                <text class="record-time">{{item.time}}</text>
+              </view>
+            </view>
+            <view class="record-change {{item.change > 0 ? 'positive' : 'negative'}}">
+              <text>{{item.change > 0 ? '+' : ''}}{{item.change || item.delta}}</text>
+            </view>
+          </view>
+        </block>
+        <view class="empty-records" wx:else>
+          <text>暂无信用变动记录</text>
+        </view>
+      </view>
+
+      <!-- 积分明细 -->
+      <view class="record-list" wx:if="{{activeTab === 'points'}}">
+        <block wx:if="{{pointsLogs.length > 0}}">
+          <view class="record-item" wx:for="{{pointsLogs}}" wx:key="index">
+            <view class="record-left">
+              <view class="record-icon positive">
+                <text>{{item.icon}}</text>
+              </view>
+              <view class="record-info">
+                <text class="record-title-text">{{item.label}}</text>
+                <text class="record-time">{{item.time}}</text>
+              </view>
+            </view>
+            <view class="record-change positive">
+              <text>+{{item.amount}}</text>
+            </view>
+          </view>
+        </block>
+        <view class="empty-records" wx:else>
+          <text>暂无积分记录，去邀请好友赚积分吧</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 信用说明 -->
+    <view class="credit-tips">
+      <view class="section-title">信用规则</view>
+      <view class="tips-card">
+        <view class="tip-item">
+          <view class="tip-dot" style="background: #30D158"></view>
+          <view class="tip-content">
+            <text class="tip-title">如何提高信用</text>
+            <text class="tip-desc">完成分享(+5) · 获得好评(+2) · 首次分享(+3)</text>
+          </view>
+        </view>
+        <view class="tip-item">
+          <view class="tip-dot" style="background: #FF453A"></view>
+          <view class="tip-content">
+            <text class="tip-title">如何降低信用</text>
+            <text class="tip-desc">获得差评(-10) · 确认后取消(-5) · 纠纷败诉(-15)</text>
+          </view>
+        </view>
+        <view class="tip-item">
+          <view class="tip-dot" style="background: #0A84FF"></view>
+          <view class="tip-content">
+            <text class="tip-title">信用分范围</text>
+            <text class="tip-desc">0-100分，新用户初始100分，等级越高权益越多</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view style="height: 80rpx"/>
+  </scroll-view>
+</view>

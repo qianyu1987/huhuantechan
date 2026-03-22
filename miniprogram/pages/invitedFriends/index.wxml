@@ -1,0 +1,105 @@
+<!-- pages/invitedFriends/index.wxml -->
+<view class="invite-page">
+
+  <!-- 奖励总览 -->
+  <view class="card reward-summary-card">
+    <view class="reward-header">
+      <text class="reward-label">邀请奖励积分</text>
+      <text class="reward-total">{{rewardSummary.totalRewards}}</text>
+    </view>
+    <view class="reward-detail-row">
+      <view class="reward-detail-item">
+        <text class="reward-num">{{inviteCount}}</text>
+        <text class="reward-desc">邀请好友</text>
+      </view>
+      <view class="reward-divider"></view>
+      <view class="reward-detail-item">
+        <text class="reward-num">+{{rewardSummary.signupRewards}}</text>
+        <text class="reward-desc">注册奖励</text>
+      </view>
+      <view class="reward-divider"></view>
+      <view class="reward-detail-item">
+        <text class="reward-num">+{{rewardSummary.swapRewards}}</text>
+        <text class="reward-desc">分享奖励</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 邀请海报 -->
+  <view class="card poster-card">
+    <view class="poster-header">
+      <text class="poster-title">邀请好友</text>
+      <text class="poster-desc">邀请好友加入发现特产，双方各得10积分</text>
+    </view>
+
+    <!-- 二维码区域 -->
+    <view class="qrcode-area">
+      <image class="qrcode-img" src="{{qrcodeUrl}}" mode="aspectFit" wx:if="{{qrcodeUrl}}" />
+      <view class="qrcode-placeholder" wx:else>
+        <text>生成中...</text>
+      </view>
+    </view>
+
+    <!-- 邀请码 -->
+    <view class="invite-code-area">
+      <text class="invite-code-label">邀请码</text>
+      <view class="invite-code-row">
+        <text class="invite-code">{{inviteCode}}</text>
+        <view class="copy-btn" bindtap="copyInviteCode">
+          <text>复制</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 邀请记录 -->
+  <view class="card record-card">
+    <view class="record-header">
+      <text class="record-title">已邀请好友</text>
+      <text class="record-count">{{inviteCount}}人</text>
+    </view>
+
+    <view class="invite-list" wx:if="{{inviteList.length > 0}}">
+      <view class="invite-item" wx:for="{{inviteList}}" wx:key="index">
+        <image class="invite-avatar" src="{{item.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill" />
+        <view class="invite-info">
+          <text class="invite-name">{{item.nickName || '好友'}}</text>
+          <text class="invite-time">{{item.inviteTime}}</text>
+        </view>
+        <view class="invite-badges">
+          <view class="badge badge-bound">已注册 +10</view>
+          <view class="badge {{item.hasFirstSwap ? 'badge-swapped' : 'badge-pending'}}">
+            {{item.hasFirstSwap ? '已分享 +20' : '待首次'}}
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="empty-invite" wx:else>
+      <text>还没有邀请过好友</text>
+    </view>
+  </view>
+
+  <!-- 邀请按钮 -->
+  <view class="card invite-btn-card">
+    <button class="invite-btn" open-type="share">邀请好友</button>
+  </view>
+
+  <!-- 保存图片按钮 -->
+  <view class="card save-btn-card" bindtap="saveQrcode" wx:if="{{qrcodeUrl}}">
+    <view class="save-btn">
+      <text>保存海报到相册</text>
+    </view>
+  </view>
+
+  <!-- 活动说明 -->
+  <view class="card tips-card">
+    <view class="tips-title">活动说明</view>
+    <view class="tips-list">
+      <view class="tips-item">1. 邀请好友成功注册，双方各得10积分</view>
+      <view class="tips-item">2. 好友首次分享成功，双方再各得20积分</view>
+      <view class="tips-item">3. 邀请人数无上限，积分奖励无上限</view>
+    </view>
+  </view>
+
+</view>

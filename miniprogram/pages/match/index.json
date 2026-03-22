@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "推荐特产",
+  "navigationBarBackgroundColor": "#000000",
+  "navigationBarTextStyle": "white",
+  "usingComponents": {
+    "tab-bar": "/components/tab-bar/tab-bar"
+  }
+}

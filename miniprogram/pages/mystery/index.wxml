@@ -1,0 +1,138 @@
+<!-- pages/mystery/index.wxml - 神秘特产 -->
+<view class="mystery-page">
+  <view class="bg-gradient"></view>
+
+  <!-- 顶部介绍 -->
+  <view class="mystery-header">
+    <view class="header-icon-wrapper">
+      <view class="icon-mystery-lg"></view>
+    </view>
+    <view class="header-title">神秘特产</view>
+    <view class="header-desc">以盲盒形式分享，开启味蕾惊喜之旅</view>
+  </view>
+
+  <scroll-view scroll-y class="mystery-scroll">
+
+    <!-- 神秘特产说明 -->
+    <view class="section explain-section">
+      <view class="explain-title">神秘特产玩法</view>
+      <view class="explain-list">
+        <view class="explain-item">
+          <view class="explain-num">1</view>
+          <view class="explain-content">
+            <text class="explain-label">发布特产</text>
+            <text class="explain-desc">选择神秘特产模式，只需填写省份</text>
+          </view>
+        </view>
+        <view class="explain-item">
+          <view class="explain-num">2</view>
+          <view class="explain-content">
+            <text class="explain-label">等待匹配</text>
+            <text class="explain-desc">系统自动匹配其他神秘特产</text>
+          </view>
+        </view>
+        <view class="explain-item">
+          <view class="explain-num">3</view>
+          <view class="explain-content">
+            <text class="explain-label">填写收货信息</text>
+            <text class="explain-desc">匹配成功后填写物流信息</text>
+          </view>
+        </view>
+        <view class="explain-item">
+          <view class="explain-num">4</view>
+          <view class="explain-content">
+            <text class="explain-label">揭晓惊喜</text>
+            <text class="explain-desc">确认收货后看到对方的真实特产</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 神秘特产 - 进行中的互换 -->
+    <view class="section" wx:if="{{activeSwaps.length > 0}}">
+      <view class="section-header">
+        <view class="section-icon active"></view>
+        <text class="section-title">正在进行</text>
+        <text class="section-count">{{activeSwaps.length}}</text>
+      </view>
+
+      <view class="swap-list">
+        <block wx:for="{{activeSwaps}}" wx:key="id">
+          <view class="swap-card" bindtap="goToSwapDetail" data-id="{{item.id}}">
+            <view class="swap-status-bar {{item.status}}"></view>
+            <view class="swap-content">
+              <view class="swap-products">
+                <view class="swap-product my">
+                  <view class="mystery-product-card">
+                    <view class="card-icon">🎁</view>
+                  </view>
+                  <view class="swap-label">我寄出的</view>
+                </view>
+                <view class="swap-arrow">⟹</view>
+                <view class="swap-product theirs">
+                  <view class="mystery-product-card mystery">
+                    <view class="card-icon">❓</view>
+                  </view>
+                  <view class="swap-label">收到的</view>
+                </view>
+              </view>
+              <view class="swap-info">
+                <view class="swap-partner">
+                  <text class="partner-label">匹配对象：</text>
+                  <text class="partner-name">{{item.partnerName || '神秘用户'}}</text>
+                </view>
+                <view class="swap-time">{{item.createTimeText}}</view>
+              </view>
+            </view>
+          </view>
+        </block>
+      </view>
+    </view>
+
+    <!-- 我发布的神秘特产 - 彩色渐变卡片网格 -->
+    <view class="section">
+      <view class="section-header">
+        <view class="section-icon publish"></view>
+        <text class="section-title">我发布的</text>
+        <text class="section-count">{{myProducts.length}}</text>
+      </view>
+
+      <view wx:if="{{myProducts.length === 0}}" class="empty-state">
+        <view class="empty-icon-wrapper">
+          <view class="icon-mystery-md"></view>
+        </view>
+        <text class="empty-text">还没有发布神秘特产</text>
+        <text class="empty-hint">发布一件神秘特产，开启盲盒惊喜</text>
+      </view>
+
+      <!-- 彩色渐变卡片网格 -->
+      <view class="mystery-grid" wx:else>
+        <block wx:for="{{myProducts}}" wx:key="_id">
+          <view class="mystery-card {{item.colorClass}}" bindtap="goToProductDetail" data-id="{{item.id}}">
+            <view class="mystery-card-icon">{{item.emoji || '🎁'}}</view>
+            <view class="mystery-card-province">{{item.provinceName || '神秘'}}</view>
+            <view class="mystery-card-status" wx:if="{{item.status === 'in_swap'}}">
+              <text>匹配中</text>
+            </view>
+          </view>
+        </block>
+
+        <!-- 添加新卡片 -->
+        <view class="mystery-card add-card" bindtap="goToPublish">
+          <view class="mystery-card-icon">+</view>
+          <view class="mystery-card-province">添加</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 参与按钮 -->
+    <view class="action-section">
+      <button class="publish-btn" bindtap="goToPublish">
+        <view class="btn-icon">+</view>
+        <text>发布神秘特产</text>
+      </button>
+    </view>
+
+    <view style="height: 120rpx"/>
+  </scroll-view>
+</view>

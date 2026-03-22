@@ -1,0 +1,192 @@
+<!-- pages/publish/index.wxml - 发布特产 -->
+<view class="publish-page">
+
+  <view class="page-header px-md">
+    <text class="page-title">{{isEdit ? '编辑特产' : '发布你的特产'}}</text>
+    <text class="page-sub">{{isEdit ? '修改你的特产信息' : '告诉大家你有什么好东西'}}</text>
+  </view>
+
+  <scroll-view scroll-y class="form-scroll">
+    <view class="form-wrap px-md">
+
+      <!-- 神秘特产开关（编辑模式不允许切换） -->
+      <view class="section mystery-toggle-section" wx:if="{{!isEdit}}">
+        <view class="mystery-toggle-row">
+          <view class="mystery-toggle-left">
+            <view class="mystery-icon-wrapper">
+              <view class="icon-mystery"></view>
+            </view>
+            <view class="mystery-toggle-info">
+              <text class="mystery-toggle-title">神秘特产</text>
+              <text class="mystery-toggle-desc">以盲盒形式发布，匹配后揭晓</text>
+            </view>
+          </view>
+          <switch 
+            class="mystery-switch" 
+            checked="{{form.isMystery}}" 
+            bindchange="toggleMystery"
+            color="#BF5AF2"
+          />
+        </view>
+      </view>
+
+      <!-- 图片上传 -->
+      <view class="section" wx:if="{{!form.isMystery}}">
+        <view class="section-label">
+          特产图片 
+          <text class="required">*</text>
+        </view>
+        <view class="img-upload-grid">
+          <block wx:for="{{images}}" wx:key="index">
+            <view class="img-item">
+              <image class="img-preview" src="{{item}}" mode="aspectFill" bindtap="previewImage" data-index="{{index}}"/>
+              <view class="img-del" catchtap="removeImage" data-index="{{index}}">
+                <view class="icon-close-w"></view>
+              </view>
+            </view>
+          </block>
+          <view class="img-add" bindtap="chooseImages" wx:if="{{images.length < 6}}">
+            <view class="icon-plus-o"></view>
+            <text class="img-add-text">{{images.length}}/6</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 特产名称 -->
+      <view class="section" wx:if="{{!form.isMystery}}">
+        <view class="section-label">特产名称 <text class="required">*</text></view>
+        <input 
+          class="form-input"
+          placeholder="如：云南古树普洱茶饼"
+          value="{{form.name}}"
+          bindinput="onInput"
+          data-field="name"
+          maxlength="30"
+        />
+        <view class="input-counter">{{form.name.length}}/30</view>
+      </view>
+
+      <!-- 特产产地 -->
+      <view class="section">
+        <view class="section-label">特产产地 <text class="required">*</text></view>
+        <picker mode="region" value="{{region}}" bindchange="onRegionChange">
+          <view class="picker-field">
+            <view class="picker-text {{region.length ? 'text-dark' : 'placeholder'}}">
+              {{region.length ? region[0] + ' ' + region[1] + ' ' + region[2] : '选择省/市/区县'}}
+            </view>
+            <view class="icon-arrow-r"></view>
+          </view>
+        </picker>
+      </view>
+
+      <!-- 品类 -->
+      <view class="section" wx:if="{{!form.isMystery}}">
+        <view class="section-label">品类 <text class="required">*</text></view>
+        <view class="tag-select-wrap">
+          <block wx:for="{{categories}}" wx:key="id">
+            <view 
+              class="tag-select-item {{form.category === item.id ? 'selected' : ''}}"
+              bindtap="selectCategory"
+              data-id="{{item.id}}"
+            >{{item.emoji}} {{item.name}}</view>
+          </block>
+        </view>
+      </view>
+
+      <!-- 估值区间 -->
+      <view class="section" wx:if="{{!form.isMystery}}">
+        <view class="section-label">估值区间 <text class="required">*</text></view>
+        <view class="value-grid">
+          <block wx:for="{{valueRanges}}" wx:key="id">
+            <view 
+              class="value-card {{form.valueRange === item.id ? 'selected' : ''}}"
+              bindtap="selectValueRange"
+              data-id="{{item.id}}"
+            >
+              <text class="value-emoji">{{item.emoji}}</text>
+              <text class="value-label">{{item.label}}</text>
+            </view>
+          </block>
+        </view>
+      </view>
+
+      <!-- 特产特色（描述标签多选） -->
+      <view class="section" wx:if="{{!form.isMystery}}">
+        <view class="section-label">特产特色</view>
+        <view class="section-sub">选择最能描述你特产的标签（可多选）</view>
+        <view class="tag-select-wrap">
+          <block wx:for="{{descTags}}" wx:key="id">
+            <view 
+              class="tag-select-item desc-tag {{descTagsSelected[item.id] ? 'selected' : ''}}"
+              bindtap="toggleDescTag"
+              data-id="{{item.id}}"
+            >{{item.emoji}} {{item.label}}</view>
+          </block>
+        </view>
+      </view>
+
+      <!-- 想换的特产 -->
+      <view class="section want-section">
+        <view class="want-header">
+          <view class="want-header-icon">🔄</view>
+          <view class="want-header-text">
+            <text class="want-title">想换的特产</text>
+            <text class="want-sub">告诉大家你的期望（可不填，接受所有特产）</text>
+          </view>
+        </view>
+
+        <view class="want-body">
+          <view class="want-field">
+            <view class="want-label">期望地区</view>
+            <picker mode="region" value="{{wantRegion}}" bindchange="onWantRegionChange">
+              <view class="picker-field sm">
+                <view class="picker-text {{wantRegion.length ? 'text-dark' : 'placeholder'}}">
+                  {{wantRegion.length ? wantRegion[0] + ' ' + wantRegion[1] : '任意地区都行'}}
+                </view>
+                <view class="icon-arrow-r-sm"></view>
+              </view>
+            </picker>
+          </view>
+
+          <view class="want-field" style="margin-top: 24rpx;">
+            <view class="want-label">期望品类</view>
+            <view class="tag-select-wrap">
+              <view 
+                class="tag-select-item sm want-tag {{form.wantCategory === '' ? 'selected' : ''}}"
+                bindtap="selectWantCategory"
+                data-id=""
+              >🌏 不限</view>
+              <block wx:for="{{categories}}" wx:key="id">
+                <view 
+                  class="tag-select-item sm want-tag {{form.wantCategory === item.id ? 'selected' : ''}}"
+                  bindtap="selectWantCategory"
+                  data-id="{{item.id}}"
+                >{{item.emoji}} {{item.name}}</view>
+              </block>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 注意事项 -->
+      <view class="notice-box">
+        <view class="icon-info"></view>
+        <text class="notice-text">发布后将展示在发现页，其他用户可以看到你的特产。请如实描述特产情况，保持诚信。</text>
+      </view>
+
+      <!-- 提交按钮 -->
+      <button 
+        class="btn btn-primary btn-full submit-btn"
+        bindtap="submit"
+        loading="{{submitting}}"
+        disabled="{{submitting}}"
+      >{{submitting ? (isEdit ? '保存中...' : '发布中...') : (isEdit ? '保存修改' : '立即发布')}}</button>
+
+      <view class="safe-bottom" style="height:160rpx"></view>
+    </view>
+  </scroll-view>
+
+  <!-- 底部导航 -->
+  <tab-bar active="publish" />
+
+</view>

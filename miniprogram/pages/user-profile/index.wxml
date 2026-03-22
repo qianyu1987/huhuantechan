@@ -1,0 +1,132 @@
+<!-- pages/user-profile/index.wxml - 用户公开主页 -->
+<view class="profile-page">
+
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="loading-wrap">
+    <view class="loading-spinner"></view>
+    <text>加载中...</text>
+  </view>
+
+  <block wx:elif="{{profile}}">
+
+    <!-- Hero 区域 -->
+    <view class="hero-section">
+      <view class="hero-content">
+        <image class="hero-avatar" src="{{profile.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill" bindtap="previewAvatar"/>
+        <view class="hero-info">
+          <view class="hero-name">{{profile.nickName || '特产达人'}}</view>
+          <view class="hero-meta">
+            <text class="hero-loc" wx:if="{{profile.provinceName}}">📍 {{profile.provinceName}}</text>
+            <text class="hero-dot" wx:if="{{profile.provinceName}}">·</text>
+            <text class="hero-join">加入 {{joinDays}} 天</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 统计行 -->
+    <view class="stats-row">
+      <view class="stat-item">
+        <view class="stat-num {{creditClass}}">{{profile.creditScore || 100}}</view>
+        <view class="stat-label">信用分</view>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <view class="stat-num">{{profile.publishCount || 0}}</view>
+        <view class="stat-label">发布</view>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <view class="stat-num">{{profile.swapCount || 0}}</view>
+        <view class="stat-label">分享</view>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <view class="stat-num">{{badgeCount}}</view>
+        <view class="stat-label">集章</view>
+      </view>
+    </view>
+
+    <!-- 省份集章 -->
+    <view class="section-card" wx:if="{{badgeList.length > 0}}">
+      <view class="section-hd">
+        <text class="section-title">省份集章</text>
+        <text class="section-sub">{{badgeCount}}/34</text>
+      </view>
+      <view class="badge-grid">
+        <view class="badge-item" wx:for="{{badgeList}}" wx:key="code">
+          <view class="badge-circle" style="background: {{item.color}}22; border-color: {{item.color}}">
+            <text class="badge-text">{{item.name}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- TA 的特产 -->
+    <view class="section-card products-section">
+      <view class="section-hd">
+        <text class="section-title">TA 的特产</text>
+        <text class="section-sub" wx:if="{{products.length > 0}}">{{products.length}}件</text>
+      </view>
+      <scroll-view wx:if="{{products.length > 0}}" class="product-scroll" scroll-x enhanced show-scrollbar="{{false}}" enable-flex>
+        <view class="product-card" wx:for="{{products}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}">
+          <!-- 粉色光晕 -->
+          <view class="card-glow"></view>
+          <!-- 封面 -->
+          <block wx:if="{{item.isMystery}}">
+            <view class="card-cover-wrap">
+              <view class="mystery-cover {{item.colorClass}}">
+                <text class="mystery-emoji">{{item.emoji}}</text>
+                <text class="mystery-prov-label">{{item.mysteryProvince}}</text>
+              </view>
+            </view>
+          </block>
+          <block wx:else>
+            <view class="card-cover-wrap">
+              <image class="card-cover-img" src="{{item.coverUrl}}" mode="aspectFill"/>
+            </view>
+          </block>
+          <!-- 信息 -->
+          <view class="card-body">
+            <view class="card-title">{{item.isMystery ? '神秘特产' : item.name}}</view>
+            <view class="card-meta-row">
+              <text class="card-status-tag {{item.statusCls}}">{{item.statusLabel}}</text>
+              <text class="card-loc-tag" wx:if="{{item.provinceName}}" style="background:{{item.provinceColor || '#FF375F'}}18;color:{{item.provinceColor || '#FF375F'}}">{{item.provinceName}}</text>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+      <view wx:else class="empty-hint">
+        <text>暂无发布的特产</text>
+      </view>
+    </view>
+
+    <!-- 收到的评价 -->
+    <view class="section-card">
+      <view class="section-hd">
+        <text class="section-title">收到的评价</text>
+        <text class="section-sub" wx:if="{{reviewCount > 0}}">{{reviewCount}}条</text>
+      </view>
+      <view wx:if="{{reviews.length > 0}}" class="reviews-list">
+        <view class="review-item" wx:for="{{reviews}}" wx:key="_id">
+          <view class="review-top">
+            <image class="review-avatar" src="{{item.reviewerAvatar || '/images/default-avatar.png'}}" mode="aspectFill"/>
+            <view class="review-info">
+              <text class="review-name">{{item.reviewerName}}</text>
+              <text class="review-time">{{item.timeText}}</text>
+            </view>
+            <view class="review-badge {{item.ratingClass}}">{{item.ratingLabel}}</view>
+          </view>
+          <text class="review-content" wx:if="{{item.comment}}">{{item.comment}}</text>
+        </view>
+      </view>
+      <view wx:else class="empty-hint">
+        <text>暂无评价</text>
+      </view>
+    </view>
+
+    <!-- 安全底部 -->
+    <view class="safe-bottom"></view>
+
+  </block>
+</view>

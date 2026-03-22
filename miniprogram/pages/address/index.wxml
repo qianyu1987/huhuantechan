@@ -1,0 +1,207 @@
+<!-- pages/address/index.wxml -->
+<view class="address-page">
+  <!-- 加载状态 -->
+  <view class="loading-state" wx:if="{{isLoading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 顶部装饰 -->
+  <view class="top-decoration"></view>
+
+  <!-- 页面标题 -->
+  <view class="page-header">
+    <text class="page-title">收货地址</text>
+    <text class="page-subtitle">管理您的收货信息</text>
+  </view>
+
+  <!-- 地址列表 -->
+  <view class="address-list" wx:if="{{addresses.length > 0 && !isEditing}}">
+    <view class="address-card" wx:for="{{addresses}}" wx:key="_id">
+      <view class="card-glow" wx:if="{{item.isDefault}}"></view>
+      <view class="card-content" bindtap="selectAddress" data-id="{{item._id}}">
+        <!-- 地址图标 -->
+        <view class="address-icon-wrap">
+          <view class="address-icon {{item.isDefault ? 'default' : ''}}">
+            <text class="icon-location">📍</text>
+          </view>
+        </view>
+
+        <!-- 地址信息 -->
+        <view class="address-main">
+          <view class="address-tag-wrap" wx:if="{{item.isDefault}}">
+            <view class="address-tag">
+              <text class="tag-dot"></text>
+              <text class="tag-text">默认</text>
+            </view>
+          </view>
+
+          <view class="address-name-phone">
+            <text class="name">{{item.contactName}}</text>
+            <text class="phone">{{item.contactPhone}}</text>
+          </view>
+
+          <view class="address-detail">
+            {{item.province}} {{item.city}} {{item.district}}
+          </view>
+          <view class="address-detail-sub">
+            {{item.detailAddress}}
+          </view>
+        </view>
+      </view>
+
+      <!-- 操作按钮 -->
+      <view class="card-actions">
+        <view class="action-item" bindtap="setDefaultAddress" data-id="{{item._id}}" wx:if="{{!item.isDefault}}">
+          <text class="action-icon">⭐</text>
+          <text class="action-text">设为默认</text>
+        </view>
+        <view class="action-item" bindtap="editAddress" data-item="{{item}}">
+          <text class="action-icon">✏️</text>
+          <text class="action-text">编辑</text>
+        </view>
+        <view class="action-item danger" bindtap="deleteAddress" data-id="{{item._id}}">
+          <text class="action-icon">🗑️</text>
+          <text class="action-text">删除</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 无地址提示 -->
+  <view class="empty-card" wx:if="{{addresses.length === 0 && !isEditing}}">
+    <view class="empty-illustration">
+      <view class="illustration-circle">
+        <text class="illustration-icon">📦</text>
+      </view>
+    </view>
+    <view class="empty-title">还没有收货地址</view>
+    <view class="empty-desc">点击下方添加按钮，添加收货地址</view>
+  </view>
+
+  <!-- 微信一键导入按钮 -->
+  <view class="import-card" wx:if="{{!isEditing}}" bindtap="chooseWechatAddress">
+    <view class="import-content">
+      <view class="import-icon-wrap">
+        <text class="import-icon">📱</text>
+      </view>
+      <view class="import-text-wrap">
+        <text class="import-title">一键导入微信地址</text>
+        <text class="import-desc">快速填充，无需手动输入</text>
+      </view>
+      <view class="import-arrow">›</view>
+    </view>
+  </view>
+
+  <!-- 编辑表单 -->
+  <view class="edit-card" wx:if="{{isEditing}}">
+    <view class="edit-header">
+      <view class="edit-title">{{editForm._id ? '编辑地址' : '新增地址'}}</view>
+      <view class="edit-subtitle">请确保信息准确无误</view>
+    </view>
+
+    <view class="form-group">
+      <!-- 收货人 -->
+      <view class="form-item">
+        <view class="form-label-wrap">
+          <text class="form-label-icon">👤</text>
+          <text class="form-label">收货人</text>
+        </view>
+        <input
+          class="form-input"
+          placeholder="请输入收货人姓名"
+          value="{{editForm.contactName}}"
+          data-field="contactName"
+          bindinput="onInput"
+        />
+      </view>
+
+      <!-- 手机号码 -->
+      <view class="form-item">
+        <view class="form-label-wrap">
+          <text class="form-label-icon">📱</text>
+          <text class="form-label">手机号码</text>
+        </view>
+        <input
+          class="form-input"
+          type="number"
+          maxlength="11"
+          placeholder="请输入手机号码"
+          value="{{editForm.contactPhone}}"
+          bindinput="onPhoneInput"
+        />
+      </view>
+
+      <!-- 省市区选择 -->
+      <view class="form-item">
+        <view class="form-label-wrap">
+          <text class="form-label-icon">🏷️</text>
+          <text class="form-label">省市区</text>
+        </view>
+        <picker mode="region" value="{{region}}" bindchange="onRegionChange">
+          <view class="region-picker">
+            <text class="{{editForm.province ? 'region-text' : 'region-placeholder'}}">
+              {{editForm.province ? editForm.province + ' ' + editForm.city + ' ' + editForm.district : '请选择省、市、区'}}
+            </text>
+            <text class="region-arrow">›</text>
+          </view>
+        </picker>
+      </view>
+
+      <!-- 详细地址 -->
+      <view class="form-item">
+        <view class="form-label-wrap">
+          <text class="form-label-icon">🏠</text>
+          <text class="form-label">详细地址</text>
+        </view>
+        <input
+          class="form-input"
+          placeholder="街道、楼栋、门牌号等"
+          value="{{editForm.detailAddress}}"
+          data-field="detailAddress"
+          bindinput="onInput"
+        />
+      </view>
+
+      <!-- 设为默认 -->
+      <view class="form-item switch-item">
+        <view class="switch-label">
+          <text class="switch-icon">⭐</text>
+          <text class="switch-text">设为默认地址</text>
+        </view>
+        <switch 
+          checked="{{editForm.isDefault}}" 
+          bindchange="onDefaultChange" 
+          color="#07c160"
+          class="switch"
+        />
+      </view>
+    </view>
+
+    <!-- 表单操作按钮 -->
+    <view class="form-actions">
+      <view class="cancel-btn" bindtap="cancelEdit">
+        <text class="btn-text">取消</text>
+      </view>
+      <view class="submit-btn" bindtap="submitEdit">
+        <text class="btn-text">保存地址</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 添加按钮 -->
+  <view class="add-card" wx:if="{{addresses.length < 5 && !isEditing}}" bindtap="addAddress">
+    <view class="add-content">
+      <view class="add-icon">+</view>
+      <text class="add-text">添加新地址</text>
+    </view>
+  </view>
+
+  <!-- 提示 -->
+  <view class="tip-card" wx:if="{{addresses.length >= 5 && !isEditing}}">
+    <text class="tip-text">已达到最大地址数量（5个），请删除后再添加</text>
+  </view>
+
+  <!-- 底部安全区域 -->
+  <view class="bottom-safe"></view>
+</view>

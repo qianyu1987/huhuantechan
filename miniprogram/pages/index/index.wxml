@@ -1,0 +1,154 @@
+<!-- pages/index/index.wxml - 发现页 -->
+<view class="index-page">
+  
+  <!-- 顶部搜索栏 -->
+  <view class="header">
+    <view class="header-top">
+      <view class="slogan-bar">
+        <view class="slogan-item">
+          <view class="slogan-icon icon-shield"></view>
+          <text class="slogan-text">诚实守信</text>
+        </view>
+        <view class="slogan-dot"></view>
+        <view class="slogan-item">
+          <view class="slogan-icon icon-hometown"></view>
+          <text class="slogan-text">家乡以我为荣</text>
+        </view>
+      </view>
+      <view class="msg-btn" bindtap="goToMessages">
+        <view class="icon-bell"></view>
+        <view class="msg-dot" wx:if="{{unreadCount > 0}}">{{unreadCount > 99 ? '99+' : unreadCount}}</view>
+      </view>
+    </view>
+    
+    <!-- 搜索框 -->
+    <view class="search-bar" bindtap="goToSearch">
+      <view class="icon-search"></view>
+      <text class="search-placeholder">搜索特产、省份...</text>
+    </view>
+    
+    <!-- 省份筛选横滑 -->
+    <scroll-view class="province-scroll" scroll-x enable-flex>
+      <view class="province-tab {{activeProvince === '' ? 'active' : ''}}" bindtap="filterProvince" data-code="">全部</view>
+      <block wx:for="{{provinceList}}" wx:key="code">
+        <view 
+          class="province-tab {{activeProvince === item.code ? 'active' : ''}}"
+          bindtap="filterProvince"
+          data-code="{{item.code}}"
+        >{{item.name}}</view>
+      </block>
+    </scroll-view>
+  </view>
+
+  <!-- 状态分类筛选 -->
+  <view class="category-bar">
+    <scroll-view scroll-x enable-flex class="category-scroll">
+      <view class="category-list">
+        <view class="category-item {{activeStatus === '' ? 'active' : ''}}" bindtap="filterStatus" data-status="">
+          <view class="cat-icon-wrap">
+            <view class="icon-grid"></view>
+          </view>
+          <text>全部</text>
+        </view>
+        <view class="category-item {{activeStatus === 'active' ? 'active' : ''}}" bindtap="filterStatus" data-status="active">
+          <view class="cat-icon-wrap {{activeStatus === 'active' ? 'active' : ''}}">
+            <view class="icon-dot"></view>
+          </view>
+          <text>可分享</text>
+        </view>
+        <view class="category-item {{activeStatus === 'swapped' ? 'active' : ''}}" bindtap="filterStatus" data-status="swapped">
+          <view class="cat-icon-wrap {{activeStatus === 'swapped' ? 'active' : ''}}">
+            <view class="icon-check"></view>
+          </view>
+          <text>已分享</text>
+        </view>
+        <view wx:if="{{featureFlags.feature_mystery !== false}}" class="category-item {{activeStatus === 'mystery' ? 'active' : ''}}" bindtap="filterStatus" data-status="mystery">
+          <view class="cat-icon-wrap {{activeStatus === 'mystery' ? 'active' : ''}}">
+            <view class="icon-mystery-sm"></view>
+          </view>
+          <text>神秘特产</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 主内容区 -->
+  <view class="product-content">
+    <!-- 骨架屏加载状态 -->
+    <view wx:if="{{loading && products.length === 0}}" class="skeleton-wrap">
+      <view class="product-grid-skeleton">
+        <block wx:for="{{9}}" wx:key="*this">
+          <view class="skeleton-card">
+            <view class="skeleton-img"></view>
+            <view class="skeleton-line w60"></view>
+            <view class="skeleton-line w40"></view>
+          </view>
+        </block>
+      </view>
+    </view>
+    
+    <!-- 空状态 -->
+    <view wx:elif="{{!loading && products.length === 0}}" class="empty-wrap">
+      <view class="empty-state" style="margin-top: 200rpx;">
+        <text class="empty-icon">📦</text>
+        <text class="empty-desc">还没有特产，快去发布吧~</text>
+        <view class="empty-btn" bindtap="goToPublish">立即发布</view>
+      </view>
+    </view>
+    
+    <!-- 产品网格 - 一行三个正方形卡片 -->
+    <view wx:else class="product-grid">
+      <block wx:for="{{products}}" wx:key="_id">
+        <!-- 统一卡片结构，神秘特产使用条件类 -->
+        <view 
+          class="product-card-square {{item.isMystery ? 'mystery-card' : ''}}" 
+          bindtap="goToDetail" 
+          data-id="{{item._id}}"
+        >
+          <block wx:if="{{item.isMystery}}">
+            <view class="square-img-wrap mystery-img-wrap {{item.colorClass}}">
+              <view class="mystery-card-content">
+                <view class="mystery-emoji">{{item.emoji || '🎁'}}</view>
+                <view class="mystery-province-inner">{{item.provinceName}}</view>
+              </view>
+              <view class="mystery-tag" wx:if="{{item.status === 'in_swap'}}">匹配中</view>
+            </view>
+            <view class="square-info">
+              <view class="square-title">神秘特产</view>
+              <view class="square-meta">
+                <text class="square-province-tag" style="background:{{item.provinceColor}}22;color:{{item.provinceColor}}">{{item.provinceName}}</text>
+              </view>
+            </view>
+          </block>
+          <block wx:else>
+            <view class="square-img-wrap">
+              <image class="square-img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load binderror="onImageError" data-index="{{index}}"/>
+              <view wx:if="{{featureFlags.feature_value_display !== false}}" class="square-value-tag">{{item.valueLabel}}</view>
+            </view>
+            <view class="square-info">
+              <view class="square-title">{{item.name}}</view>
+              <view class="square-meta">
+                <text class="square-province-tag" style="background:{{item.provinceColor}}22;color:{{item.provinceColor}}">{{item.provinceName}}</text>
+              </view>
+            </view>
+          </block>
+        </view>
+      </block>
+    </view>
+    
+    <!-- 加载更多 -->
+    <view class="load-more" wx:if="{{loadingMore}}">
+      <view class="loading-spinner-sm"></view>
+      <text class="load-more-text">加载中...</text>
+    </view>
+    <view class="load-more" wx:if="{{noMore && products.length > 0}}">
+      <text class="text-light text-sm">— 已经到底啦 —</text>
+    </view>
+    
+    <view class="safe-bottom" style="height:120rpx"></view>
+  </view>
+
+  <!-- 底部导航 -->
+  <tab-bar active="index" />
+
+</view>

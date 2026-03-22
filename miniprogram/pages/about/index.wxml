@@ -1,0 +1,194 @@
+<!-- pages/about/index.wxml - 关于我们 -->
+<view class="about-page">
+  <view class="bg-gradient"></view>
+
+  <!-- 毛玻璃导航栏 -->
+  <view class="glass-nav">
+    <view class="nav-back" bindtap="goBack">
+      <text>‹</text>
+    </view>
+    <text class="nav-title">关于我们</text>
+    <view class="nav-placeholder"></view>
+  </view>
+
+  <scroll-view scroll-y class="about-scroll">
+    <!-- Logo区 -->
+    <view class="logo-section">
+      <view class="logo-circle">
+        <text class="logo-icon">🎁</text>
+      </view>
+      <view class="app-name">换特产</view>
+      <view class="app-version">Version 6.2.2</view>
+      <view class="app-slogan">一方水土一方味，以物易物见真情</view>
+    </view>
+
+    <!-- 简介 -->
+    <view class="intro-card">
+      <view class="intro-title">关于换特产</view>
+      <view class="intro-text">
+        「换特产」是一款基于地域文化的特产分享社交平台。我们相信，每一份特产背后都承载着一方水土的味道和一段故事。平台以"分享家乡味"为核心理念，让天南海北的用户通过分享家乡特产，足不出户就能品尝到全国各地的地道风味。
+      </view>
+      <view class="intro-text" style="margin-top: 20rpx;">
+        无论是东北的松子、新疆的红枣、四川的花椒，还是广东的陈皮、云南的鲜花饼、福建的铁观音，在这里都能找到懂得欣赏它的新主人。我们致力于搭建一个诚信、安全、有温度的特产社区，让分享成为一种生活方式。
+      </view>
+    </view>
+
+    <!-- 平台亮点 -->
+    <view class="highlights-section">
+      <view class="section-title">平台亮点</view>
+      <view class="highlights-list">
+        <view class="highlight-item">
+          <view class="highlight-icon-wrap hl-green">
+            <text class="highlight-icon">🤝</text>
+          </view>
+          <view class="highlight-content">
+            <text class="highlight-name">以物易物，分享家乡味</text>
+            <text class="highlight-desc">用你的家乡特产分享给别人，收获别人的家乡味道</text>
+          </view>
+        </view>
+        <view class="highlight-item">
+          <view class="highlight-icon-wrap hl-blue">
+            <text class="highlight-icon">🛡️</text>
+          </view>
+          <view class="highlight-content">
+            <text class="highlight-name">信用体系保障</text>
+            <text class="highlight-desc">四级信用等级、双方互评机制，让每一次分享都有信任支撑</text>
+          </view>
+        </view>
+        <view class="highlight-item">
+          <view class="highlight-icon-wrap hl-purple">
+            <text class="highlight-icon">🗺️</text>
+          </view>
+          <view class="highlight-content">
+            <text class="highlight-name">34省份集章</text>
+            <text class="highlight-desc">每完成一次分享点亮一个省份，集齐全国风味地图</text>
+          </view>
+        </view>
+        <view class="highlight-item">
+          <view class="highlight-icon-wrap hl-orange">
+            <text class="highlight-icon">🎲</text>
+          </view>
+          <view class="highlight-content">
+            <text class="highlight-name">神秘特产盲盒</text>
+            <text class="highlight-desc">不知道对方寄什么，拆包那一刻的惊喜感是最大的乐趣</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 功能介绍 -->
+    <view class="features-section">
+      <view class="section-title">主要功能</view>
+      <view class="features-grid">
+        <view class="feature-item">
+          <text class="feature-icon">📦</text>
+          <text class="feature-name">发布特产</text>
+        </view>
+        <view class="feature-item">
+          <text class="feature-icon">🔄</text>
+          <text class="feature-name">智能推荐</text>
+        </view>
+        <view class="feature-item">
+          <text class="feature-icon">⭐</text>
+          <text class="feature-name">信用体系</text>
+        </view>
+        <view class="feature-item">
+          <text class="feature-icon">🏆</text>
+          <text class="feature-name">省份集章</text>
+        </view>
+        <view class="feature-item">
+          <text class="feature-icon">🎲</text>
+          <text class="feature-name">神秘盲盒</text>
+        </view>
+        <view class="feature-item">
+          <text class="feature-icon">💬</text>
+          <text class="feature-name">互评系统</text>
+        </view>
+        <view class="feature-item">
+          <text class="feature-icon">🎁</text>
+          <text class="feature-name">邀请奖励</text>
+        </view>
+        <view class="feature-item">
+          <text class="feature-icon">🤖</text>
+          <text class="feature-name">智能客服</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 使用须知 -->
+    <view class="intro-card" style="margin-top: 30rpx;">
+      <view class="intro-title" style="color: #e74c3c;">⚠️ 使用须知</view>
+      <view class="intro-text" style="font-size: 26rpx; line-height: 1.8;">
+        <text style="display: block; margin-bottom: 20rpx; font-weight: bold; color: #333;">【诚信为本 · 道德为准】</text>
+        
+        <text style="display: block; margin-bottom: 20rpx;">本平台是一个信息撮合服务工具，<text style="color: #e74c3c; font-weight: bold;">平台不参与用户之间的任何活动，不对物品的质量、安全、合法性、价值作出任何担保或承诺。</text></text>
+        
+        <text style="display: block; margin-bottom: 15rpx; font-weight: bold; color: #333;">【平台不仲裁】</text>
+        <text style="display: block; margin-bottom: 20rpx;">用户之间的行为属于自愿达成的民事关系。平台<text style="color: #e74c3c; font-weight: bold;">不参与仲裁、不承担任何连带责任</text>，过程中产生的任何纠纷、损失，由双方自行协商解决。</text>
+        
+        <text style="display: block; margin-bottom: 15rpx; font-weight: bold; color: #333;">【用户需谨慎】</text>
+        <text style="display: block; margin-bottom: 20rpx;">• 请充分了解对方信用评分和历史记录\n• 建议通过平台有效沟通并保留凭证\n• 食品请务必确认生产资质和保质期\n• 价值较高的物品建议使用保价快递\n• 收到物品后请及时查验后再确认</text>
+        
+        <text style="display: block; margin-bottom: 15rpx; font-weight: bold; color: #333;">【道德约束】</text>
+        <text style="display: block; margin-bottom: 10rpx;">• 发布信息必须真实、准确、完整\n• 需遵守承诺，按时发货\n• 不得以次充好、货不对板\n• 不得恶意取消、收到货后失联\n• 禁止发布违规违法物品\n• 违背诚信将被扣除信用分，情节严重者将被封号</text>
+        
+        <text style="display: block; margin-top: 20rpx; padding: 20rpx; background: #fff3cd; border-radius: 10rpx; color: #856404;">💡 温馨提示：请用户自行评估并承担后果。平台仅提供信息技术服务。</text>
+      </view>
+    </view>
+
+    <!-- 联系方式 -->
+    <view class="contact-section">
+      <view class="section-title">联系我们</view>
+      <view class="contact-list">
+        <view class="contact-item" bindtap="copyText" data-id="3184958887@qq.com">
+          <text class="contact-label">联系我们</text>
+          <view class="contact-value">
+            <text>3184958887@qq.com</text>
+            <text class="copy-btn">复制</text>
+          </view>
+        </view>
+        <view class="contact-item" bindtap="copyText" data-id="13127899995">
+          <text class="contact-label">商务合作</text>
+          <view class="contact-value">
+            <text>13127899995</text>
+            <text class="copy-btn">复制</text>
+          </view>
+        </view>
+        <view class="contact-item" bindtap="copyText" data-id="huantechan">
+          <text class="contact-label">微信号</text>
+          <view class="contact-value">
+            <text>huantechan</text>
+            <text class="copy-btn">复制</text>
+          </view>
+        </view>
+        <view class="contact-item" bindtap="copyText" data-id="换特产">
+          <text class="contact-label">公众号</text>
+          <view class="contact-value">
+            <text>换特产</text>
+            <text class="copy-btn">复制</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 协议链接 -->
+    <view class="links-section">
+      <view class="link-item" bindtap="showAgreement" data-type="user">
+        <text>用户协议</text>
+        <text class="link-arrow">›</text>
+      </view>
+      <view class="link-item" bindtap="showAgreement" data-type="privacy">
+        <text>隐私政策</text>
+        <text class="link-arrow">›</text>
+      </view>
+    </view>
+
+    <!-- 版权 -->
+    <view class="copyright">
+      <text>© 2025 泰兴市钱哥食品店</text>
+      <text>版权所有 保留一切权利</text>
+    </view>
+
+    <view style="height: 60rpx"/>
+  </scroll-view>
+</view>

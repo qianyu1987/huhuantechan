@@ -1,0 +1,664 @@
+/* pages/index/index.wxss - 发现页 - iOS 26 顶级玻璃风格 */
+
+.index-page {
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+/* ===== 顶部搜索栏 - 玻璃悬浮效果 ===== */
+.header {
+  background: var(--color-surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 20rpx 32rpx;
+  border-bottom: 1rpx solid var(--color-divider);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20rpx;
+  position: relative;
+}
+
+/* 居中标语栏 */
+.slogan-bar {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 10rpx 28rpx;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-full);
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+}
+
+.slogan-item {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.slogan-icon {
+  width: 32rpx;
+  height: 32rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.slogan-text {
+  font-size: 24rpx;
+  font-weight: 600;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 1rpx;
+}
+
+.slogan-dot {
+  width: 6rpx;
+  height: 6rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+/* 盾牌图标 - 诚实守信 */
+.icon-shield::before {
+  content: "";
+  display: block;
+  width: 28rpx;
+  height: 28rpx;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 15l-4-4 1.41-1.41L11 13.17l5.59-5.59L18 9l-7 7z'/%3E%3C/svg%3E") no-repeat center / contain;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 15l-4-4 1.41-1.41L11 13.17l5.59-5.59L18 9l-7 7z'/%3E%3C/svg%3E") no-repeat center / contain;
+}
+
+/* 家乡图标 - 山脉/家 */
+.icon-hometown::before {
+  content: "";
+  display: block;
+  width: 28rpx;
+  height: 28rpx;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M14 6l-3.75 5 2.85 3.8-1.6 1.2C9.81 13.75 7 10 7 10l-6 8h22L14 6z'/%3E%3C/svg%3E") no-repeat center / contain;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M14 6l-3.75 5 2.85 3.8-1.6 1.2C9.81 13.75 7 10 7 10l-6 8h22L14 6z'/%3E%3C/svg%3E") no-repeat center / contain;
+}
+
+.msg-btn {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 72rpx;
+  height: 72rpx;
+  background: var(--color-bg);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.msg-btn:active {
+  background: var(--color-bg-secondary);
+  transform: translateY(-50%) scale(0.95);
+}
+
+.msg-dot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 32rpx;
+  height: 32rpx;
+  background: var(--color-danger);
+  color: white;
+  font-size: 20rpx;
+  font-weight: 700;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8rpx;
+  border: 2rpx solid white;
+  box-shadow: 0 2rpx 8rpx rgba(255, 59, 48, 0.3);
+}
+
+/* 搜索框 - 玻璃输入风格 */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  background: var(--color-bg);
+  border-radius: var(--radius-xl);
+  padding: 20rpx 28rpx;
+  margin-bottom: 20rpx;
+  transition: all 0.2s ease;
+}
+
+.search-bar:active {
+  background: var(--color-bg-secondary);
+}
+
+.search-placeholder {
+  font-size: 28rpx;
+  color: var(--color-text-tertiary);
+}
+
+/* 省份筛选 - 胶囊标签风格 - 增大间距 */
+.province-scroll {
+  white-space: nowrap;
+  padding: 8rpx 0;
+}
+
+.province-list {
+  display: inline-flex;
+  gap: 20rpx;
+  padding: 0 32rpx;
+}
+
+.province-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 20rpx 36rpx;
+  font-size: 30rpx;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-full);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  min-width: 100rpx;
+  justify-content: center;
+}
+
+.province-tab:active {
+  transform: scale(0.95);
+}
+
+.province-tab.active {
+  background: var(--color-primary);
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 4rpx 16rpx rgba(10, 132, 255, 0.4);
+}
+
+/* ===== 品类快捷入口 - 玻璃卡片 - 增大间距 ===== */
+.category-bar {
+  background: var(--color-surface-solid);
+  padding: 32rpx 0;
+  border-bottom: 1rpx solid var(--color-divider);
+}
+
+.category-scroll {
+  white-space: nowrap;
+  padding: 0 32rpx;
+  box-sizing: border-box;
+}
+
+.category-list {
+  display: flex;
+  flex-direction: row;
+  gap: 48rpx;
+}
+
+.category-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+  min-width: 140rpx;
+  transition: all 0.2s ease;
+}
+
+.category-item text {
+  font-size: 28rpx;
+  font-weight: 500;
+}
+
+.category-item:active {
+  transform: scale(0.95);
+}
+
+.cat-icon-wrap {
+  width: 96rpx;
+  height: 96rpx;
+  background: var(--color-bg);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border: 2rpx solid transparent;
+}
+
+.cat-icon-wrap.active {
+  background: var(--color-primary);
+  box-shadow: 0 4rpx 16rpx rgba(0, 122, 255, 0.35);
+}
+
+.category-item text {
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.category-item.active text {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* ===== 产品网格 - 三列正方形卡片 ===== */
+.product-content {
+  padding: 24rpx 24rpx 0;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16rpx;
+}
+
+/* ===== 正方形特产卡片 - iOS 26 发光效果 ===== */
+.product-card-square {
+  background: var(--color-surface-solid);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 
+    0 4rpx 20rpx rgba(0, 0, 0, 0.3),
+    0 0 0 1rpx rgba(255, 255, 255, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+}
+
+.product-card-square:active {
+  transform: scale(0.95);
+  box-shadow: 
+    0 8rpx 32rpx rgba(10, 132, 255, 0.2),
+    0 0 0 1rpx rgba(10, 132, 255, 0.3);
+}
+
+.square-img-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+}
+
+.square-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.product-card-square:active .square-img {
+  transform: scale(1.05);
+}
+
+.square-value-tag {
+  position: absolute;
+  bottom: 12rpx;
+  right: 12rpx;
+  padding: 6rpx 12rpx;
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+  font-size: 20rpx;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: 1rpx solid rgba(255, 255, 255, 0.15);
+}
+
+.square-info {
+  padding: 12rpx 12rpx 14rpx;
+}
+
+.square-title {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  margin-bottom: 8rpx;
+  text-align: center;
+}
+
+.square-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 省份彩色标签 - 每个省份颜色不同，通过 inline style 动态设置 */
+.square-province-tag {
+  display: inline-block;
+  font-size: 20rpx;
+  font-weight: 600;
+  padding: 2rpx 12rpx;
+  border-radius: var(--radius-full);
+  line-height: 1.6;
+}
+
+/* ===== 神秘特产卡片 ===== */
+.mystery-card {
+  position: relative;
+  overflow: hidden;
+}
+
+/* 神秘特产图片区 - 复用正方形比例，渐变背景 */
+.mystery-img-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mystery-img-wrap.color-1 {
+  background: linear-gradient(135deg, #FF6B6B 0%, #EE5A24 100%);
+}
+
+.mystery-img-wrap.color-2 {
+  background: linear-gradient(135deg, #FECA57 0%, #FF9F43 100%);
+}
+
+.mystery-img-wrap.color-3 {
+  background: linear-gradient(135deg, #48DBFB 0%, #0ABDE3 100%);
+}
+
+.mystery-img-wrap.color-4 {
+  background: linear-gradient(135deg, #A55EEA 0%, #8854D0 100%);
+}
+
+.mystery-img-wrap.color-5 {
+  background: linear-gradient(135deg, #26DE81 0%, #20BF6B 100%);
+}
+
+.mystery-img-wrap.color-6 {
+  background: linear-gradient(135deg, #FED330 0%, #F79F1F 100%);
+}
+
+.mystery-img-wrap.color-7 {
+  background: linear-gradient(135deg, #FC5C65 0%, #EB3B5A 100%);
+}
+
+.mystery-img-wrap.color-8 {
+  background: linear-gradient(135deg, #45AAF2 0%, #2D98DA 100%);
+}
+
+.mystery-img-wrap.color-9 {
+  background: linear-gradient(135deg, #4B7BEC 0%, #3867D6 100%);
+}
+
+.mystery-img-wrap.color-10 {
+  background: linear-gradient(135deg, #778CA3 0%, #4B6584 100%);
+}
+
+.mystery-card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.mystery-emoji {
+  font-size: 64rpx;
+  margin-bottom: 4rpx;
+}
+
+.mystery-province-inner {
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+}
+
+.mystery-tag {
+  position: absolute;
+  top: 8rpx;
+  right: 8rpx;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4rpx 10rpx;
+  border-radius: 6rpx;
+  font-size: 18rpx;
+  color: #FFFFFF;
+}
+
+/* ===== 加载更多 ===== */
+.load-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx;
+  color: var(--color-text-tertiary);
+  font-size: 24rpx;
+}
+
+/* ===== 悬浮发布按钮 - 玻璃拟态 ===== */
+.fab {
+  position: fixed;
+  right: 40rpx;
+  bottom: 180rpx;
+  width: 112rpx;
+  height: 112rpx;
+  background: linear-gradient(135deg, #FF6B35 0%, #FF8E53 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 32rpx rgba(255, 107, 53, 0.4), 
+              inset 0 2rpx 4rpx rgba(255, 255, 255, 0.3);
+  z-index: 100;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2rpx solid rgba(255, 255, 255, 0.3);
+}
+
+.fab:active {
+  transform: scale(0.92);
+  box-shadow: 0 4rpx 16rpx rgba(255, 107, 53, 0.3);
+}
+
+.fab::before {
+  content: '';
+  position: absolute;
+  top: 10%;
+  left: 20%;
+  width: 30%;
+  height: 30%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+/* ===== 图标（使用 CSS 绘制） ===== */
+.icon-bell::before { 
+  content: "";
+  display: block;
+  width: 32rpx;
+  height: 36rpx;
+  background: var(--color-text-secondary);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9'/%3E%3Cpath d='M13.73 21a2 2 0 0 1-3.46 0'/%3E%3C/svg%3E") no-repeat center;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9'/%3E%3Cpath d='M13.73 21a2 2 0 0 1-3.46 0'/%3E%3C/svg%3E") no-repeat center;
+}
+
+.icon-search::before { 
+  content: "🔍"; 
+  font-size: 32rpx; 
+  filter: grayscale(100%);
+  opacity: 0.5;
+}
+
+.icon-grid::before { content: "⊞"; font-size: 40rpx; color: var(--color-text-secondary); }
+.icon-dot::before { content: "●"; font-size: 40rpx; color: var(--color-text-secondary); }
+.icon-check::before { content: "✓"; font-size: 36rpx; color: var(--color-text-secondary); }
+.icon-mystery-sm::before { content: "?"; font-size: 36rpx; color: var(--color-text-secondary); font-weight: bold; }
+.cat-icon-wrap.active .icon-grid::before,
+.cat-icon-wrap.active .icon-dot::before,
+.cat-icon-wrap.active .icon-check::before,
+.cat-icon-wrap.active .icon-mystery-sm::before { color: white; }
+
+.icon-swap-w::before { 
+  content: "⇄"; 
+  font-size: 24rpx; 
+  color: var(--color-indigo);
+  font-weight: bold;
+}
+
+.icon-plus-w::before { 
+  content: "+"; 
+  font-size: 56rpx; 
+  color: white; 
+  font-weight: 300;
+  text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.2);
+}
+
+.icon-box::before { 
+  content: "📦"; 
+  font-size: 120rpx; 
+  opacity: 0.3;
+  filter: grayscale(100%);
+}
+
+/* ===== 空状态优化 ===== */
+.empty-tip {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120rpx 40rpx;
+}
+
+.empty-text {
+  font-size: 32rpx;
+  color: var(--color-text-tertiary);
+  margin-bottom: 16rpx;
+  font-weight: 500;
+}
+
+.empty-subtext {
+  font-size: 26rpx;
+  color: var(--color-text-quaternary);
+}
+
+/* ===== 骨架屏动画 ===== */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg) 25%,
+    var(--color-bg-secondary) 50%,
+    var(--color-bg) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* ===== 骨架屏 ===== */
+.skeleton-wrap {
+  padding: 24rpx;
+}
+
+.product-grid-skeleton {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16rpx;
+}
+
+.skeleton-card {
+  background: var(--color-surface-solid);
+  border-radius: var(--radius-lg);
+  padding: 16rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+}
+
+.skeleton-img {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-md);
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-line {
+  height: 20rpx;
+  border-radius: 10rpx;
+  margin-top: 16rpx;
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-line.w60 { width: 60%; }
+.skeleton-line.w40 { width: 40%; }
+
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* ===== 空状态 ===== */
+.empty-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 600rpx;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.empty-icon {
+  font-size: 80rpx;
+}
+
+.empty-desc {
+  font-size: 28rpx;
+  color: var(--color-text-tertiary);
+}
+
+.empty-btn {
+  margin-top: 20rpx;
+  padding: 16rpx 64rpx;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 28rpx;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+}
+
+.empty-btn:active {
+  opacity: 0.8;
+}
+
+/* ===== 加载更多 ===== */
+.loading-spinner-sm {
+  width: 36rpx;
+  height: 36rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.load-more-text {
+  font-size: 24rpx;
+  color: var(--color-text-tertiary);
+  margin-left: 12rpx;
+}

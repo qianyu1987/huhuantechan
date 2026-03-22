@@ -1,0 +1,126 @@
+<!-- pages/detail/index.wxml - 特产详情页 - iOS 26 -->
+<view class="detail-page">
+  <view wx:if="{{loading}}" class="loading-wrap">
+    <view class="loading-spinner"></view>
+    <text>加载中...</text>
+  </view>
+
+  <block wx:elif="{{product}}">
+    <!-- 神秘特产头图 -->
+    <view class="mystery-hero {{mysteryColorClass}}" wx:if="{{product.isMystery}}">
+      <view class="mystery-emoji">{{mysteryEmoji}}</view>
+      <view class="mystery-label">神秘特产</view>
+    </view>
+
+    <!-- 普通特产 - 图片轮播（圆角+渐变融入） -->
+    <view wx:else class="img-container">
+      <swiper class="img-swiper" indicator-dots indicator-active-color="#0A84FF" circular autoplay>
+        <block wx:for="{{product.images}}" wx:key="index">
+          <swiper-item>
+            <image class="swiper-img" src="{{item}}" mode="aspectFill" bindtap="previewImages" data-index="{{index}}"/>
+          </swiper-item>
+        </block>
+      </swiper>
+      <view class="img-fade-bottom"></view>
+      <view class="img-count">{{product.images.length}} 张</view>
+    </view>
+
+    <!-- 基础信息卡 -->
+    <view class="glass-card info-card">
+      <text class="product-name">{{product.isMystery ? '神秘特产' : product.name}}</text>
+
+      <!-- 标签行：地区 + 品类 + 估值 -->
+      <view class="tags-row">
+        <view class="info-pill location-pill">📍 {{locationText}}</view>
+        <view class="info-pill category-pill" wx:if="{{categoryName && !product.isMystery}}">{{categoryEmoji}} {{categoryName}}</view>
+        <view class="info-pill value-pill" wx:if="{{valueLabel && !product.isMystery && featureFlags.feature_value_display !== false}}">{{valueEmoji}} {{valueLabel}}</view>
+      </view>
+
+      <!-- 描述标签 -->
+      <view class="desc-tags-row" wx:if="{{descTagList.length > 0 && !product.isMystery}}">
+        <view class="desc-pill" wx:for="{{descTagList}}" wx:key="id">{{item.emoji}} {{item.label}}</view>
+      </view>
+
+      <!-- 神秘提示 -->
+      <view class="mystery-hint-box" wx:if="{{product.isMystery}}">
+        <text class="mystery-hint-text">🎁 这是一份神秘特产，匹配成功后才能揭晓内容</text>
+      </view>
+    </view>
+
+    <!-- 想换的特产 -->
+    <view class="glass-card want-card" wx:if="{{wantLocationText || wantCategoryName}}">
+      <view class="card-header">
+        <view class="card-header-icon">🔄</view>
+        <text class="card-header-title">感兴趣的特产</text>
+      </view>
+      <view class="want-tags-row">
+        <view class="info-pill want-loc-pill" wx:if="{{wantLocationText}}">📍 {{wantLocationText}}</view>
+        <view class="info-pill want-cat-pill" wx:if="{{wantCategoryName}}">{{wantCategoryEmoji}} {{wantCategoryName}}</view>
+        <view class="info-pill" wx:if="{{!wantLocationText && !wantCategoryName}}">🌏 任意特产均可</view>
+      </view>
+    </view>
+
+    <!-- 发布者卡片 -->
+    <view class="glass-card publisher-card" bindtap="goToUserProfile" data-openid="{{publisher.openid}}">
+      <image class="pub-avatar" src="{{publisher.avatarUrl || 'https://img.icons8.com/ios-filled/100/cccccc/user.png'}}" mode="aspectFill"/>
+      <view class="pub-info">
+        <text class="pub-name">{{publisher.nickName || '特产达人'}}</text>
+        <view class="pub-meta">
+          <text class="{{creditClass}}">信用 {{publisher.creditScore || 100}}分</text>
+          <text class="pub-dot">·</text>
+          <text class="pub-stat">已完成{{publisherSwapCount}}次分享</text>
+        </view>
+      </view>
+      <view class="pub-arrow">›</view>
+    </view>
+
+    <!-- 发布者评价 -->
+    <view class="glass-card reviews-card">
+      <view class="card-header">
+        <view class="card-header-icon">⭐</view>
+        <text class="card-header-title">收到的评价</text>
+        <text class="review-count" wx:if="{{reviewCount > 0}}">{{reviewCount}}条</text>
+      </view>
+      <view class="reviews-list" wx:if="{{reviews.length > 0}}">
+        <view class="review-item" wx:for="{{reviews}}" wx:key="_id">
+          <view class="review-top">
+            <image class="review-avatar" src="{{item.reviewerAvatar || 'https://img.icons8.com/ios-filled/100/cccccc/user.png'}}" mode="aspectFill"/>
+            <view class="review-info">
+              <text class="review-name">{{item.reviewerName}}</text>
+              <text class="review-time">{{item.timeText}}</text>
+            </view>
+            <view class="review-badge {{item.ratingClass}}">{{item.ratingLabel}}</view>
+          </view>
+          <text class="review-content" wx:if="{{item.comment}}">{{item.comment}}</text>
+        </view>
+      </view>
+      <view class="reviews-empty" wx:else>
+        <text class="reviews-empty-icon">💬</text>
+        <text class="reviews-empty-text">暂无评价，完成分享后可获得评价</text>
+      </view>
+    </view>
+
+    <!-- 发布时间 -->
+    <view class="time-row">
+      发布于 {{timeLabel}}  ·  👁 {{product.viewCount || 0}} 次浏览
+    </view>
+
+    <!-- 底部占位 -->
+    <view class="bottom-placeholder"></view>
+
+    <!-- 底部操作栏 -->
+    <view class="bottom-bar">
+      <view wx:if="{{isMine}}" class="bottom-bar-inner">
+        <button class="bar-btn bar-btn-ghost" bindtap="editProduct">编辑</button>
+        <button class="bar-btn bar-btn-danger" bindtap="removeProduct">下架</button>
+      </view>
+      <view wx:else class="bottom-bar-inner">
+        <view class="fav-btn" bindtap="toggleFav">
+          <text class="fav-icon">{{isFav ? '❤️' : '🤍'}}</text>
+          <text class="fav-label" style="color:{{isFav ? '#FF453A' : ''}}">收藏</text>
+        </view>
+        <button wx:if="{{featureFlags.feature_swap !== false}}" class="bar-btn bar-btn-swap" bindtap="initiateSwap">🔄 我想要</button>
+      </view>
+    </view>
+  </block>
+</view>

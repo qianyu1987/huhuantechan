@@ -1,0 +1,101 @@
+<view class="container">
+  <!-- 状态标签栏 -->
+  <view class="tabs-bar">
+    <scroll-view scroll-x class="tabs-scroll" show-scrollbar="false">
+      <view class="tabs-list">
+        <view 
+          wx:for="{{tabs}}" 
+          wx:key="id"
+          class="tab-item {{activeTab === item.id ? 'active' : ''}}"
+          bindtap="switchTab"
+          data-id="{{item.id}}"
+        >
+          <text class="tab-label">{{item.label}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 统计信息 -->
+  <view class="stats-bar">
+    <text class="stats-text">共 {{totalCount}} 个特产</text>
+  </view>
+
+  <!-- 产品列表 -->
+  <view class="products-list">
+    <view 
+      wx:for="{{products}}" 
+      wx:key="_id"
+      class="product-card"
+      bindtap="goToDetail"
+      data-id="{{item._id}}"
+    >
+      <!-- 产品图片 -->
+      <view class="product-image-wrap">
+        <image class="product-image" src="{{item.coverUrl}}" mode="aspectFill"/>
+        <view class="status-badge status-{{item.status}}">
+          {{item.statusConfig.label}}
+        </view>
+      </view>
+
+      <!-- 产品信息 -->
+      <view class="product-info">
+        <text class="product-name">{{item.name}}</text>
+        <view class="product-tags">
+          <view class="info-tag location-tag">📍 {{item.provinceName}}</view>
+          <view class="info-tag category-tag" wx:if="{{item.categoryName}}">{{item.categoryEmoji}} {{item.categoryName}}</view>
+        </view>
+        <view class="product-bottom">
+          <view class="product-stats">
+            <text class="stat-item">👁 {{item.viewCount}}</text>
+            <text class="stat-item">❤️ {{item.favCount}}</text>
+          </view>
+          <text class="product-time">{{item.timeLabel}}</text>
+        </view>
+      </view>
+
+      <!-- 操作按钮 -->
+      <view class="product-actions" catchtap="preventBubble">
+        <!-- 展示中 -->
+        <block wx:if="{{item.status === 'active'}}">
+          <button class="action-btn" bindtap="editProduct" data-id="{{item._id}}">编辑</button>
+          <button class="action-btn danger" bindtap="removeProduct" data-id="{{item._id}}" data-name="{{item.name}}">下架</button>
+        </block>
+
+        <!-- 已下架 -->
+        <block wx:if="{{item.status === 'removed'}}">
+          <button class="action-btn primary" bindtap="reactivateProduct" data-id="{{item._id}}">重新上架</button>
+          <button class="action-btn danger" bindtap="deleteProduct" data-id="{{item._id}}" data-name="{{item.name}}">删除</button>
+        </block>
+
+        <!-- 互换中/已换出 -->
+        <block wx:if="{{item.status === 'in_swap' || item.status === 'swapped'}}">
+          <button class="action-btn" bindtap="goToDetail" data-id="{{item._id}}">查看详情</button>
+        </block>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载更多 -->
+  <view wx:if="{{loadingMore}}" class="loading-more">
+    <view class="loading-spinner"></view>
+    <text>加载中...</text>
+  </view>
+
+  <view wx:if="{{noMore && products.length > 0}}" class="no-more">
+    <text>没有更多了</text>
+  </view>
+
+  <!-- 空状态 -->
+  <view wx:if="{{!loading && products.length === 0}}" class="empty-state">
+    <image class="empty-icon" src="/images/empty-products.png" mode="aspectFit"/>
+    <text class="empty-text">暂无{{activeTabLabel}}特产</text>
+    <button class="empty-btn" bindtap="goToPublish">去发布特产</button>
+  </view>
+
+  <!-- 加载中 -->
+  <view wx:if="{{loading && products.length === 0}}" class="loading-state">
+    <view class="loading-spinner"></view>
+    <text>加载中...</text>
+  </view>
+</view>

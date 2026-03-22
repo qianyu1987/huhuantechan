@@ -1,0 +1,48 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/publish/index",
+    "pages/match/index",
+    "pages/order/index",
+    "pages/mine/index",
+    "pages/detail/index",
+    "pages/order-detail/index",
+    "pages/my-products/index",
+    "pages/search/index",
+    "pages/review/index",
+    "pages/profile-edit/index",
+    "pages/address/index",
+    "pages/invitedFriends/index",
+    "pages/credit/index",
+    "pages/help/index",
+    "pages/settings/index",
+    "pages/about/index",
+    "pages/favorites/index",
+    "pages/my-reviews/index",
+    "pages/mystery/index",
+    "pages/admin/index",
+    "pages/user-profile/index"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#000000",
+    "navigationBarTitleText": "发现特产",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#000000"
+  },
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于显示你所在省份，帮助匹配当地特产"
+    }
+  },
+  "requiredPrivateInfos": [
+    "chooseAddress"
+  ],
+  "requiredBackgroundModes": [],
+  "sitemapLocation": "sitemap.json",
+  "useExtendedLib": {
+    "weui": true
+  },
+  "darkmode": true,
+  "lazyCodeLoading": "requiredComponents"
+}

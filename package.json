@@ -1,0 +1,19 @@
+{
+  "name": "specialty-swap",
+  "version": "1.0.0",
+  "description": "特产互换小程序",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "tdesign-miniprogram": "^1.13.0"
+  },
+  "keywords": [
+    "miniprogram",
+    "specialty",
+    "swap"
+  ],
+  "author": "",
+  "license": "MIT"
+}
