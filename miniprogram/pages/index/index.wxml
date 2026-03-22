@@ -50,13 +50,13 @@
           </view>
           <text>全部</text>
         </view>
-        <view class="category-item {{activeStatus === 'active' ? 'active' : ''}}" bindtap="filterStatus" data-status="active">
+        <view wx:if="{{featureFlags.feature_swap !== false}}" class="category-item {{activeStatus === 'active' ? 'active' : ''}}" bindtap="filterStatus" data-status="active">
           <view class="cat-icon-wrap {{activeStatus === 'active' ? 'active' : ''}}">
             <view class="icon-dot"></view>
           </view>
           <text>可分享</text>
         </view>
-        <view class="category-item {{activeStatus === 'swapped' ? 'active' : ''}}" bindtap="filterStatus" data-status="swapped">
+        <view wx:if="{{featureFlags.feature_swap !== false}}" class="category-item {{activeStatus === 'swapped' ? 'active' : ''}}" bindtap="filterStatus" data-status="swapped">
           <view class="cat-icon-wrap {{activeStatus === 'swapped' ? 'active' : ''}}">
             <view class="icon-check"></view>
           </view>
@@ -91,8 +91,8 @@
     <view wx:elif="{{!loading && products.length === 0}}" class="empty-wrap">
       <view class="empty-state" style="margin-top: 200rpx;">
         <text class="empty-icon">📦</text>
-        <text class="empty-desc">还没有特产，快去发布吧~</text>
-        <view class="empty-btn" bindtap="goToPublish">立即发布</view>
+        <text class="empty-desc">暂无特产信息</text>
+        <view class="empty-btn" wx:if="{{featureFlags.tab_publish !== false}}" bindtap="goToPublish">立即发布</view>
       </view>
     </view>
     

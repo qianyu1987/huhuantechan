@@ -116,6 +116,7 @@ Page({
   },
 
   onLoad() {
+    this.setData({ featureFlags: getApp().globalData.featureFlags || {} })
     this.initProvinces()
     this.loadUserData()
     this._kbCallback = res => {

@@ -27,12 +27,17 @@ Page({
     descTags: DESC_TAGS,
     submitting: false,
     isEdit: false,
-    editId: ''
+    editId: '',
+    featureDisabled: false
+  },
+
+  goHome() {
+    wx.reLaunch({ url: '/pages/index/index' })
   },
 
   onLoad(options) {
     if (!getApp().isFeatureEnabled('tab_publish')) {
-      wx.reLaunch({ url: '/pages/index/index' })
+      this.setData({ featureDisabled: true })
       return
     }
     if (options.mystery === '1') {

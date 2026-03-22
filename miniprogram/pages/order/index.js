@@ -34,12 +34,17 @@ Page({
     refreshing: false,
     noMore: false,
     page: 1,
-    reviewedOrders: {}
+    reviewedOrders: {},
+    featureDisabled: false
+  },
+
+  goHome() {
+    wx.reLaunch({ url: '/pages/index/index' })
   },
 
   onLoad(options) {
     if (!getApp().isFeatureEnabled('tab_order')) {
-      wx.reLaunch({ url: '/pages/index/index' })
+      this.setData({ featureDisabled: true })
       return
     }
     const { status } = options

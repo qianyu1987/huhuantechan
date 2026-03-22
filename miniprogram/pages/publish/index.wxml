@@ -1,6 +1,15 @@
 <!-- pages/publish/index.wxml - 发布特产 -->
 <view class="publish-page">
 
+  <!-- 功能未开放占位 -->
+  <view wx:if="{{featureDisabled}}" class="feature-disabled-wrap">
+    <view class="feature-disabled-icon">🔧</view>
+    <view class="feature-disabled-title">功能开发中</view>
+    <view class="feature-disabled-desc">该功能正在升级优化，敬请期待</view>
+    <view class="feature-disabled-btn" bindtap="goHome">返回首页</view>
+  </view>
+
+  <block wx:else>
   <view class="page-header px-md">
     <text class="page-title">{{isEdit ? '编辑特产' : '发布你的特产'}}</text>
     <text class="page-sub">{{isEdit ? '修改你的特产信息' : '告诉大家你有什么好东西'}}</text>
@@ -188,5 +197,6 @@
 
   <!-- 底部导航 -->
   <tab-bar active="publish" />
+  </block>
 
 </view>

@@ -1,4 +1,14 @@
 <view class="container">
+
+  <!-- 功能未开放占位 -->
+  <view wx:if="{{featureDisabled}}" class="feature-disabled-wrap">
+    <view class="feature-disabled-icon">🔧</view>
+    <view class="feature-disabled-title">功能开发中</view>
+    <view class="feature-disabled-desc">该功能正在升级优化，敬请期待</view>
+    <view class="feature-disabled-btn" bindtap="goHome">返回首页</view>
+  </view>
+
+  <block wx:else>
   <!-- 状态标签栏 -->
   <view class="tabs-bar">
     <scroll-view scroll-x class="tabs-scroll" show-scrollbar="false">
@@ -98,4 +108,5 @@
     <view class="loading-spinner"></view>
     <text>加载中...</text>
   </view>
+  </block>
 </view>

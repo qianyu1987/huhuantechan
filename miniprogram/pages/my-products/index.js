@@ -29,10 +29,19 @@ Page({
     noMore: false,
     page: 1,
     pageSize: 20,
-    totalCount: 0
+    totalCount: 0,
+    featureDisabled: false
+  },
+
+  goHome() {
+    wx.reLaunch({ url: '/pages/index/index' })
   },
 
   onLoad() {
+    if (!getApp().isFeatureEnabled('tab_publish')) {
+      this.setData({ featureDisabled: true })
+      return
+    }
     this.loadProducts(true)
   },
 

@@ -15,12 +15,17 @@ Page({
     refreshing: false,
     noMore: false,
     page: 1,
-    showRulesPopup: false
+    showRulesPopup: false,
+    featureDisabled: false
+  },
+
+  goHome() {
+    wx.reLaunch({ url: '/pages/index/index' })
   },
 
   onLoad() {
     if (!getApp().isFeatureEnabled('tab_match')) {
-      wx.reLaunch({ url: '/pages/index/index' })
+      this.setData({ featureDisabled: true })
       return
     }
     this.loadMyProducts()

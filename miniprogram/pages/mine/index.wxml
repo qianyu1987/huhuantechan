@@ -52,16 +52,16 @@
           <view class="stat-label">信用分</view>
         </view>
         <view class="stat-divider"/>
-        <view class="stat-item" bindtap="goToMyProducts">
+        <view wx:if="{{featureFlags.tab_publish !== false}}" class="stat-item" bindtap="goToMyProducts">
           <view class="stat-num">{{publishCount}}</view>
           <view class="stat-label">发布</view>
         </view>
-        <view class="stat-divider"/>
-        <view class="stat-item" bindtap="goToOrders">
+        <view wx:if="{{featureFlags.tab_publish !== false}}" class="stat-divider"/>
+        <view wx:if="{{featureFlags.feature_swap !== false}}" class="stat-item" bindtap="goToOrders">
           <view class="stat-num">{{swapCount}}</view>
           <view class="stat-label">分享次数</view>
         </view>
-        <view class="stat-divider"/>
+        <view wx:if="{{featureFlags.feature_swap !== false}}" class="stat-divider"/>
         <view class="stat-item">
           <view class="stat-num">{{badgeCount}}</view>
           <view class="stat-label">集章数</view>
@@ -96,7 +96,7 @@
     </view>
 
     <!-- 我的特产 -->
-    <view class="section card mx-md mt-md">
+    <view wx:if="{{featureFlags.tab_publish !== false}}" class="section card mx-md mt-md">
       <view class="section-hd" bindtap="goToMyProducts">
         <text class="section-title">我的特产</text>
         <view class="more-btn">
@@ -134,7 +134,7 @@
         <text class="section-title">快捷服务</text>
       </view>
       <view class="quick-grid">
-        <view class="quick-grid-item" bindtap="goToAddress">
+        <view wx:if="{{featureFlags.feature_swap !== false}}" class="quick-grid-item" bindtap="goToAddress">
           <view class="quick-grid-icon qg-teal">
             <view class="qi qi-pin"></view>
           </view>
@@ -146,7 +146,7 @@
           </view>
           <text class="quick-grid-label">我的收藏</text>
         </view>
-        <view class="quick-grid-item" bindtap="goToMystery">
+        <view wx:if="{{featureFlags.feature_mystery !== false}}" class="quick-grid-item" bindtap="goToMystery">
           <view class="quick-grid-icon qg-purple">
             <view class="qi qi-mystery"></view>
           </view>
@@ -158,13 +158,13 @@
           </view>
           <text class="quick-grid-label">邀请好友</text>
         </view>
-        <view class="quick-grid-item" bindtap="goToOrders">
+        <view wx:if="{{featureFlags.feature_swap !== false}}" class="quick-grid-item" bindtap="goToOrders">
           <view class="quick-grid-icon qg-blue">
             <view class="qi qi-swap"></view>
           </view>
           <text class="quick-grid-label">我的记录</text>
         </view>
-        <view class="quick-grid-item" bindtap="goToReview">
+        <view wx:if="{{featureFlags.feature_swap !== false}}" class="quick-grid-item" bindtap="goToReview">
           <view class="quick-grid-icon qg-green">
             <view class="qi qi-comment"></view>
           </view>

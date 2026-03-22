@@ -82,7 +82,7 @@
       <view class="features-grid">
         <view class="feature-item">
           <text class="feature-icon">📦</text>
-          <text class="feature-name">发布特产</text>
+          <text class="feature-name">发现特产</text>
         </view>
         <view class="feature-item">
           <text class="feature-icon">🔄</text>
