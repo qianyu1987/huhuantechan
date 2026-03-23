@@ -148,13 +148,9 @@ Page({
   showAgreement(e) {
     const type = e.currentTarget.dataset.type
     
-    // 使用 wx.showModal 显示完整协议内容
-    wx.showModal({
-      title: type === 'user' ? '用户协议' : '隐私政策',
-      content: type === 'user' ? this.getUserAgreement() : this.getPrivacyContent(),
-      showCancel: true,
-      confirmText: '我已阅读',
-      cancelText: '返回'
+    // 跳转到专门的协议页面
+    wx.navigateTo({
+      url: `/pages/user-agreement/index?type=${type}`
     })
   }
 })

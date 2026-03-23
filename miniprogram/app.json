@@ -17,6 +17,7 @@
     "pages/credit/index",
     "pages/settings/index",
     "pages/about/index",
+    "pages/user-agreement/index",
     "pages/favorites/index",
     "pages/my-reviews/index",
     "pages/mystery/index",

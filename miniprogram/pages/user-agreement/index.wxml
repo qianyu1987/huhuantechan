@@ -1,0 +1,101 @@
+<!-- pages/user-agreement/index.wxml - 用户服务协议 -->
+<view class="agreement-page">
+  <view class="bg-gradient"></view>
+  
+  <scroll-view scroll-y class="agreement-scroll">
+    <view class="agreement-content">
+      <view class="agreement-header">
+        <text class="agreement-title">{{agreementType === 'user' ? '用户服务协议' : '隐私政策'}}</text>
+        <text class="agreement-version">版本 1.0</text>
+        <text class="agreement-date">生效日期：2026年3月23日</text>
+      </view>
+
+      <!-- 用户服务协议内容 -->
+      <view wx:if="{{agreementType === 'user'}}" class="agreement-text">
+        <text class="section-title">第一条 服务概述</text>
+        <text class="section-content">本服务协议是您（以下称"用户"或"您"）与特产互换小程序（以下称"本平台"或"我们"）之间的法律协议。您在使用本平台所有功能、服务、内容和产品时，即表示您已阅读、理解并同意受本协议的约束。</text>
+        
+        <text class="section-title">第二条 用户账户</text>
+        <text class="section-content">2.1 您同意授权本平台获取您的微信基本信息（头像、昵称、OpenID），用于创建和维护账户。</text>
+        <text class="section-content">2.2 您负责保管您的账户登录凭证，严禁向他人泄露。</text>
+        <text class="section-content">2.3 您可申请注销账户，一旦注销将无法恢复。</text>
+        
+        <text class="section-title">第三条 用户行为规范</text>
+        <text class="section-content">您在使用本平台时，不得：</text>
+        <text class="section-content">• 发布违法违规内容</text>
+        <text class="section-content">• 进行欺诈与骗取行为</text>
+        <text class="section-content">• 恶意破坏平台秩序</text>
+        <text class="section-content">• 侵犯他人合法权益</text>
+        
+        <text class="section-title">第四条 交易与信用评分</text>
+        <text class="section-content">4.1 本平台为用户提供特产互换的信息撮合服务。</text>
+        <text class="section-content">4.2 您承诺遵守诚信原则，按时发货，不得以次充好。</text>
+        <text class="section-content">4.3 信用评分基于您的交易记录、互评结果等综合计算。</text>
+        
+        <text class="section-title">第五条 隐私保护</text>
+        <text class="section-content">我们重视您的隐私保护，详情请参阅《隐私政策》。</text>
+        
+        <text class="section-title">第六条 免责声明</text>
+        <text class="section-content">6.1 本平台仅为中立的信息撮合技术服务平台。</text>
+        <text class="section-content">6.2 平台不参与用户之间的实际交易活动，不对交易结果承担责任。</text>
+        
+        <text class="section-title">第七条 协议修改</text>
+        <text class="section-content">我们保留随时修改本协议的权利，修改后的协议将在平台上公布。</text>
+        
+        <text class="section-title">第八条 联系方式</text>
+        <text class="section-content">如有任何疑问，请联系：</text>
+        <text class="section-content">• 客服邮箱：3184958887@qq.com</text>
+        <text class="section-content">• 客服电话：18252658116</text>
+        
+        <view class="agreement-footer">
+          <text class="company-name">泰兴市钱哥食品店（个体工商户）</text>
+          <text class="sign-date">2026年3月23日</text>
+        </view>
+      </view>
+
+      <!-- 隐私政策内容 -->
+      <view wx:else class="agreement-text">
+        <text class="section-title">隐私保护指引</text>
+        <text class="section-content">本指引是钱哥食品小程序开发者 泰兴市钱哥食品店(个体工商户)（以下简称"开发者"）为处理你的个人信息而制定。</text>
+        
+        <text class="section-title">开发者处理的信息</text>
+        <text class="section-content">根据法律规定，开发者仅处理实现小程序功能所必要的信息。</text>
+        
+        <text class="section-title">收集的信息及用途</text>
+        <text class="section-content">1. 手机号 - 用途：登录或者注册</text>
+        <text class="section-content">2. 位置信息 - 用途：登录或者注册</text>
+        <text class="section-content">3. 微信运动步数 - 用途：用户互动</text>
+        <text class="section-content">4. 相册（仅写入）权限 - 用途：保存推荐码</text>
+        <text class="section-content">5. 麦克风 - 用途：通过语音与其他用户交流互动</text>
+        <text class="section-content">6. 照片或视频信息 - 用途：展示产品</text>
+        <text class="section-content">7. 剪切板 - 用途：方便粘贴地址</text>
+        <text class="section-content">8. 地址信息 - 用途：用于邮寄产品</text>
+        
+        <text class="section-title">第三方插件信息</text>
+        <text class="section-content">为实现特定功能，开发者可能会接入由第三方提供的插件/SDK。第三方插件的个人信息处理规则，请以其公示的官方说明为准。</text>
+        
+        <text class="section-title">未成年人保护</text>
+        <text class="section-content">若你是14周岁以下的未成年人，你需要和你的监护人共同仔细阅读本指引，并在征得监护人明示同意后继续使用小程序服务。</text>
+        
+        <text class="section-title">你的权益</text>
+        <text class="section-content">关于收集的信息，你可以通过以下路径操作：小程序主页右上角"..." — "设置" — "小程序已获取的信息" — 点击特定信息 — 点击"通知开发者删除"，开发者承诺收到通知后将删除信息。</text>
+        
+        <text class="section-title">联系方式</text>
+        <text class="section-content">电话：18252658116</text>
+        
+        <text class="section-title">信息保存期限</text>
+        <text class="section-content">开发者承诺，对你的信息的保存期限应当为实现处理目的所必要的最短时间。</text>
+        
+        <text class="section-title">信息对外提供</text>
+        <text class="section-content">开发者承诺，不会主动共享、转让或公开披露你的信息至任何第三方，如必须公开披露时，开发者应当向你告知并征得你的单独同意。</text>
+        
+        <view class="agreement-footer">
+          <text class="update-date">更新日期：2026-03-21</text>
+          <text class="effect-date">生效日期：2026-03-21</text>
+        </view>
+      </view>
+    </view>
+    
+    <view style="height: 60rpx"/>
+  </scroll-view>
+</view>

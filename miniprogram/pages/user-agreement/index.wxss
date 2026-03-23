@@ -1,0 +1,115 @@
+/* pages/user-agreement/index.wxss - 用户服务协议 */
+
+.agreement-page {
+  min-height: 100vh;
+  background: #000000;
+  position: relative;
+}
+
+.bg-gradient {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+  z-index: 0;
+}
+
+.agreement-scroll {
+  position: relative;
+  z-index: 1;
+  height: 100vh;
+  padding: 30rpx;
+}
+
+.agreement-content {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20rpx;
+  padding: 40rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.2);
+}
+
+.agreement-header {
+  text-align: center;
+  margin-bottom: 40rpx;
+  padding-bottom: 30rpx;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.2);
+}
+
+.agreement-title {
+  display: block;
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #ffffff;
+  margin-bottom: 20rpx;
+}
+
+.agreement-version {
+  display: block;
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 10rpx;
+}
+
+.agreement-date {
+  display: block;
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.agreement-text {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.section-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #ffffff;
+  margin-top: 40rpx;
+  margin-bottom: 20rpx;
+}
+
+.section-content {
+  display: block;
+  font-size: 28rpx;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 15rpx;
+}
+
+.agreement-footer {
+  margin-top: 60rpx;
+  padding-top: 30rpx;
+  border-top: 1rpx solid rgba(255, 255, 255, 0.2);
+  text-align: center;
+}
+
+.company-name {
+  display: block;
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 15rpx;
+}
+
+.sign-date {
+  display: block;
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.update-date {
+  display: block;
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 10rpx;
+}
+
+.effect-date {
+  display: block;
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.6);
+}
