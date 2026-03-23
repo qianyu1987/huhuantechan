@@ -43,12 +43,17 @@ Page({
   async loadRecords() {
     try {
       const res = await callCloud('reviewMgr', { action: 'creditLogs' })
+      console.log('[credit] creditLogs 响应:', res)
       if (res.success && res.list) {
         const records = res.list.map(item => ({
           ...item,
-          icon: item.change > 0 ? '📈' : '📉',
+          // 云函数返回 delta 字段，统一映射为 change
+          change: item.change ?? item.delta ?? 0,
+          title: item.title || item.reason || '信用变动',
+          icon: (item.change ?? item.delta ?? 0) > 0 ? '📈' : '📉',
           time: formatTime(item.createTime)
         }))
+        console.log('[credit] 处理后的记录:', records)
         this.setData({ records })
       }
     } catch (e) {

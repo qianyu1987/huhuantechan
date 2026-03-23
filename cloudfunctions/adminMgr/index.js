@@ -40,25 +40,37 @@ exports.main = async (event, context) => {
         const reviewCount = await db.collection('reviews').where({
           status: 'pending'
         }).count()
+        const pendingProductCount = await db.collection('products').where({
+          status: 'pending_review'
+        }).count()
         const mysteryCount = await db.collection('products').where({
           isMystery: true
         }).count()
+
+        // 性别统计
+        const maleCount = await db.collection('users').where({ gender: 'male' }).count()
+        const femaleCount = await db.collection('users').where({ gender: 'female' }).count()
 
         return {
           totalUsers: userCount.total,
           totalProducts: productCount.total,
           activeSwaps: swapCount.total,
-          pendingReviews: reviewCount.total,
+          pendingReviews: reviewCount.total + pendingProductCount.total,
+          pendingProductCount: pendingProductCount.total,
           mysteryCount: mysteryCount.total,
+          maleCount: maleCount.total,
+          femaleCount: femaleCount.total,
           isSuperAdmin
         }
       }
 
       // 获取用户列表（支持搜索）
       case 'getUsers': {
-        const { page = 1, pageSize = 20, keyword = '' } = event
+        const { page = 1, pageSize = 20, keyword = '', filter = '' } = event
         
         let query = db.collection('users')
+        
+        // 关键词搜索
         if (keyword) {
           query = query.where({
             nickName: db.RegExp({
@@ -68,63 +80,112 @@ exports.main = async (event, context) => {
           })
         }
         
-        const res = await query
-          .orderBy('_createTime', 'desc')
-          .skip((page - 1) * pageSize)
-          .limit(pageSize)
-          .get()
+        // 筛选条件
+        if (filter === 'high' || filter === 'low') {
+          // 积分排序在后面处理
+        } else if (filter === 'excellent') {
+          query = query.where({ creditScore: _.gte(90) })
+        } else if (filter === 'good') {
+          query = query.where({ creditScore: _.and(_.gte(80), _.lt(90)) })
+        } else if (filter === 'poor') {
+          query = query.where({ creditScore: _.lt(60) })
+        }
 
-        // 获取积分信息
-        const list = await Promise.all(res.data.map(async (user) => {
-          let userData = { ...user }
-          try {
-            const pointsRes = await db.collection('user_points').where({
-              _openid: user._openid
-            }).get()
-            if (pointsRes.data.length > 0) {
-              userData.points = pointsRes.data[0].points || 0
-              userData.totalPoints = pointsRes.data[0].totalPoints || 0
-            } else {
-              userData.points = 0
-              userData.totalPoints = 0
-            }
-          } catch (e) {
-            userData.points = 0
-            userData.totalPoints = 0
+        let res
+        // 积分排序特殊处理
+        if (filter === 'high') {
+          res = await db.collection('users')
+            .orderBy('points', 'desc')
+            .skip((page - 1) * pageSize)
+            .limit(pageSize)
+            .get()
+        } else if (filter === 'low') {
+          res = await db.collection('users')
+            .orderBy('points', 'asc')
+            .skip((page - 1) * pageSize)
+            .limit(pageSize)
+            .get()
+        } else {
+          res = await query
+            .orderBy('_createTime', 'desc')
+            .skip((page - 1) * pageSize)
+            .limit(pageSize)
+            .get()
+        }
+
+        // 用户积分直接从 users 表读取（统一数据源）
+        const list = res.data.map((user) => {
+          return {
+            ...user,
+            points: user.points || 0,
+            totalPoints: user.points || 0  // 简化处理，不单独维护累计积分
           }
-          return userData
-        }))
+        })
 
-        return { list, isSuperAdmin }
+        // 积分统计（从 users 表统计）
+        let stats = { totalUsers: 0, totalPoints: 0, avgPoints: 0 }
+        try {
+          const totalUserCount = await db.collection('users').count()
+          const pointsSum = await db.collection('users')
+            .aggregate()
+            .group({
+              _id: null,
+              totalPoints: $.sum('$points')
+            })
+            .end()
+          stats = {
+            totalUsers: totalUserCount.total,
+            totalPoints: pointsSum.list[0]?.totalPoints || 0,
+            avgPoints: totalUserCount.total > 0 ? Math.round((pointsSum.list[0]?.totalPoints || 0) / totalUserCount.total) : 0
+          }
+        } catch (e) {}
+
+        // 信用分分布统计
+        let creditDist = { excellent: 0, good: 0, normal: 0, poor: 0 }
+        try {
+          const [excellent, good, normal, poor] = await Promise.all([
+            db.collection('users').where({ creditScore: _.gte(90) }).count(),
+            db.collection('users').where({ creditScore: _.and(_.gte(80), _.lt(90)) }).count(),
+            db.collection('users').where({ creditScore: _.and(_.gte(60), _.lt(80)) }).count(),
+            db.collection('users').where({ creditScore: _.lt(60) }).count()
+          ])
+          const total = excellent.total + good.total + normal.total + poor.total
+          creditDist = {
+            excellent: total > 0 ? Math.round(excellent.total / total * 100) : 0,
+            good: total > 0 ? Math.round(good.total / total * 100) : 0,
+            normal: total > 0 ? Math.round(normal.total / total * 100) : 0,
+            poor: total > 0 ? Math.round(poor.total / total * 100) : 0
+          }
+        } catch (e) {}
+
+        return { list, stats, creditDist, isSuperAdmin }
       }
 
       // 获取单个用户详情
       case 'getUserDetail': {
         const { openid } = event
         const userRes = await db.collection('users').where({
-          openid: openid
+          _openid: openid
         }).get()
         
         if (userRes.data.length === 0) {
-          return { error: '用户不存在' }
+          return { success: false, error: '用户不存在' }
         }
         
         const user = userRes.data[0]
         
-        // 获取积分记录
-        const pointsRes = await db.collection('user_points').where({
-          _openid: openid
-        }).get()
+        // 积分直接从 users 表读取
+        const userPoints = user.points || 0
         
-        // 获取积分变动记录
+        // 获取积分变动记录（只使用 _openid）
         const pointsLogRes = await db.collection('points_log').where({
           _openid: openid
         }).orderBy('createTime', 'desc').limit(50).get()
         
         return {
           user,
-          points: pointsRes.data[0]?.points || 0,
-          totalPoints: pointsRes.data[0]?.totalPoints || 0,
+          points: userPoints,
+          totalPoints: userPoints,
           pointsLog: pointsLogRes.data || [],
           isSuperAdmin
         }
@@ -133,49 +194,36 @@ exports.main = async (event, context) => {
       // 增加用户积分（仅超级管理员）
       case 'addPoints': {
         if (!isSuperAdmin) {
-          return { error: '权限不足，需要超级管理员权限' }
+          return { success: false, error: '权限不足，需要超级管理员权限' }
         }
         
         const { openid, points, reason = '管理员操作' } = event
         if (!openid || !points || points <= 0) {
-          return { error: '参数错误' }
+          return { success: false, error: '参数错误' }
         }
         
-        // 查询或创建用户积分记录
-        let pointsRes = await db.collection('user_points').where({
-          _openid: openid
-        }).get()
-        
-        if (pointsRes.data.length === 0) {
-          // 创建积分记录
-          await db.collection('user_points').add({
-            data: {
-              _openid: openid,
-              points: points,
-              totalPoints: points,
-              updateTime: db.serverDate()
-            }
-          })
-        } else {
-          // 更新积分
-          await db.collection('user_points').where({
-            _openid: openid
-          }).update({
-            data: {
-              points: _.inc(points),
-              totalPoints: _.inc(points),
-              updateTime: db.serverDate()
-            }
-          })
+        // 查询用户
+        const userRes = await db.collection('users').where({ _openid: openid }).get()
+        if (userRes.data.length === 0) {
+          return { success: false, error: '用户不存在' }
         }
+        const user = userRes.data[0]
+        
+        // 直接更新 users 表的积分（统一数据源）
+        await db.collection('users').doc(user._id).update({
+          data: {
+            points: _.inc(points),
+            updateTime: db.serverDate()
+          }
+        })
         
         // 记录积分变动日志
         await db.collection('points_log').add({
           data: {
             _openid: openid,
-            points: points,
+            amount: points,
             type: 'admin_add',
-            reason: reason,
+            desc: reason,
             createTime: db.serverDate()
           }
         })
@@ -186,28 +234,28 @@ exports.main = async (event, context) => {
       // 扣除用户积分（仅超级管理员）
       case 'deductPoints': {
         if (!isSuperAdmin) {
-          return { error: '权限不足，需要超级管理员权限' }
+          return { success: false, error: '权限不足，需要超级管理员权限' }
         }
         
         const { openid, points, reason = '管理员操作' } = event
         if (!openid || !points || points <= 0) {
-          return { error: '参数错误' }
+          return { success: false, error: '参数错误' }
         }
         
-        // 查询当前积分
-        let pointsRes = await db.collection('user_points').where({
-          _openid: openid
-        }).get()
+        // 查询用户当前积分
+        const userRes = await db.collection('users').where({ _openid: openid }).get()
+        if (userRes.data.length === 0) {
+          return { success: false, error: '用户不存在' }
+        }
+        const user = userRes.data[0]
+        const currentPoints = user.points || 0
         
-        let currentPoints = pointsRes.data.length > 0 ? (pointsRes.data[0].points || 0) : 0
         if (currentPoints < points) {
-          return { error: '积分不足，当前积分: ' + currentPoints }
+          return { success: false, error: '积分不足，当前积分: ' + currentPoints }
         }
         
-        // 扣除积分
-        await db.collection('user_points').where({
-          _openid: openid
-        }).update({
+        // 扣除积分（统一更新 users 表）
+        await db.collection('users').doc(user._id).update({
           data: {
             points: _.inc(-points),
             updateTime: db.serverDate()
@@ -218,9 +266,9 @@ exports.main = async (event, context) => {
         await db.collection('points_log').add({
           data: {
             _openid: openid,
-            points: -points,
+            amount: -points,
             type: 'admin_deduct',
-            reason: reason,
+            desc: reason,
             createTime: db.serverDate()
           }
         })
@@ -231,21 +279,29 @@ exports.main = async (event, context) => {
       // 调整用户信用分（仅超级管理员）
       case 'adjustCredit': {
         if (!isSuperAdmin) {
-          return { error: '权限不足，需要超级管理员权限' }
+          return { success: false, error: '权限不足，需要超级管理员权限' }
         }
         
         const { openid, creditScore, reason = '管理员操作' } = event
         if (!openid || creditScore === undefined) {
-          return { error: '参数错误' }
+          return { success: false, error: '参数错误' }
         }
         
         // 信用分范围 0-100
         const newScore = Math.max(0, Math.min(100, creditScore))
         
-        // 更新用户信用分
-        await db.collection('users').where({
-          openid: openid
-        }).update({
+        // 先查询用户
+        const userRes = await db.collection('users').where({ _openid: openid }).get()
+        if (userRes.data.length === 0) {
+          return { success: false, error: '用户不存在' }
+        }
+        
+        const user = userRes.data[0]
+        const oldScore = user.creditScore || 100
+        const delta = newScore - oldScore
+        
+        // 使用 _id 精准更新
+        await db.collection('users').doc(user._id).update({
           data: {
             creditScore: newScore,
             creditUpdatedAt: db.serverDate()
@@ -253,9 +309,10 @@ exports.main = async (event, context) => {
         })
         
         // 记录信用分变动日志
-        await db.collection('credit_log').add({
+        await db.collection('credit_logs').add({
           data: {
-            _openid: openid,
+            openid: openid,
+            delta: delta,
             creditScore: newScore,
             type: 'admin_adjust',
             reason: reason,
@@ -269,15 +326,24 @@ exports.main = async (event, context) => {
       // 编辑用户信息（仅超级管理员）
       case 'editUser': {
         if (!isSuperAdmin) {
-          return { error: '权限不足，需要超级管理员权限' }
+          return { success: false, error: '权限不足，需要超级管理员权限' }
         }
 
         const { openid, updates } = event
         if (!openid || !updates) {
-          return { error: '参数错误' }
+          return { success: false, error: '参数错误' }
         }
 
-        const allowedFields = ['nickName', 'province']
+        // 查询用户
+        const userRes = await db.collection('users').where({ _openid: openid }).get()
+        if (userRes.data.length === 0) {
+          return { success: false, error: '用户不存在' }
+        }
+        
+        const user = userRes.data[0]
+
+        // 允许编辑的字段
+        const allowedFields = ['nickName', 'province', 'gender', 'birthday', 'zodiac', 'zodiacAnimal', 'points', 'creditScore']
         const updateData = {}
 
         for (const key of allowedFields) {
@@ -287,12 +353,13 @@ exports.main = async (event, context) => {
         }
 
         if (Object.keys(updateData).length === 0) {
-          return { error: '没有可更新的字段' }
+          return { success: false, error: '没有可更新的字段' }
         }
 
         updateData.updateTime = db.serverDate()
 
-        await db.collection('users').where({ openid }).update({
+        // 使用 _id 精准更新
+        await db.collection('users').doc(user._id).update({
           data: updateData
         })
 
@@ -302,12 +369,12 @@ exports.main = async (event, context) => {
       // 编辑特产信息（仅超级管理员）
       case 'editProduct': {
         if (!isSuperAdmin) {
-          return { error: '权限不足，需要超级管理员权限' }
+          return { success: false, error: '权限不足，需要超级管理员权限' }
         }
 
         const { productId, updates } = event
         if (!productId || !updates) {
-          return { error: '参数错误' }
+          return { success: false, error: '参数错误' }
         }
 
         const allowedFields = ['name', 'description', 'province', 'city', 'category', 'valueRange', 'status']
@@ -320,7 +387,7 @@ exports.main = async (event, context) => {
         }
 
         if (Object.keys(updateData).length === 0) {
-          return { error: '没有可更新的字段' }
+          return { success: false, error: '没有可更新的字段' }
         }
 
         updateData.updatedAt = db.serverDate()
@@ -356,29 +423,50 @@ exports.main = async (event, context) => {
       // 获取神秘特产列表（仅超级管理员）
       case 'getMysteryProducts': {
         if (!isSuperAdmin) {
-          return { error: '权限不足，需要超级管理员权限' }
+          return { success: false, error: '权限不足，需要超级管理员权限' }
         }
         
-        const { page = 1, pageSize = 20 } = event
-        const res = await db.collection('products')
-          .where({ isMystery: true })
+        const { page = 1, pageSize = 20, filter = 'all' } = event
+        
+        let query = db.collection('products').where({ isMystery: true })
+        
+        // 筛选条件
+        if (filter !== 'all') {
+          query = query.where({ status: filter })
+        }
+
+        const res = await query
           .orderBy('_createTime', 'desc')
           .skip((page - 1) * pageSize)
           .limit(pageSize)
           .get()
 
-        return { list: res.data }
+        // 统计
+        const [totalCount, activeCount, inSwapCount] = await Promise.all([
+          db.collection('products').where({ isMystery: true }).count(),
+          db.collection('products').where({ isMystery: true, status: 'active' }).count(),
+          db.collection('products').where({ isMystery: true, status: 'in_swap' }).count()
+        ])
+
+        return { 
+          list: res.data,
+          stats: {
+            total: totalCount.total,
+            active: activeCount.total,
+            inSwap: inSwapCount.total
+          }
+        }
       }
 
       // 编辑神秘特产（仅超级管理员）
       case 'editMysteryProduct': {
         if (!isSuperAdmin) {
-          return { error: '权限不足，需要超级管理员权限' }
+          return { success: false, error: '权限不足，需要超级管理员权限' }
         }
         
         const { productId, updates } = event
         if (!productId) {
-          return { error: '缺少特产ID' }
+          return { success: false, error: '缺少特产ID' }
         }
         
         // 允许更新的字段
@@ -403,12 +491,12 @@ exports.main = async (event, context) => {
       // 删除神秘特产（仅超级管理员）
       case 'deleteMysteryProduct': {
         if (!isSuperAdmin) {
-          return { error: '权限不足，需要超级管理员权限' }
+          return { success: false, error: '权限不足，需要超级管理员权限' }
         }
         
         const { productId } = event
         if (!productId) {
-          return { error: '缺少特产ID' }
+          return { success: false, error: '缺少特产ID' }
         }
         
         await db.collection('products').doc(productId).remove()
@@ -418,7 +506,7 @@ exports.main = async (event, context) => {
 
       // 下架特产
       case 'banProduct': {
-        if (!isSuperAdmin) return { error: '权限不足，需要超级管理员权限' }
+        if (!isSuperAdmin) return { success: false, error: '权限不足，需要超级管理员权限' }
         const { productId } = event
         await db.collection('products').doc(productId).update({
           data: {
@@ -426,12 +514,12 @@ exports.main = async (event, context) => {
             bannedAt: db.serverDate()
           }
         })
-        return { success: true }
+        return { success: true, message: '已下架' }
       }
 
       // 上架特产
       case 'unbanProduct': {
-        if (!isSuperAdmin) return { error: '权限不足，需要超级管理员权限' }
+        if (!isSuperAdmin) return { success: false, error: '权限不足，需要超级管理员权限' }
         const { productId } = event
         await db.collection('products').doc(productId).update({
           data: {
@@ -444,8 +532,16 @@ exports.main = async (event, context) => {
 
       // 获取订单列表
       case 'getOrders': {
-        const { page = 1, pageSize = 20 } = event
-        const res = await db.collection('orders')
+        const { page = 1, pageSize = 20, filter = 'all' } = event
+        
+        let query = db.collection('orders')
+        
+        // 筛选条件
+        if (filter !== 'all') {
+          query = query.where({ status: filter })
+        }
+
+        const res = await query
           .orderBy('_createTime', 'desc')
           .skip((page - 1) * pageSize)
           .limit(pageSize)
@@ -456,23 +552,55 @@ exports.main = async (event, context) => {
           let orderData = { ...order }
 
           // 获取请求者信息
-          if (order.requesterId) {
+          if (order.requesterId || order.requesterOpenid || order._openid) {
             try {
-              const userRes = await db.collection('users').doc(order.requesterId).get()
-              orderData.requesterNick = userRes.data.nickName
+              const openid = order.requesterOpenid || order._openid
+              const userRes = await db.collection('users').where({
+                _openid: openid
+              }).field({ nickName: true, avatarUrl: true }).get()
+              if (userRes.data.length > 0) {
+                orderData.requesterNick = userRes.data[0].nickName
+                orderData.requesterAvatar = userRes.data[0].avatarUrl
+              }
+            } catch (e) {}
+          }
+
+          // 获取特产信息
+          if (order.productId) {
+            try {
+              const productRes = await db.collection('products').doc(order.productId).get()
+              if (productRes.data) {
+                orderData.productName = productRes.data.name
+                orderData.productCover = productRes.data.images && productRes.data.images[0] ? productRes.data.images[0] : ''
+                orderData.productProvince = productRes.data.province
+              }
             } catch (e) {}
           }
 
           return orderData
         }))
 
-        return { list }
+        // 获取订单统计
+        const [pendingCount, shippingCount, completedCount] = await Promise.all([
+          db.collection('orders').where({ status: _.in(['pending', 'confirmed']) }).count(),
+          db.collection('orders').where({ status: 'shipped' }).count(),
+          db.collection('orders').where({ status: 'completed' }).count()
+        ])
+
+        return { 
+          list,
+          stats: {
+            pending: pendingCount.total,
+            shipping: shippingCount.total,
+            completed: completedCount.total
+          }
+        }
       }
 
       // 强制完成订单（仅超级管理员）
       case 'forceCompleteOrder': {
         if (!isSuperAdmin) {
-          return { error: '权限不足，需要超级管理员权限' }
+          return { success: false, error: '权限不足，需要超级管理员权限' }
         }
         
         const { orderId } = event
@@ -488,7 +616,7 @@ exports.main = async (event, context) => {
       // 强制取消订单（仅超级管理员）
       case 'forceCancelOrder': {
         if (!isSuperAdmin) {
-          return { error: '权限不足，需要超级管理员权限' }
+          return { success: false, error: '权限不足，需要超级管理员权限' }
         }
         
         const { orderId } = event
@@ -541,7 +669,7 @@ exports.main = async (event, context) => {
       // 获取操作日志
       case 'getAdminLogs': {
         if (!isSuperAdmin) {
-          return { error: '权限不足，需要超级管理员权限' }
+          return { success: false, error: '权限不足，需要超级管理员权限' }
         }
         
         const { page = 1, pageSize = 50, type = '' } = event
@@ -667,11 +795,126 @@ exports.main = async (event, context) => {
         }
       }
 
+      // ========== 获取待审核产品列表 ==========
+      case 'getPendingProducts': {
+        try {
+          const { page = 1, pageSize = 20, filter = 'all' } = event
+          
+          let query = db.collection('products').where({ status: 'pending_review' })
+          
+          // 筛选条件
+          if (filter === 'auto') {
+            query = db.collection('products').where({
+              status: 'pending_review',
+              auditReason: _.neq('')
+            })
+          } else if (filter === 'manual') {
+            query = db.collection('products').where({
+              status: 'pending_review',
+              auditReason: ''
+            })
+          }
+
+          const res = await query
+            .orderBy('createTime', 'asc')
+            .skip((page - 1) * pageSize)
+            .limit(pageSize)
+            .get()
+
+          // 获取发布者信息
+          const openids = [...new Set(res.data.map(p => p.openid))]
+          const userMap = {}
+          if (openids.length > 0) {
+            const usersRes = await db.collection('users')
+              .where({ _openid: _.in(openids) })
+              .field({ _openid: true, nickName: true, avatarUrl: true })
+              .get()
+            for (const u of usersRes.data) {
+              userMap[u._openid] = u
+            }
+          }
+
+          const list = res.data.map(p => ({
+            ...p,
+            publisher: userMap[p.openid] || {}
+          }))
+
+          // 统计
+          const [autoBlockedCount, manualReviewCount] = await Promise.all([
+            db.collection('products').where({
+              status: 'pending_review',
+              auditReason: _.neq('')
+            }).count(),
+            db.collection('products').where({
+              status: 'pending_review',
+              auditReason: ''
+            }).count()
+          ])
+
+          return { 
+            success: true, 
+            list,
+            stats: {
+              autoBlocked: autoBlockedCount.total,
+              manualReview: manualReviewCount.total
+            }
+          }
+        } catch (e) {
+          return { success: false, error: e.message }
+        }
+      }
+
+      // ========== 审核通过 ==========
+      case 'approveProduct': {
+        try {
+          const { productId } = event
+          if (!productId) {
+            return { success: false, error: '缺少产品ID' }
+          }
+
+          await db.collection('products').doc(productId).update({
+            data: {
+              status: 'active',
+              auditReason: '',
+              auditTime: db.serverDate(),
+              auditor: wxContext.OPENID
+            }
+          })
+
+          return { success: true, message: '审核通过' }
+        } catch (e) {
+          return { success: false, error: e.message }
+        }
+      }
+
+      // ========== 审核拒绝 ==========
+      case 'rejectProduct': {
+        try {
+          const { productId, reason } = event
+          if (!productId) {
+            return { success: false, error: '缺少产品ID' }
+          }
+
+          await db.collection('products').doc(productId).update({
+            data: {
+              status: 'rejected',
+              auditReason: reason || '管理员审核拒绝',
+              auditTime: db.serverDate(),
+              auditor: wxContext.OPENID
+            }
+          })
+
+          return { success: true, message: '已拒绝' }
+        } catch (e) {
+          return { success: false, error: e.message }
+        }
+      }
+
       default:
-        return { error: '未知操作' }
+        return { success: false, error: '未知操作' }
     }
   } catch (e) {
     console.error('adminMgr error:', e)
-    return { error: e.message }
+    return { success: false, error: e.message }
   }
 }

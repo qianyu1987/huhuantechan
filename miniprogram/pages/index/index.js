@@ -1,12 +1,9 @@
 // pages/index/index.js
-const { PROVINCES, PRODUCT_CATEGORIES, VALUE_RANGES } = require('../../utils/constants')
+const { PROVINCES, PRODUCT_CATEGORIES, VALUE_RANGES, MYSTERY_EMOJIS } = require('../../utils/constants')
 const { callCloud, formatTime, getCreditLevel, formatValue, getProvinceByCode, processImageUrl } = require('../../utils/util')
 
 const PAGE_SIZE = 20
 const ALL_PRODUCTS_LIMIT = 500  // "全部"选项最多显示500条特产
-
-// 神秘特产emoji
-const MYSTERY_EMOJIS = ['🎁', '🎀', '🎄', '🎃', '🎉', '🎈', '🎎', '🎏', '🎑', '🎭']
 
 Page({
   data: {
@@ -71,16 +68,14 @@ Page({
     }
   },
 
-  // 绑定邀请关系
+  // 绑定邀请关系（支持重试）
   async bindInvite(inviteCode) {
     try {
-      const res = await wx.cloud.callFunction({
-        name: 'userInit',
-        data: {
-          action: 'bindInvite',
-          inviteCode: inviteCode
-        }
-      })
+      const app = getApp()
+      const res = await app.callCloudFunctionWithRetry('userInit', {
+        action: 'bindInvite',
+        inviteCode: inviteCode
+      }, 3)
 
       if (res.result && res.result.success) {
         wx.setStorageSync('boundInvite', inviteCode)
@@ -96,38 +91,41 @@ Page({
         }
       }
     } catch (e) {
-      console.error('绑定邀请失败', e)
+      console.warn('[Index] 绑定邀请失败（将在后续重试）:', e)
     }
   },
 
-  // 检查云开发状态
+  // 检查云开发状态（异步、不阻塞用户操作）
   checkCloudStatus() {
     if (!wx.cloud) {
-      wx.showModal({
-        title: '提示',
-        content: '当前微信版本过低，无法使用云开发',
-        showCancel: false
-      })
+      console.error('[Index] wx.cloud 不可用')
       return
     }
     
     // 检查云开发环境
     const envId = getApp().globalData.envId
-    console.log('[Index] 云开发环境ID:', envId)
+    const platform = getApp().globalData.platform || 'weixin'
+    console.log('[Index] 云开发环境ID:', envId, ', 平台:', platform)
     
-    // 测试云函数连通性
+    // 异步测试云函数连通性（不显示错误弹窗，仅用于日志诊断）
     wx.cloud.callFunction({
       name: 'testConnect',
-      data: {}
+      data: {},
+      timeout: 10000  // 设置超时10秒
     }).then(res => {
-      console.log('[Index] 云函数连通性测试:', res.result)
+      console.log('[Index] 云函数连通性测试成功:', res.result)
     }).catch(err => {
-      console.error('[Index] 云函数连通性测试失败:', err)
-      wx.showModal({
-        title: '提示',
-        content: '云函数连接失败，请确保已部署云函数\n错误: ' + (err.errMsg || '未知错误'),
-        showCancel: false
+      // 仅记录错误日志，不显示弹窗（特别是在 HarmonyOS 环境下可能失败）
+      console.warn('[Index] 云函数连通性测试失败（这在某些平台是正常的）:', {
+        errCode: err.errCode,
+        errMsg: err.errMsg,
+        platform: platform
       })
+      
+      // 如果是 HarmonyOS，记录为预期行为
+      if (platform === 'harmony') {
+        console.log('[Index] HarmonyOS 多端开发环境，云函数调用可能有延迟，将在后续操作时自动重试')
+      }
     })
   },
 
@@ -230,9 +228,9 @@ Page({
     const wantCat = PRODUCT_CATEGORIES.find(c => c.id === item.wantCategory)
 
     const isMystery = item.isMystery || false
-    const provinceName = province ? province.name : item.province || '神秘'
+    const provinceName = province ? province.name : item.province || '惊喜'
 
-    // 神秘特产：使用彩色渐变卡片
+    // 惊喜特产：使用彩色渐变卡片
     if (isMystery) {
       // 根据省份生成稳定的颜色和emoji
       const code = provinceName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
@@ -242,7 +240,7 @@ Page({
       return {
         ...item,
         isMystery: true,
-        name: '神秘特产',
+        name: '惊喜特产',
         desc: '',
         category: '',
         wantCategory: '',
@@ -255,7 +253,7 @@ Page({
         timeLabel: '',
         valueLabel: valueRange ? valueRange.label : '',
         wantLabel: '',
-        // 神秘特产专属属性
+        // 惊喜特产专属属性
         colorClass: colors[code % colors.length],
         emoji: MYSTERY_EMOJIS[code % MYSTERY_EMOJIS.length]
       }

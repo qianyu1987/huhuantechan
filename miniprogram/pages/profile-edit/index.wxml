@@ -1,64 +1,177 @@
-<view class="container">
+<!-- pages/profile-edit/index.wxml - 个人资料编辑 iOS 26深色玻璃风格 -->
+<view class="profile-edit-page">
+
+  <!-- 头部 -->
+  <view class="header">
+    <text class="header-title">编辑资料</text>
+    <text class="header-sub">完善个人资料，展示更好的自己</text>
+  </view>
+
   <!-- 头像 -->
-  <view class="avatar-section" bindtap="chooseAvatar">
-    <text class="section-label">头像</text>
-    <view class="avatar-wrapper">
-      <view class="avatar-placeholder" wx:if="{{!avatarUrl}}">
-        <text class="iconfont icon-user"></text>
+  <view class="avatar-section">
+    <view class="avatar-wrap" bindtap="changeAvatar">
+      <image class="avatar-img" src="{{profile.avatarUrl || defaultAvatar}}" mode="aspectFill"/>
+      <view class="avatar-edit-icon">📷</view>
+    </view>
+    <text class="avatar-tip">点击更换头像</text>
+  </view>
+
+  <!-- 基本信息卡片 -->
+  <view class="card">
+    <view class="card-title">👤 基本信息</view>
+    
+    <!-- 昵称 -->
+    <view class="field-row">
+      <text class="field-label">昵称</text>
+      <input class="field-input" placeholder="请输入昵称" value="{{profile.nickName}}" bindinput="onNicknameInput" maxlength="20"/>
+    </view>
+
+    <!-- 性别 -->
+    <view class="field-row">
+      <text class="field-label">性别</text>
+      <view class="gender-options">
+        <view 
+          class="gender-btn {{profile.gender === 'male' ? 'active' : ''}}"
+          bindtap="selectGender" data-gender="male"
+        >👨 男</view>
+        <view 
+          class="gender-btn {{profile.gender === 'female' ? 'active' : ''}}"
+          bindtap="selectGender" data-gender="female"
+        >👩 女</view>
+        <view 
+          class="gender-btn {{!profile.gender ? 'active' : ''}}"
+          bindtap="selectGender" data-gender=""
+        >🆕 保密</view>
       </view>
-      <image wx:else class="avatar" src="{{avatarUrl}}" mode="aspectFill"/>
-      <text class="avatar-tip">点击更换</text>
     </view>
   </view>
 
-  <!-- 昵称 -->
-  <view class="form-section">
-    <view class="form-item">
-      <text class="form-label">昵称</text>
-      <input class="form-input" placeholder="请输入昵称" value="{{nickName}}" bindinput="onNickNameInput" maxlength="20"/>
+  <!-- 详细信息卡片 -->
+  <view class="card detail-card">
+    <view class="card-title">
+      <text>详细信息</text>
+      <text class="card-tip" wx:if="{{!isProfileLocked}}">只能设置一次</text>
+      <text class="card-tip card-tip-locked" wx:else>已锁定</text>
     </view>
-  </view>
 
-  <!-- 家乡 -->
-  <view class="form-section">
-    <view class="form-item" bindtap="selectProvince">
-      <text class="form-label">家乡</text>
-      <view class="form-value {{provinceName ? '' : 'placeholder'}}">
-        {{provinceName || '请选择家乡'}}
-        <text wx:if="{{hasProvince}}" class="locked-tip">（已锁定）</text>
+    <!-- 生日选择 - 重点突出 -->
+    <picker mode="date" value="{{profile.birthday || '2000-01-01'}}" start="1950-01-01" end="2025-12-31" bindchange="onBirthdayChange">
+      <view class="birthday-section {{isProfileLocked ? 'locked' : ''}}">
+        <view class="birthday-icon">🎂</view>
+        <view class="birthday-info">
+          <view class="birthday-label">{{isProfileLocked ? '生日' : '选择生日'}}</view>
+          <view class="birthday-value">{{profile.birthday || '点击设置你的生日'}}</view>
+        </view>
+        <view class="birthday-arrow" wx:if="{{!isProfileLocked}}">›</view>
+        <view class="birthday-lock" wx:else>🔒</view>
       </view>
+    </picker>
+
+    <!-- 省份选择 -->
+    <view class="province-section {{originalProfile.province ? 'locked selected' : ''}}" bindtap="onProvinceTap">
+      <!-- 已选择：显示省份徽章 -->
+      <block wx:if="{{originalProfile.province && provinceIndex >= 0}}">
+        <view class="province-badge" style="background: linear-gradient(135deg, {{provinces[provinceIndex].color || '#34C759'}} 0%, {{provinces[provinceIndex].colorDark || '#30B94D'}} 100%);">
+          <text class="province-badge-code">{{provinces[provinceIndex].shortName || provinces[provinceIndex].name}}</text>
+        </view>
+        <view class="province-info selected">
+          <view class="province-label">所在省份</view>
+          <view class="province-value-wrapper">
+            <text class="province-value-text">{{provinces[provinceIndex].name}}</text>
+            <view class="province-locked-tag">
+              <text class="province-lock-icon">🔒</text>
+              <text class="province-lock-text">已锁定</text>
+            </view>
+          </view>
+        </view>
+      </block>
+      <!-- 未选择：显示选择提示 -->
+      <block wx:else>
+        <view class="province-icon">📍</view>
+        <view class="province-info">
+          <view class="province-label">选择省份</view>
+          <view class="province-value">
+            <text class="{{provinceIndex >= 0 ? '' : 'placeholder'}}">
+              {{provinceIndex >= 0 ? provinces[provinceIndex].name : '点击选择你的省份'}}
+            </text>
+          </view>
+        </view>
+        <view class="province-arrow">›</view>
+      </block>
     </view>
-    <view class="form-tip" wx:if="{{hasProvince}}">
-      * 家乡设置后无法修改
-    </view>
-    <view class="form-tip" wx:else>
-      * 选择后无法修改，请谨慎选择
+
+    <!-- 属相/星座/年龄 - 横向卡片组 -->
+    <view class="zodiac-cards" wx:if="{{zodiacAnimal.name || zodiac.name || age > 0}}">
+      <!-- 属相卡片 -->
+      <view class="zodiac-card" wx:if="{{zodiacAnimal.name}}">
+        <view class="zodiac-emoji">{{zodiacAnimal.emoji}}</view>
+        <view class="zodiac-name">{{zodiacAnimal.name}}</view>
+        <view class="zodiac-label">属相</view>
+      </view>
+
+      <!-- 星座卡片 -->
+      <view class="zodiac-card" wx:if="{{zodiac.name}}">
+        <view class="zodiac-emoji">{{zodiac.emoji}}</view>
+        <view class="zodiac-name">{{zodiac.name}}</view>
+        <view class="zodiac-label">星座</view>
+      </view>
+
+      <!-- 年龄卡片 -->
+      <view class="zodiac-card age-card" wx:if="{{age > 0}}">
+        <view class="zodiac-emoji">📅</view>
+        <view class="zodiac-name">{{age}}</view>
+        <view class="zodiac-label">周岁</view>
+      </view>
     </view>
   </view>
 
   <!-- 保存按钮 -->
   <view class="save-section">
-    <button class="save-btn" bindtap="saveProfile">保存</button>
+    <view class="save-btn" bindtap="saveProfile">保存</view>
   </view>
 
-  <!-- 省份选择弹窗 -->
-  <view wx:if="{{showProvincePicker}}" class="modal-mask" bindtap="cancelProvince">
-    <view class="modal-content" catchtap="preventBubble">
-      <view class="modal-header">
-        <text class="modal-title">选择家乡</text>
-        <text class="modal-close" bindtap="cancelProvince">×</text>
-      </view>
-      <view class="modal-body">
-        <picker mode="selector" range="{{provinces}}" range-key="name" value="{{provinceIndex}}" bindchange="onProvinceChange">
-          <view class="province-picker">
-            点击选择省份
-          </view>
-        </picker>
-      </view>
-      <view class="modal-footer">
-        <button class="btn btn-default" bindtap="cancelProvince">取消</button>
-        <button class="btn btn-primary" bindtap="confirmProvince">确认</button>
+</view>
+
+<!-- 省份选择弹窗 -->
+<view class="province-modal {{showProvinceModal ? 'show' : ''}}" catchtouchmove="preventTouchMove">
+  <view class="province-modal-mask" bindtap="closeProvinceModal"></view>
+  <view class="province-modal-content">
+    <view class="province-modal-header">
+      <text class="province-modal-title">选择省份</text>
+      <view class="province-modal-close" bindtap="closeProvinceModal">✕</view>
+    </view>
+    
+    <!-- 热门省份 -->
+    <view class="province-hot">
+      <view class="province-hot-title">热门</view>
+      <view class="province-hot-grid">
+        <view 
+          class="province-hot-item {{profile.province === item.code ? 'active' : ''}}" 
+          wx:for="{{hotProvinces}}" 
+          wx:key="code"
+          bindtap="selectProvince"
+          data-code="{{item.code}}"
+          data-index="{{item.index}}"
+        >{{item.name}}</view>
       </view>
     </view>
+    
+    <!-- 全部省份列表 -->
+    <scroll-view class="province-list" scroll-y>
+      <view class="province-group" wx:for="{{provinceGroups}}" wx:for-item="group" wx:key="letter">
+        <view class="province-group-letter">{{group.letter}}</view>
+        <view class="province-group-items">
+          <view 
+            class="province-item {{profile.province === item.code ? 'active' : ''}}" 
+            wx:for="{{group.provinces}}" 
+            wx:for-item="item"
+            wx:key="code"
+            bindtap="selectProvince"
+            data-code="{{item.code}}"
+            data-index="{{item.index}}"
+          >{{item.name}}</view>
+        </view>
+      </view>
+    </scroll-view>
   </view>
 </view>

@@ -1,8 +1,6 @@
 // pages/match/index.js
-const { PROVINCES, PRODUCT_CATEGORIES, VALUE_RANGES } = require('../../utils/constants')
+const { PROVINCES, PRODUCT_CATEGORIES, VALUE_RANGES, MYSTERY_EMOJIS } = require('../../utils/constants')
 const { callCloud, formatTime, getCreditLevel, getProvinceByCode, toast, processImageUrl, getTempUrls } = require('../../utils/util')
-
-const MYSTERY_EMOJIS = ['🎁', '🎀', '🎄', '🎃', '🎉', '🎈', '🎎', '🎏', '🎑', '🎭']
 
 Page({
   data: {
@@ -51,7 +49,7 @@ Page({
           return {
             ...item,
             isMystery: true,
-            name: '神秘特产',
+            name: '惊喜特产',
             coverUrl: '',
             provinceName,
             provinceColor: province ? province.color : '#999',

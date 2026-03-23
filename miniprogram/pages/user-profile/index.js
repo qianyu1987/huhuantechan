@@ -1,8 +1,6 @@
 // pages/user-profile/index.js
-const { PROVINCES } = require('../../utils/constants')
+const { PROVINCES, MYSTERY_EMOJIS } = require('../../utils/constants')
 const { callCloud, formatTime, formatValue, getCreditLevel, getProvinceByCode, getProvinceByName, toast, processImageUrl } = require('../../utils/util')
-
-const MYSTERY_EMOJIS = ['🎁', '🎀', '🎄', '🎃', '🎉', '🎈', '🎎', '🎏', '🎑', '🎭']
 
 const STATUS_MAP = {
   active: { label: '可换', cls: 'status-active' },
@@ -27,7 +25,8 @@ Page({
   },
 
   onLoad(options) {
-    const { openid } = options
+    // 兼容 openid 和 _openid 两种参数名
+    const openid = options.openid || options._openid
     if (!openid) {
       toast('参数错误')
       setTimeout(() => wx.navigateBack(), 1500)

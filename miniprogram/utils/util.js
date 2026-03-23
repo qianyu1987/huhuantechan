@@ -253,15 +253,99 @@ function hideLoading() {
 }
 
 /**
- * 调用云函数（含错误处理）
+ * 调用云函数（含重试机制和多端兼容）
+ * 支持 HarmonyOS 多端开发环境
  */
-async function callCloud(name, data = {}) {
+async function callCloud(name, data = {}, maxRetries = 3) {
+  let lastError = null
+  
+  for (let retryCount = 0; retryCount < maxRetries; retryCount++) {
+    try {
+      const res = await wx.cloud.callFunction({ 
+        name, 
+        data,
+        timeout: 15000  // HarmonyOS 可能需要更长的超时时间
+      })
+      return res.result
+    } catch (e) {
+      lastError = e
+      
+      // 记录错误日志
+      const errInfo = {
+        funcName: name,
+        retry: retryCount + 1,
+        maxRetries,
+        errCode: e.errCode,
+        errMsg: e.errMsg || e.message
+      }
+      
+      // 只在最后一次或非可重试错误时输出错误日志
+      if (retryCount === maxRetries - 1 || !isRetryableError(e.errCode)) {
+        console.error(`[cloud:${name}] 调用失败 (重试${retryCount + 1}/${maxRetries}):`, errInfo)
+      } else {
+        console.warn(`[cloud:${name}] 调用失败，将重试 (${retryCount + 1}/${maxRetries}):`, errInfo)
+      }
+      
+      // 如果不是可重试的错误，直接抛出
+      if (!isRetryableError(e.errCode)) {
+        throw e
+      }
+      
+      // 如果已经是最后一次重试，抛出错误
+      if (retryCount === maxRetries - 1) {
+        throw e
+      }
+      
+      // 指数退避：延迟一段时间后重试
+      const delayMs = Math.min(1000 * (retryCount + 1), 5000)
+      await new Promise(resolve => setTimeout(resolve, delayMs))
+    }
+  }
+  
+  throw lastError
+}
+
+/**
+ * 判断错误是否可以重试
+ * HarmonyOS 特定错误码：
+ * - -601002: 云函数环境错误（可重试）
+ * - -1: 网络错误或超时（可重试）
+ */
+function isRetryableError(errCode) {
+  return errCode === -601002 || errCode === -1 || errCode === 'INTERNAL_ERROR'
+}
+
+/**
+ * 从用户数据对象中安全获取 openid
+ * 兼容 openid 和 _openid 两种字段名
+ * @param {Object} userData - 用户数据对象
+ * @returns {string|null} - 返回 openid 或 null
+ */
+function getOpenid(userData) {
+  if (!userData) return null
+  return userData.openid || userData._openid || null
+}
+
+/**
+ * 获取当前用户的 openid
+ * 优先从 globalData 获取，否则调用云函数
+ * @returns {Promise<string|null>} - 返回 openid 或 null
+ */
+async function getCurrentOpenid() {
+  const app = getApp()
+  if (app.globalData.openid) {
+    return app.globalData.openid
+  }
   try {
-    const res = await wx.cloud.callFunction({ name, data })
-    return res.result
+    const res = await callCloud('userInit', {})
+    const openid = res.openid || res._openid
+    if (openid) {
+      app.globalData.openid = openid
+    }
+    return openid
   } catch (e) {
-    console.error(`[cloud:${name}]`, e)
-    throw e
+    console.error('[getCurrentOpenid] 获取 openid 失败', e)
+    return null
   }
 }
 
@@ -281,5 +365,7 @@ module.exports = {
   toast,
   showLoading,
   hideLoading,
-  callCloud
+  callCloud,
+  getOpenid,
+  getCurrentOpenid
 }

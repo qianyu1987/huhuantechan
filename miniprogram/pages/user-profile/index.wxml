@@ -14,7 +14,12 @@
       <view class="hero-content">
         <image class="hero-avatar" src="{{profile.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill" bindtap="previewAvatar"/>
         <view class="hero-info">
-          <view class="hero-name">{{profile.nickName || '特产达人'}}</view>
+          <view class="hero-name-row">
+            <text class="hero-name">{{profile.nickName || '特产达人'}}</text>
+            <view class="hero-gender {{profile.gender === 'male' ? 'gender-male' : (profile.gender === 'female' ? 'gender-female' : '')}}" wx:if="{{profile.gender}}">
+              {{profile.gender === 'male' ? '👨' : (profile.gender === 'female' ? '👩' : '')}}
+            </view>
+          </view>
           <view class="hero-meta">
             <text class="hero-loc" wx:if="{{profile.provinceName}}">📍 {{profile.provinceName}}</text>
             <text class="hero-dot" wx:if="{{profile.provinceName}}">·</text>

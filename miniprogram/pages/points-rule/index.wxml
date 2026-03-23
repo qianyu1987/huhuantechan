@@ -1,0 +1,107 @@
+<!-- pages/points-rule/index.wxml - 积分规则 iOS风格 -->
+<view class="points-rule-page">
+  <!-- 头部 -->
+  <view class="header">
+    <view class="header-content">
+      <text class="header-title">积分规则</text>
+      <text class="header-subtitle">了解如何获取和使用积分</text>
+    </view>
+  </view>
+
+  <!-- 当前积分卡片 -->
+  <view class="current-points-card">
+    <view class="points-icon">💰</view>
+    <view class="points-info">
+      <text class="points-label">当前积分</text>
+      <text class="points-value">{{points}}</text>
+    </view>
+  </view>
+
+  <!-- 获得积分 -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-icon earn-icon">➕</text>
+      <text class="section-title">获得积分</text>
+    </view>
+    <view class="rule-list">
+      <view class="rule-item">
+        <view class="rule-left">
+          <text class="rule-name">新用户注册</text>
+        </view>
+        <view class="rule-right earn">
+          <text class="rule-points">+50</text>
+        </view>
+      </view>
+      <view class="rule-item">
+        <view class="rule-left">
+          <text class="rule-name">邀请好友注册</text>
+        </view>
+        <view class="rule-right earn">
+          <text class="rule-points">+10</text>
+        </view>
+      </view>
+      <view class="rule-item">
+        <view class="rule-left">
+          <text class="rule-name">首次互换成功</text>
+        </view>
+        <view class="rule-right earn">
+          <text class="rule-points">+20</text>
+        </view>
+      </view>
+      <view class="rule-item">
+        <view class="rule-left">
+          <text class="rule-name">完成互换</text>
+        </view>
+        <view class="rule-right earn">
+          <text class="rule-points">+10</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 消耗积分 -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-icon cost-icon">➖</text>
+      <text class="section-title">消耗积分</text>
+    </view>
+    <view class="rule-list">
+      <view class="rule-item">
+        <view class="rule-left">
+          <text class="rule-name">发布普通特产</text>
+        </view>
+        <view class="rule-right cost">
+          <text class="rule-points">-5</text>
+        </view>
+      </view>
+      <view class="rule-item">
+        <view class="rule-left">
+          <text class="rule-name">发布神秘特产</text>
+        </view>
+        <view class="rule-right cost">
+          <text class="rule-points">-10</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 温馨提示 -->
+  <view class="tips-card">
+    <view class="tips-icon">💡</view>
+    <view class="tips-content">
+      <text class="tips-title">温馨提示</text>
+      <text class="tips-text">• 积分不足时无法发布特产</text>
+      <text class="tips-text">• 发布后审核不通过不退还积分</text>
+      <text class="tips-text">• 邀请好友注册后双方各得10积分</text>
+    </view>
+  </view>
+
+  <!-- 底部按钮 -->
+  <view class="bottom-action">
+    <view class="action-btn" bindtap="goInvite">
+      <text class="action-btn-icon">🎁</text>
+      <text class="action-btn-text">邀请好友赚积分</text>
+    </view>
+  </view>
+</view>
+

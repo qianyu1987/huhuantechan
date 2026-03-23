@@ -17,7 +17,8 @@ Page({
       wantCity: '',
       wantDistrict: '',
       wantCategory: '',
-      isMystery: false
+      isMystery: false,
+      gender: ''  // 性别: 'male' | 'female'
     },
     region: [],
     wantRegion: [],
@@ -185,6 +186,11 @@ Page({
     this.setData({ 'form.valueRange': e.currentTarget.dataset.id })
   },
 
+  // 选择性别
+  selectGender(e) {
+    this.setData({ 'form.gender': e.currentTarget.dataset.gender })
+  },
+
   selectWantCategory(e) {
     this.setData({ 'form.wantCategory': e.currentTarget.dataset.id })
   },
@@ -225,6 +231,7 @@ Page({
 
     if (form.isMystery) {
       if (!form.province) { toast('请选择特产产地'); return false }
+      if (!form.gender) { toast('请选择你的性别'); return false }
       return true
     }
 
@@ -233,6 +240,7 @@ Page({
     if (!form.province) { toast('请选择特产产地'); return false }
     if (!form.category) { toast('请选择品类'); return false }
     if (!form.valueRange) { toast('请选择估值区间'); return false }
+    if (!form.gender) { toast('请选择你的性别'); return false }
     return true
   },
 
@@ -240,6 +248,30 @@ Page({
   async submit() {
     if (!this.validate()) return
     if (this.data.submitting) return
+
+    // 发布前检查积分
+    if (!this.data.isEdit) {
+      const app = getApp()
+      const isMystery = this.data.form.isMystery
+      const requiredPoints = isMystery ? 10 : 5
+      const currentPoints = app.globalData.points || 0
+      
+      console.log('[publish] 发布前积分检查:', {
+        currentPoints,
+        requiredPoints,
+        isMystery
+      })
+      
+      if (currentPoints < requiredPoints) {
+        wx.showModal({
+          title: '积分不足',
+          content: `发布${isMystery ? '神秘特产' : '特产'}需要${requiredPoints}积分，当前积分${currentPoints}。可通过互换特产或邀请好友获得积分。`,
+          showCancel: false,
+          confirmText: '知道了'
+        })
+        return
+      }
+    }
 
     this.setData({ submitting: true })
     const isEdit = this.data.isEdit
@@ -289,9 +321,23 @@ Page({
 
       const res = await callCloud('productMgr', payload)
 
+      hideLoading()
+
+      // 积分不足提示
+      if (!res.success && res.message && res.message.includes('积分不足')) {
+        wx.showModal({
+          title: '积分不足',
+          content: res.message + '，可通过互换特产或邀请好友获得积分',
+          showCancel: false,
+          confirmText: '知道了'
+        })
+        return
+      }
+
       if (res && res.success) {
-        hideLoading()
-        toast(isEdit ? '保存成功！' : '发布成功！', 'success')
+        const isPending = !res.auditPass
+        const toastMsg = isPending ? '已提交，系统审核中' : (isEdit ? '保存成功！' : '发布成功！')
+        toast(toastMsg, isPending ? 'none' : 'success')
 
         setTimeout(() => {
           if (isEdit) {
@@ -299,6 +345,13 @@ Page({
           } else {
             const productId = res.productId
             const isMystery = this.data.form.isMystery
+            
+            // 审核中或审核不通过的产品不跳转详情页
+            if (isPending) {
+              wx.reLaunch({ url: '/pages/my-products/index' })
+              return
+            }
+            
             this.setData({
               images: [],
               form: {

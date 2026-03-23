@@ -3,6 +3,7 @@
   "navigationBarBackgroundColor": "#000000",
   "navigationBarTextStyle": "white",
   "usingComponents": {
-    "tab-bar": "/components/tab-bar/tab-bar"
+    "tab-bar": "/components/tab-bar/tab-bar",
+    "phone-verify": "/components/phone-verify/index"
   }
 }

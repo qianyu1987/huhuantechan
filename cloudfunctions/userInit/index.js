@@ -4,6 +4,56 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
+// 计算属相和星座
+function calculateZodiacInfo(birthday) {
+  const date = new Date(birthday)
+  if (isNaN(date.getTime())) return { zodiac: '', zodiacAnimal: '' }
+
+  const year = date.getFullYear()
+  const month = date.getMonth() + 1
+  const day = date.getDate()
+
+  // 属相（以2020年鼠年为基准，需要处理负数取模）
+  const zodiacAnimals = [
+    { name: '鼠', emoji: '🐭' },
+    { name: '牛', emoji: '🐂' },
+    { name: '虎', emoji: '🐅' },
+    { name: '兔', emoji: '🐇' },
+    { name: '龙', emoji: '🐉' },
+    { name: '蛇', emoji: '🐍' },
+    { name: '马', emoji: '🐎' },
+    { name: '羊', emoji: '🐏' },
+    { name: '猴', emoji: '🐵' },
+    { name: '鸡', emoji: '🐔' },
+    { name: '狗', emoji: '🐕' },
+    { name: '猪', emoji: '🐷' }
+  ]
+  // 正确处理负数取模：((year - 2020) % 12 + 12) % 12
+  const zodiacIndex = ((year - 2020) % 12 + 12) % 12
+  const zodiacAnimal = zodiacAnimals[zodiacIndex]
+  const zodiacAnimalStr = `${zodiacAnimal.emoji}${zodiacAnimal.name}`
+
+  // 星座
+  let zodiac = ''
+  let zodiacEmoji = ''
+  if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) { zodiac = '白羊座'; zodiacEmoji = '♈' }
+  else if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) { zodiac = '金牛座'; zodiacEmoji = '♉' }
+  else if ((month === 5 && day >= 21) || (month === 6 && day <= 21)) { zodiac = '双子座'; zodiacEmoji = '♊' }
+  else if ((month === 6 && day >= 22) || (month === 7 && day <= 22)) { zodiac = '巨蟹座'; zodiacEmoji = '♋' }
+  else if ((month === 7 && day >= 23) || (month === 8 && day <= 22)) { zodiac = '狮子座'; zodiacEmoji = '♌' }
+  else if ((month === 8 && day >= 23) || (month === 9 && day <= 22)) { zodiac = '处女座'; zodiacEmoji = '♍' }
+  else if ((month === 9 && day >= 23) || (month === 10 && day <= 23)) { zodiac = '天秤座'; zodiacEmoji = '♎' }
+  else if ((month === 10 && day >= 24) || (month === 11 && day <= 22)) { zodiac = '天蝎座'; zodiacEmoji = '♏' }
+  else if ((month === 11 && day >= 23) || (month === 12 && day <= 21)) { zodiac = '射手座'; zodiacEmoji = '♐' }
+  else if ((month === 12 && day >= 22) || (month === 1 && day <= 19)) { zodiac = '摩羯座'; zodiacEmoji = '♑' }
+  else if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) { zodiac = '水瓶座'; zodiacEmoji = '♒' }
+  else { zodiac = '双鱼座'; zodiacEmoji = '♓' }
+
+  const zodiacStr = `${zodiacEmoji}${zodiac}`
+
+  return { zodiac: zodiacStr, zodiacAnimal: zodiacAnimalStr }
+}
+
 // 将 cloud:// fileID 转为 https 临时链接
 async function resolveCloudUrl(url) {
   if (!url || !url.startsWith('cloud://')) return url
@@ -52,70 +102,177 @@ async function ensureAddressesCollection() {
   }
 }
 
+// 确保 phone_verify_temp 集合存在
+async function ensurePhoneVerifyCollection() {
+  try {
+    // 尝试获取集合信息，如果不存在会报错
+    await db.collection('phone_verify_temp').count()
+  } catch (e) {
+    // 集合不存在，尝试创建一个空文档来创建集合
+    if (e.message && e.message.includes('collection not exist')) {
+      try {
+        const initRes = await db.collection('phone_verify_temp').add({
+          data: {
+            _openid: 'system_init',
+            verifyId: '_init_',
+            phoneNumber: '00000000000',
+            code: '000000',
+            createTime: db.serverDate(),
+            expireAt: new Date(Date.now() + 5 * 60 * 1000) // 5分钟后过期
+          }
+        })
+        // 删除这条初始化记录
+        await db.collection('phone_verify_temp').doc(initRes._id).remove()
+        console.log('phone_verify_temp 集合创建成功')
+      } catch (addErr) {
+        console.log('创建 phone_verify_temp 集合失败:', addErr)
+      }
+    }
+  }
+}
+
 exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
   const openid = wxContext.OPENID
+  const unionid = wxContext.UNIONID // 多端统一标识
 
   const action = event.action || 'init'
 
   // ========== 初始化/获取用户 ==========
   if (action === 'init') {
     try {
-      // 查询用户（支持重装后 openid 丢失的情况）
-      let userRes = await db.collection('users').where({ openid }).get()
-      let userData = userRes.data && userRes.data[0]
-
+      console.log('[userInit] 平台信息:', {
+        openid,
+        unionid,
+        platform: wxContext.PLATFORM,
+        source: wxContext.SOURCE
+      })
+      
+      // 尝试多种方式查询用户
+      let userData = null
+      
+      // 优先用 UNIONID 查询（多端统一）
+      if (unionid) {
+        const unionRes = await db.collection('users').where({ unionid: unionid }).get()
+        userData = unionRes.data && unionRes.data[0]
+        console.log('[userInit] UNIONID 查询结果:', userData ? '找到' : '未找到')
+      }
+      
+      // 如果没有 UNIONID 或未找到，尝试用 _openid
       if (!userData) {
-        userRes = await db.collection('users').where({ _openid: openid }).get()
-        userData = userRes.data && userRes.data[0]
+        const openRes = await db.collection('users').where({ _openid: openid }).get()
+        userData = openRes.data && openRes.data[0]
+        console.log('[userInit] _openid 查询结果:', userData ? '找到' : '未找到')
+      }
+      
+      // 最后尝试用 openid 字段（兼容旧数据）
+      if (!userData) {
+        const oldRes = await db.collection('users').where({ openid: openid }).get()
+        userData = oldRes.data && oldRes.data[0]
+        console.log('[userInit] openid 字段查询结果:', userData ? '找到' : '未找到')
       }
 
       if (!userData) {
         // 新用户，创建记录
+        const NEW_USER_POINTS = 50
+        
         await db.collection('users').add({
           data: {
-            openid,
+            // 多端统一标识
+            unionid: unionid || '', // 存储 UNIONID 用于跨平台识别
+            // 不需要手动存储 openid，云数据库会自动添加 _openid
             nickName: '',
             avatarUrl: '',
             province: '',
             creditScore: 100,
             publishCount: 0,
             swapCount: 0,
+            points: NEW_USER_POINTS,
             provincesBadges: [],
             createTime: db.serverDate(),
             updateTime: db.serverDate()
           }
         })
+        
+        // 记录积分变动
+        await db.collection('points_log').add({
+          data: {
+            _openid: openid,
+            type: 'signup',
+            amount: NEW_USER_POINTS,
+            desc: '新用户注册奖励',
+            createTime: db.serverDate()
+          }
+        })
+        
+        // 重新获取用户数据
         const newUserRes = await db.collection('users').where({ _openid: openid }).get()
         userData = newUserRes.data && newUserRes.data[0]
+        console.log('[userInit] 创建新用户成功')
+      } else {
+        // 如果用户存在但没有 unionid，补充 unionid
+        if (unionid && !userData.unionid) {
+          await db.collection('users').doc(userData._id).update({
+            data: { unionid: unionid }
+          })
+          console.log('[userInit] 已补充 unionid')
+        }
       }
+
+      // 不再转换 cloud:// 为临时链接，直接返回原始链接
+      // 前端展示时由 WXML 处理（小程序 image 组件支持 cloud://）
+      const avatarUrl = userData.avatarUrl || ''
+      
+      console.log('[init] 用户数据:', {
+        _id: userData._id,
+        phoneNumber: userData.phoneNumber,
+        phoneVerified: userData.phoneVerified
+      })
 
       return {
         success: true,
         openid,
         userInfo: {
           nickName: userData.nickName || '',
-          avatarUrl: userData.avatarUrl || ''
+          avatarUrl: avatarUrl
         },
         creditScore: userData.creditScore || 100,
         province: userData.province || '',
-        provincesBadges: userData.provincesBadges || []
+        provincesBadges: userData.provincesBadges || [],
+        points: userData.points || 0,
+        // 手机号验证状态
+        phoneNumber: userData.phoneNumber || '',
+        phoneVerified: userData.phoneVerified || false
       }
     } catch (e) {
       return { success: false, error: e.message }
     }
   }
 
-  // ========== 更新资料 ==========
+  // ========== 更新资料(mine页面头像+昵称) ==========
   if (action === 'updateProfile') {
     try {
-      // 获取当前用户信息，检查是否已有家乡（支持重装后 openid 丢失的情况）
-      let currentUserRes = await db.collection('users').where({ openid }).get()
-      let currentUser = currentUserRes.data && currentUserRes.data[0]
-
+      const unionid = wxContext.UNIONID
+      
+      // 尝试多种方式查询用户
+      let currentUser = null
+      
+      // 优先用 UNIONID
+      if (unionid) {
+        const unionRes = await db.collection('users').where({ unionid: unionid }).get()
+        currentUser = unionRes.data && unionRes.data[0]
+      }
+      
+      // 如果没有 UNIONID 或未找到，尝试用 _openid
       if (!currentUser) {
-        currentUserRes = await db.collection('users').where({ _openid: openid }).get()
-        currentUser = currentUserRes.data && currentUserRes.data[0]
+        const openRes = await db.collection('users').where({ _openid: openid }).get()
+        currentUser = openRes.data && openRes.data[0]
+      }
+      
+      // 最后尝试用 openid 字段
+      if (!currentUser) {
+        const oldRes = await db.collection('users').where({ openid: openid }).get()
+        currentUser = oldRes.data && oldRes.data[0]
       }
 
       if (!currentUser) {
@@ -123,18 +280,21 @@ exports.main = async (event, context) => {
       }
       const currentProvince = currentUser.province
 
-      // 构建更新数据
-      const updateData = {
-        nickName: event.nickName !== undefined ? event.nickName : currentUser.nickName,
-        avatarUrl: event.avatarUrl !== undefined ? event.avatarUrl : currentUser.avatarUrl,
-        updateTime: db.serverDate()
+      // 构建更新数据 - 只更新非空值
+      const updateData = { updateTime: db.serverDate() }
+
+      // 头像：只接受 cloud:// 格式（防止临时链接覆盖原始链接）
+      if (event.avatarUrl && event.avatarUrl.startsWith('cloud://')) {
+        updateData.avatarUrl = event.avatarUrl
+      }
+      // 昵称：只接受非空字符串
+      if (event.nickName && typeof event.nickName === 'string' && event.nickName.trim().length > 0) {
+        updateData.nickName = event.nickName.trim()
       }
 
       // 只有当没有设置过家乡时，才能设置家乡
-      // 如果已有家乡且新传来的province与当前不同，拒绝修改
       if (event.province !== undefined) {
         if (currentProvince && currentProvince !== event.province) {
-          // 已设置过家乡，不能修改
           return {
             success: false,
             error: '家乡已设置，不能修改',
@@ -142,12 +302,12 @@ exports.main = async (event, context) => {
           }
         }
         if (!currentProvince && event.province) {
-          // 首次设置家乡
           updateData.province = event.province
         }
       }
 
-      await db.collection('users').where({ _openid: openid }).update({
+      // 使用 _id 精确更新，避免 _openid/openid 字段混乱问题
+      await db.collection('users').doc(currentUser._id).update({
         data: updateData
       })
       return { success: true }
@@ -156,24 +316,162 @@ exports.main = async (event, context) => {
     }
   }
 
+  // ========== 保存完整资料(头像、昵称、性别、生日) ==========
+  if (action === 'saveProfile') {
+    try {
+      console.log('[saveProfile] 收到请求, openid:', openid)
+      console.log('[saveProfile] event:', JSON.stringify(event))
+      
+      const unionid = wxContext.UNIONID
+      
+      // 尝试多种方式查询用户
+      let currentUser = null
+      
+      // 优先用 UNIONID
+      if (unionid) {
+        const unionRes = await db.collection('users').where({ unionid: unionid }).get()
+        currentUser = unionRes.data && unionRes.data[0]
+      }
+      
+      // 如果没有 UNIONID 或未找到，尝试用 _openid
+      if (!currentUser) {
+        const openRes = await db.collection('users').where({ _openid: openid }).get()
+        currentUser = openRes.data && openRes.data[0]
+      }
+      
+      // 最后尝试用 openid 字段
+      if (!currentUser) {
+        const oldRes = await db.collection('users').where({ openid: openid }).get()
+        currentUser = oldRes.data && oldRes.data[0]
+      }
+      
+      console.log('[saveProfile] 查询结果:', currentUser ? '找到用户' : '未找到')
+
+      if (!currentUser) {
+        console.log('[saveProfile] 用户不存在, openid:', openid)
+        return { success: false, error: '用户不存在，请先登录' }
+      }
+
+      console.log('[saveProfile] 当前用户ID:', currentUser._id)
+
+      // 构建更新数据
+      const updateData = { updateTime: db.serverDate() }
+
+      // 头像和昵称：可随意修改（但头像只接受 cloud:// 格式）
+      if (event.nickName !== undefined && event.nickName !== '') {
+        updateData.nickName = event.nickName
+      }
+      if (event.avatarUrl && typeof event.avatarUrl === 'string' && event.avatarUrl.startsWith('cloud://')) {
+        updateData.avatarUrl = event.avatarUrl
+      }
+      // 性别：可随意修改
+      if (event.gender !== undefined && event.gender !== '') {
+        updateData.gender = event.gender
+      }
+      // 省份：只能设置一次
+      if (event.province !== undefined && event.province !== '') {
+        if (currentUser.province && currentUser.province !== event.province) {
+          return { success: false, error: '省份只能设置一次，无法修改' }
+        }
+        if (!currentUser.province) {
+          updateData.province = event.province
+        }
+      }
+      // 生日、属相、星座：只能设置一次
+      if (event.birthday !== undefined && event.birthday !== '') {
+        // 如果已有生日，且传来的新值不同，则拒绝修改
+        if (currentUser.birthday && String(currentUser.birthday) !== String(event.birthday)) {
+          return { success: false, error: '生日只能设置一次，无法修改' }
+        }
+        // 首次设置生日，或者值相同也不需要更新
+        if (!currentUser.birthday) {
+          updateData.birthday = event.birthday
+          // 自动计算并存储属相和星座
+          const zodiacInfo = calculateZodiacInfo(event.birthday)
+          updateData.zodiac = zodiacInfo.zodiac
+          updateData.zodiacAnimal = zodiacInfo.zodiacAnimal
+        }
+      }
+
+      console.log('[saveProfile] 准备更新, updateData:', JSON.stringify(updateData))
+
+      // 使用 _id 精确更新，避免 _openid/openid 字段混乱问题
+      const updateRes = await db.collection('users').doc(currentUser._id).update({
+        data: updateData
+      })
+
+      console.log('[saveProfile] 更新结果:', JSON.stringify(updateRes))
+      return { success: true }
+    } catch (e) {
+      console.error('[saveProfile] 错误:', e.message, e.stack)
+      return { success: false, error: e.message }
+    }
+  }
+
+  // ========== 获取当前用户资料 ==========
+  if (action === 'getMyProfile') {
+    try {
+      const unionid = wxContext.UNIONID
+      
+      // 尝试多种方式查询用户
+      let user = null
+      
+      // 优先用 UNIONID
+      if (unionid) {
+        const unionRes = await db.collection('users').where({ unionid: unionid }).get()
+        user = unionRes.data && unionRes.data[0]
+      }
+      
+      // 如果没有 UNIONID 或未找到，尝试用 _openid
+      if (!user) {
+        const openRes = await db.collection('users').where({ _openid: openid }).get()
+        user = openRes.data && openRes.data[0]
+      }
+      
+      // 最后尝试用 openid 字段
+      if (!user) {
+        const oldRes = await db.collection('users').where({ openid: openid }).get()
+        user = oldRes.data && oldRes.data[0]
+      }
+
+      if (!user) {
+        return { success: false, error: '用户不存在' }
+      }
+
+      // 不再转换 cloud:// 为临时链接，直接返回原始链接
+      // 前端 image 组件支持 cloud:// fileID
+      const avatarUrl = user.avatarUrl || ''
+
+      return {
+        success: true,
+        profile: {
+          nickName: user.nickName || '',
+          avatarUrl: avatarUrl,
+          gender: user.gender || '',
+          birthday: user.birthday || '',
+          zodiac: user.zodiac || '',
+          zodiacAnimal: user.zodiacAnimal || '',
+          province: user.province || ''
+        }
+      }
+    } catch (e) {
+      return { success: false, error: e.message }
+    }
+  }
+
   // ========== 获取统计数据 ==========
   if (action === 'getStats') {
     try {
-      // 查询用户（支持重装后 openid 丢失的情况）
-      let userRes = await db.collection('users').where({ openid }).get()
+      // 只使用 _openid 查询用户
+      let userRes = await db.collection('users').where({ _openid: openid }).get()
       let user = userRes.data && userRes.data[0]
-
-      if (!user) {
-        userRes = await db.collection('users').where({ _openid: openid }).get()
-        user = userRes.data && userRes.data[0]
-      }
 
       if (!user) {
         return { success: false, error: '用户不存在' }
       }
       const u = user
 
-      // 获取订单各状态计数
+      // 获取订单各状态计数（订单中存储的是用户的 openid，需要用 _openid 匹配）
       const pendingOrders = await db.collection('orders')
         .where({
           $or: [{ initiatorOpenid: openid }, { receiverOpenid: openid }],
@@ -220,30 +518,30 @@ exports.main = async (event, context) => {
       const { targetOpenid } = event
       if (!targetOpenid) return { success: false, message: '缺少参数' }
 
-      const userFields = { nickName: true, avatarUrl: true, province: true, creditScore: true, publishCount: true, swapCount: true, provincesBadges: true, createTime: true, openid: true }
+      const userFields = { nickName: true, avatarUrl: true, province: true, creditScore: true, publishCount: true, swapCount: true, provincesBadges: true, createTime: true, gender: true, _openid: true, openid: true }
 
-      // 先按自定义 openid 字段查询
-      let userRes = await db.collection('users').where({ openid: targetOpenid })
+      // 先用 _openid 查询
+      let userRes = await db.collection('users').where({ _openid: targetOpenid })
         .field(userFields).limit(1).get()
       let user = userRes.data && userRes.data[0]
 
-      // fallback: 按系统 _openid 字段查询
+      // 如果没找到，尝试用 openid 字段查询（兼容旧数据）
       if (!user) {
-        userRes = await db.collection('users').where({ _openid: targetOpenid })
+        userRes = await db.collection('users').where({ openid: targetOpenid })
           .field(userFields).limit(1).get()
         user = userRes.data && userRes.data[0]
       }
 
       if (!user) return { success: false, message: '用户不存在' }
 
-      // 后续查产品使用实际的 openid 字段
-      const actualOpenid = user.openid || targetOpenid
+      // 使用正确的 openid 查询产品（优先用 _openid）
+      const actualOpenid = user._openid || user.openid
 
       user.avatarUrl = await resolveCloudUrl(user.avatarUrl)
 
       // 用户所有特产（含各状态）
       const productsRes = await db.collection('products')
-        .where({ openid: actualOpenid, status: _.in(['active', 'in_swap', 'swapped']) })
+        .where({ _openid: actualOpenid, status: _.in(['active', 'in_swap', 'swapped']) })
         .orderBy('createTime', 'desc').limit(100)
         .field({ _id: true, name: true, images: true, province: true, category: true, valueMin: true, valueMax: true, viewCount: true, isMystery: true, status: true })
         .get()
@@ -273,7 +571,8 @@ exports.main = async (event, context) => {
           nickName: user.nickName || '', avatarUrl: user.avatarUrl || '',
           province: user.province || '', creditScore: user.creditScore || 100,
           publishCount: user.publishCount || 0, swapCount: user.swapCount || 0,
-          provincesBadges: user.provincesBadges || [], createTime: user.createTime
+          provincesBadges: user.provincesBadges || [], createTime: user.createTime,
+          gender: user.gender || ''
         },
         products
       }
@@ -434,31 +733,31 @@ exports.main = async (event, context) => {
   // ========== 获取邀请数据 ==========
   if (action === 'getInviteData') {
     try {
-      // 获取或生成邀请码（支持重装后 openid 丢失的情况）
-      let userRes = await db.collection('users').where({ openid }).get()
+      // 获取或生成邀请码
+      let userRes = await db.collection('users').where({ _openid: openid }).get()
       let user = userRes.data && userRes.data[0]
 
       if (!user) {
-        userRes = await db.collection('users').where({ _openid: openid }).get()
+        userRes = await db.collection('users').where({ openid: openid }).get()
         user = userRes.data && userRes.data[0]
       }
 
-      const actualOpenid = user && (user.openid || openid)
+      const actualOpenid = openid
 
       let inviteCode = user && user.inviteCode
 
       // 如果没有邀请码，生成一个
-      if (!inviteCode && actualOpenid) {
-        inviteCode = 'INV' + actualOpenid.slice(-6).toUpperCase()
-        // 使用 _openid 精准定位
-        await db.collection('users').where({ _openid: openid }).update({
+      if (!inviteCode) {
+        inviteCode = 'INV' + openid.slice(-6).toUpperCase()
+        // 使用 _id 精准更新
+        await db.collection('users').doc(user._id).update({
           data: { inviteCode }
         })
       }
 
       // 获取邀请列表（查询邀请人为当前 openid 的用户）
       const inviteRes = await db.collection('users').where({
-        invitedBy: actualOpenid
+        invitedBy: openid
       }).get()
 
       // 获取邀请详情（包含首次互换状态）
@@ -517,8 +816,8 @@ exports.main = async (event, context) => {
         return { success: false, error: '邀请码不能为空' }
       }
 
-      // 查询当前用户（支持重装后 openid 丢失的情况）
-      let currentUserRes = await db.collection('users').where({ openid }).get()
+      // 查询当前用户
+      let currentUserRes = await db.collection('users').where({ _openid: openid }).get()
       let currentUser = currentUserRes.data && currentUserRes.data[0]
       if (!currentUser) {
         currentUserRes = await db.collection('users').where({ _openid: openid }).get()
@@ -533,7 +832,7 @@ exports.main = async (event, context) => {
         return { success: false, error: '已绑定过邀请关系' }
       }
 
-      // 查找邀请人（邀请人必须有自定义 openid 字段）
+      // 查找邀请人
       const inviterRes = await db.collection('users').where({
         inviteCode: inviteCode
       }).get()
@@ -545,24 +844,21 @@ exports.main = async (event, context) => {
       }
 
       // 不能自己邀请自己
-      const inviterOpenid = inviter.openid || inviter._openid
-      const myOpenid = currentUser.openid || openid
-      if (inviterOpenid === myOpenid) {
+      if (inviter._openid === openid) {
         return { success: false, error: '不能邀请自己' }
       }
 
-      // 绑定邀请关系（用 _openid 精准定位）
-      await db.collection('users').where({ _openid: openid }).update({
+      // 绑定邀请关系（用 _id 精准更新）
+      await db.collection('users').doc(currentUser._id).update({
         data: {
-          invitedBy: inviterOpenid,
+          invitedBy: inviter._openid,
           inviteTime: db.serverDate()
         }
       })
 
-      // 给邀请人增加积分奖励
+      // 给邀请人增加积分奖励（用 _id 精准更新）
       const INVITE_REWARD = 10
-      const inviterActualOpenid = inviter.openid || inviter._openid
-      await db.collection('users').where({ _openid: inviterActualOpenid }).update({
+      await db.collection('users').doc(inviter._id).update({
         data: {
           points: _.inc(INVITE_REWARD),
           inviteCount: _.inc(1)
@@ -572,7 +868,7 @@ exports.main = async (event, context) => {
       // 记录邀请人积分变动
       await db.collection('points_log').add({
         data: {
-          openid: inviterActualOpenid,
+          _openid: inviter._openid,
           type: 'invite',
           amount: INVITE_REWARD,
           desc: '邀请好友奖励',
@@ -580,8 +876,8 @@ exports.main = async (event, context) => {
         }
       })
 
-      // 记录被邀请用户的积分
-      await db.collection('users').where({ _openid: openid }).update({
+      // 记录被邀请用户的积分（用 _id 精准更新）
+      await db.collection('users').doc(currentUser._id).update({
         data: {
           points: _.inc(INVITE_REWARD)
         }
@@ -589,7 +885,7 @@ exports.main = async (event, context) => {
 
       await db.collection('points_log').add({
         data: {
-          openid: openid,
+          _openid: openid,
           type: 'invited',
           amount: INVITE_REWARD,
           desc: '被邀请注册奖励',
@@ -631,6 +927,545 @@ exports.main = async (event, context) => {
       return {
         success: true,
         fileID: uploadRes.fileID
+      }
+    } catch (e) {
+      return { success: false, error: e.message }
+    }
+  }
+
+  // ========== 发送手机验证码 ==========
+  if (action === 'sendPhoneVerifyCode') {
+    try {
+      const { cloudID, encryptedData, iv } = event
+      
+      if (!cloudID && !encryptedData) {
+        return { success: false, message: '缺少手机号数据' }
+      }
+
+      // 通过 cloudID 解密手机号（推荐方式）
+      let phoneNumber = ''
+      
+      if (cloudID) {
+        try {
+          const res = await cloud.getOpenData({
+            list: [cloudID]
+          })
+          phoneNumber = res.list[0].data.phoneNumber
+        } catch (e) {
+          console.error('cloudID 解密失败:', e)
+        }
+      }
+      
+      // 如果 cloudID 失败，尝试用 encryptedData
+      if (!phoneNumber && encryptedData) {
+        try {
+          const res = await cloud.openapi.phonenumber.getPhoneNumber({
+            code: encryptedData
+          })
+          phoneNumber = res.phoneInfo.phoneNumber
+        } catch (e) {
+          console.error('encryptedData 解密失败:', e)
+        }
+      }
+
+      if (!phoneNumber) {
+        return { success: false, message: '获取手机号失败' }
+      }
+
+      // 生成验证码（6位数字）
+      const code = Math.random().toString().slice(-6)
+      
+      // 生成验证ID
+      const verifyId = `verify_${openid}_${Date.now()}`
+      
+      // 确保集合存在
+      await ensurePhoneVerifyCollection()
+      
+      // 存储验证信息到临时表（5分钟有效期）
+      await db.collection('phone_verify_temp').add({
+        data: {
+          verifyId,
+          openid,
+          phoneNumber,
+          code,
+          createdAt: db.serverDate(),
+          expireAt: new Date(Date.now() + 5 * 60 * 1000), // 5分钟后过期
+          verified: false
+        }
+      })
+
+      // TODO: 实际项目中应该调用短信服务发送验证码
+      // 这里为了演示,我们直接返回验证码(生产环境严禁这样做!)
+      console.log(`[DEV] 验证码已生成: ${phoneNumber} -> ${code}`)
+
+      // 开发环境：直接返回验证码（生产环境必须删除这行!）
+      return {
+        success: true,
+        verifyId,
+        phoneNumber,
+        // 开发模式：返回验证码（生产环境必须删除!）
+        _devCode: code
+      }
+    } catch (e) {
+      console.error('发送验证码失败:', e)
+      return { success: false, message: e.message }
+    }
+  }
+
+  // ========== 重发验证码 ==========
+  if (action === 'resendPhoneVerifyCode') {
+    try {
+      const { verifyId } = event
+      
+      if (!verifyId) {
+        return { success: false, message: '缺少验证ID' }
+      }
+
+      // 查找原验证记录
+      const verifyRes = await db.collection('phone_verify_temp').where({
+        verifyId,
+        openid,
+        verified: false
+      }).get()
+
+      const verifyData = verifyRes.data && verifyRes.data[0]
+      if (!verifyData) {
+        return { success: false, message: '验证记录不存在或已过期' }
+      }
+
+      // 检查发送频率限制
+      const timeSinceLastSend = Date.now() - new Date(verifyData.createdAt).getTime();
+      if (timeSinceLastSend < 60 * 1000) {
+        const waitSeconds = Math.ceil((60 * 1000 - timeSinceLastSend) / 1000);
+        return { 
+          success: false, 
+          message: `请${waitSeconds}秒后再试` 
+        };
+      }
+
+      // 生成新验证码
+      const code = Math.random().toString().slice(-6)
+      
+      // 调用短信服务发送验证码
+      if (smsClient) {
+        const smsResult = await smsClient.sendVerifyCode(verifyData.phoneNumber, code, '5');
+        
+        if (!smsResult.success) {
+          console.error('[SMS] 重发短信失败:', smsResult.errorMessage);
+          return { 
+            success: false, 
+            message: '短信发送失败,请稍后重试',
+            error: smsResult.errorMessage
+          };
+        }
+        
+        // 更新验证码
+        await db.collection('phone_verify_temp').doc(verifyData._id).update({
+          data: {
+            code,
+            createdAt: db.serverDate(),
+            expireAt: new Date(Date.now() + 5 * 60 * 1000)
+          }
+        })
+        
+        console.log('[SMS] 重发短信成功:', verifyData.phoneNumber, 'bizId:', smsResult.bizId);
+        
+        return {
+          success: true,
+          message: '验证码已重新发送'
+        };
+      } else {
+        // 短信服务未初始化,使用开发模式
+        console.warn('[SMS] 短信服务未初始化,使用开发模式');
+        
+        // 更新验证码
+        await db.collection('phone_verify_temp').doc(verifyData._id).update({
+          data: {
+            code,
+            createdAt: db.serverDate(),
+            expireAt: new Date(Date.now() + 5 * 60 * 1000)
+          }
+        })
+        
+        console.log(`[DEV] 验证码已重发: ${verifyData.phoneNumber} -> ${code}`)
+        
+        return {
+          success: true,
+          _devCode: code, // 仅开发环境使用
+          message: '验证码已重发(开发模式)'
+        };
+      }
+    } catch (e) {
+      console.error('重发验证码失败:', e)
+      return { success: false, message: e.message }
+    }
+  }
+
+  // ========== 验证手机验证码 ==========
+  if (action === 'verifyPhoneCode') {
+    try {
+      const { verifyId, code, phoneNumber } = event
+      
+      if (!verifyId || !code || !phoneNumber) {
+        return { success: false, message: '参数不完整' }
+      }
+
+      // 查找验证记录
+      const verifyRes = await db.collection('phone_verify_temp').where({
+        verifyId,
+        openid,
+        phoneNumber,
+        verified: false
+      }).get()
+
+      const verifyData = verifyRes.data && verifyRes.data[0]
+      
+      if (!verifyData) {
+        return { success: false, message: '验证记录不存在或已过期' }
+      }
+
+      // 检查是否过期
+      if (new Date() > verifyData.expireAt) {
+        return { success: false, message: '验证码已过期' }
+      }
+
+      // 验证码是否正确
+      if (verifyData.code !== code) {
+        return { success: false, message: '验证码错误' }
+      }
+
+      // 标记为已验证
+      await db.collection('phone_verify_temp').doc(verifyData._id).update({
+        data: { verified: true }
+      })
+
+      // 查询用户
+      let userRes = await db.collection('users').where({ _openid: openid }).get()
+      let user = userRes.data && userRes.data[0]
+      
+      if (!user) {
+        userRes = await db.collection('users').where({ openid: openid }).get()
+        user = userRes.data && userRes.data[0]
+      }
+
+      if (!user) {
+        return { success: false, message: '用户不存在' }
+      }
+
+      // 检查是否已验证过手机号（只能验证一次）
+      if (user.phoneVerified) {
+        return { 
+          success: false, 
+          message: '您已验证过手机号，每个用户只能验证一次' 
+        }
+      }
+
+      // 首次验证奖励信用分
+      const creditReward = 5
+
+      // 更新用户手机号信息（用 _id 精准更新）
+      await db.collection('users').doc(user._id).update({
+        data: {
+          phoneNumber,
+          phoneVerified: true,
+          phoneVerifyTime: db.serverDate(),
+          creditScore: _.inc(creditReward),
+          updateTime: db.serverDate()
+        }
+      })
+
+      // 记录信用分变动（使用 credit_logs 表，字段名与其他地方一致）
+      await db.collection('credit_logs').add({
+        data: {
+          openid: openid,
+          delta: creditReward,
+          reason: '首次验证手机号',
+          createTime: db.serverDate()
+        }
+      })
+
+      return {
+        success: true,
+        phoneNumber,
+        creditScore: (user.creditScore || 100) + creditReward,
+        isFirstVerify: true
+      }
+    } catch (e) {
+      return { success: false, message: e.message }
+    }
+  }
+
+  // ========== 微信原生手机号验证(无需验证码) ==========
+  if (action === 'verifyPhoneNumber') {
+    try {
+      const { code, cloudID, encryptedData, iv } = event
+      
+      // 微信新版本使用 code,旧版本使用 cloudID 或 encryptedData
+      let phoneNumber = ''
+      
+      // 方式1: 使用 code (推荐,微信新版)
+      if (code) {
+        try {
+          const res = await cloud.openapi.phonenumber.getPhoneNumber({
+            code: code
+          })
+          phoneNumber = res.phoneInfo.phoneNumber
+          console.log('[verifyPhoneNumber] 通过 code 获取手机号成功:', phoneNumber)
+        } catch (e) {
+          console.error('[verifyPhoneNumber] code 方式失败:', e)
+        }
+      }
+      
+      // 方式2: 使用 cloudID
+      if (!phoneNumber && cloudID) {
+        try {
+          const res = await cloud.getOpenData({
+            list: [cloudID]
+          })
+          phoneNumber = res.list[0].data.phoneNumber
+          console.log('[verifyPhoneNumber] 通过 cloudID 获取手机号成功:', phoneNumber)
+        } catch (e) {
+          console.error('[verifyPhoneNumber] cloudID 方式失败:', e)
+        }
+      }
+      
+      // 方式3: 使用 encryptedData (旧版本,已不推荐)
+      if (!phoneNumber && encryptedData) {
+        return { 
+          success: false, 
+          message: '请更新微信版本后重试' 
+        }
+      }
+      
+      if (!phoneNumber) {
+        return { success: false, message: '获取手机号失败,请重试' }
+      }
+
+      // 查询用户
+      let userRes = await db.collection('users').where({ _openid: openid }).get()
+      let user = userRes.data && userRes.data[0]
+      
+      if (!user) {
+        userRes = await db.collection('users').where({ openid: openid }).get()
+        user = userRes.data && userRes.data[0]
+      }
+
+      if (!user) {
+        return { success: false, message: '用户不存在' }
+      }
+
+      // 检查是否已验证过手机号（只能验证一次）
+      if (user.phoneVerified) {
+        return { 
+          success: false, 
+          message: '您已验证过手机号，每个用户只能验证一次' 
+        }
+      }
+
+      // 首次验证奖励信用分
+      const creditReward = 5
+
+      // 更新用户手机号信息
+      const updateResult = await db.collection('users').doc(user._id).update({
+        data: {
+          phoneNumber,
+          phoneVerified: true,
+          phoneVerifyTime: db.serverDate(),
+          creditScore: _.inc(creditReward),
+          updateTime: db.serverDate()
+        }
+      })
+      
+      console.log('[verifyPhoneNumber] 更新数据库结果:', updateResult)
+      console.log('[verifyPhoneNumber] 更新的手机号:', phoneNumber)
+
+      // 记录信用分变动（使用 credit_logs 表，字段名与其他地方一致）
+      await db.collection('credit_logs').add({
+        data: {
+          openid: openid,
+          delta: creditReward,
+          reason: '首次验证手机号',
+          createTime: db.serverDate()
+        }
+      })
+
+      return {
+        success: true,
+        phoneNumber,
+        creditScore: (user.creditScore || 100) + creditReward,
+        isFirstVerify: true
+      }
+    } catch (e) {
+      console.error('验证手机号失败:', e)
+      return { success: false, message: e.message }
+    }
+  }
+
+  // ========== 调试：获取用户原始数据 ==========
+  if (action === 'debugGetUser') {
+    try {
+      let userRes = await db.collection('users').where({ _openid: openid }).get()
+      let user = userRes.data && userRes.data[0]
+      
+      if (!user) {
+        userRes = await db.collection('users').where({ openid: openid }).get()
+        user = userRes.data && userRes.data[0]
+      }
+
+      if (!user) {
+        return { success: false, error: '用户不存在' }
+      }
+
+      return {
+        success: true,
+        rawUser: user,
+        stats: {
+          publishCount: user.publishCount || 0,
+          swapCount: user.swapCount || 0,
+          provincesBadges: user.provincesBadges || [],
+          badgeCount: (user.provincesBadges || []).length,
+          points: user.points || 0,
+          creditScore: user.creditScore || 100
+        }
+      }
+    } catch (e) {
+      return { success: false, error: e.message }
+    }
+  }
+
+  // ========== 调试：修复用户积分 ==========
+  if (action === 'debugFixPoints') {
+    try {
+      const targetPoints = event.points || 50
+      
+      let userRes = await db.collection('users').where({ _openid: openid }).get()
+      let user = userRes.data && userRes.data[0]
+      
+      if (!user) {
+        userRes = await db.collection('users').where({ openid: openid }).get()
+        user = userRes.data && userRes.data[0]
+      }
+
+      if (!user) {
+        return { success: false, error: '用户不存在' }
+      }
+
+      const oldPoints = user.points || 0
+      
+      // 使用 _id 精准更新
+      await db.collection('users').doc(user._id).update({
+        data: { 
+          points: targetPoints,
+          updateTime: db.serverDate()
+        }
+      })
+
+      return {
+        success: true,
+        message: '积分已修复',
+        oldPoints,
+        newPoints: targetPoints
+      }
+    } catch (e) {
+      return { success: false, error: e.message }
+    }
+  }
+
+  // ========== 修复我的发布数 ==========
+  if (action === 'fixMyPublishCount') {
+    try {
+      // 获取当前用户
+      let userRes = await db.collection('users').where({ _openid: openid }).get()
+      let user = userRes.data && userRes.data[0]
+      
+      if (!user) {
+        userRes = await db.collection('users').where({ openid: openid }).get()
+        user = userRes.data && userRes.data[0]
+      }
+
+      if (!user) {
+        return { success: false, error: '用户不存在' }
+      }
+
+      // 统计实际特产数量（所有状态）
+      const countRes = await db.collection('products')
+        .where({ openid: openid })
+        .count()
+      
+      const actualCount = countRes.total
+      const storedCount = user.publishCount || 0
+      
+      // 更新发布数
+      await db.collection('users').doc(user._id).update({
+        data: { 
+          publishCount: actualCount,
+          updateTime: db.serverDate()
+        }
+      })
+
+      console.log(`[fixMyPublishCount] 用户 ${openid} 发布数已修复: ${storedCount} -> ${actualCount}`)
+
+      return {
+        success: true,
+        message: actualCount !== storedCount ? '发布数已修复' : '发布数正确，无需修复',
+        oldCount: storedCount,
+        newCount: actualCount,
+        fixed: actualCount !== storedCount
+      }
+    } catch (e) {
+      return { success: false, error: e.message }
+    }
+  }
+
+  // ========== 修复我的统计数据（发布数+分享数）==========
+  if (action === 'fixMyStats') {
+    try {
+      // 获取当前用户
+      let userRes = await db.collection('users').where({ _openid: openid }).get()
+      let user = userRes.data && userRes.data[0]
+      
+      if (!user) {
+        userRes = await db.collection('users').where({ openid: openid }).get()
+        user = userRes.data && userRes.data[0]
+      }
+
+      if (!user) {
+        return { success: false, error: '用户不存在' }
+      }
+
+      // 1. 统计实际特产数量（所有状态）
+      const productCountRes = await db.collection('products')
+        .where({ openid: openid })
+        .count()
+      const actualPublishCount = productCountRes.total
+      const storedPublishCount = user.publishCount || 0
+      
+      // 2. 统计实际完成的订单数（分享数）
+      const completedOrdersRes = await db.collection('orders')
+        .where({
+          $or: [{ initiatorOpenid: openid }, { receiverOpenid: openid }],
+          status: 'completed'
+        })
+        .count()
+      const actualSwapCount = completedOrdersRes.total
+      const storedSwapCount = user.swapCount || 0
+      
+      // 3. 更新统计数据
+      await db.collection('users').doc(user._id).update({
+        data: { 
+          publishCount: actualPublishCount,
+          swapCount: actualSwapCount,
+          updateTime: db.serverDate()
+        }
+      })
+
+      console.log(`[fixMyStats] 用户 ${openid} 数据已修复: 发布数 ${storedPublishCount} -> ${actualPublishCount}, 分享数 ${storedSwapCount} -> ${actualSwapCount}`)
+
+      return {
+        success: true,
+        message: '统计数据已修复',
+        publishCount: { old: storedPublishCount, new: actualPublishCount, fixed: storedPublishCount !== actualPublishCount },
+        swapCount: { old: storedSwapCount, new: actualSwapCount, fixed: storedSwapCount !== actualSwapCount }
       }
     } catch (e) {
       return { success: false, error: e.message }

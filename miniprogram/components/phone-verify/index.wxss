@@ -1,0 +1,234 @@
+/* components/phone-verify/index.wxss - 手机号快速验证组件 */
+
+.phone-verify-container {
+  width: 100%;
+}
+
+/* 已验证状态 */
+.verified-box {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(52, 199, 89, 0.15), rgba(52, 199, 89, 0.05));
+  border: 1rpx solid rgba(52, 199, 89, 0.3);
+  border-radius: 24rpx;
+  padding: 32rpx;
+  backdrop-filter: blur(20rpx);
+}
+
+.verified-icon {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #34C759, #30B350);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 36rpx;
+  font-weight: bold;
+  margin-right: 24rpx;
+  flex-shrink: 0;
+}
+
+.verified-content {
+  flex: 1;
+}
+
+.verified-label {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 8rpx;
+}
+
+.verified-phone {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 2rpx;
+}
+
+.verified-badge {
+  padding: 8rpx 20rpx;
+  background: rgba(52, 199, 89, 0.2);
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  color: #34C759;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* 未验证状态 */
+.unverified-box {
+  position: relative;
+  width: 100%;
+}
+
+.get-phone-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(0, 122, 255, 0.15), rgba(0, 122, 255, 0.05));
+  border: 1rpx solid rgba(0, 122, 255, 0.3);
+  border-radius: 24rpx;
+  padding: 32rpx;
+  backdrop-filter: blur(20rpx);
+  transition: all 0.3s ease;
+}
+
+.get-phone-btn::after {
+  border: none;
+}
+
+.get-phone-btn:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+.get-phone-btn[disabled] {
+  opacity: 0.5;
+}
+
+.btn-icon {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #007AFF, #0051D5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  margin-right: 24rpx;
+  flex-shrink: 0;
+}
+
+.btn-text {
+  flex: 1;
+}
+
+.btn-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 8rpx;
+}
+
+.btn-desc {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* 验证码输入 */
+.code-input-box {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  border-radius: 24rpx;
+  padding: 40rpx 32rpx;
+  backdrop-filter: blur(20rpx);
+}
+
+.code-header {
+  margin-bottom: 40rpx;
+}
+
+.code-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 12rpx;
+}
+
+.code-phone {
+  display: block;
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.code-inputs {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 32rpx;
+  gap: 16rpx;
+}
+
+.code-input {
+  flex: 1;
+  height: 100rpx;
+  background: rgba(255, 255, 255, 0.08);
+  border: 2rpx solid rgba(255, 255, 255, 0.2);
+  border-radius: 16rpx;
+  text-align: center;
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #fff;
+  transition: all 0.3s ease;
+}
+
+.code-input:focus {
+  border-color: #007AFF;
+  background: rgba(0, 122, 255, 0.1);
+}
+
+.code-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.code-timer {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.resend-btn {
+  color: #007AFF;
+  font-weight: 600;
+}
+
+.code-verify-btn {
+  padding: 16rpx 48rpx;
+  background: rgba(0, 122, 255, 0.2);
+  border-radius: 20rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  transition: all 0.3s ease;
+}
+
+.code-verify-btn.active {
+  background: linear-gradient(135deg, #007AFF, #0051D5);
+  color: #fff;
+}
+
+.code-verify-btn:active {
+  transform: scale(0.95);
+}
+
+/* 加载状态 */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 4rpx solid rgba(255, 255, 255, 0.3);
+  border-top-color: #007AFF;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

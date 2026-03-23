@@ -7,6 +7,7 @@ Page({
     currentTab: 0,
     tabs: ['概览', '用户', '特产', '订单', '审核', '积分', '信用'],
     isSuperAdmin: false,
+    defaultAvatar: '/images/default-avatar.png',
     // 概览数据
     stats: {
       totalUsers: 0,
@@ -32,26 +33,51 @@ Page({
     orderPage: 1,
     orderLoading: false,
     orderNoMore: false,
+    orderFilter: 'all',
+    orderStats: { pending: 0, shipping: 0, completed: 0 },
     // 审核列表
     reviews: [],
     reviewPage: 1,
     reviewLoading: false,
     reviewNoMore: false,
+    // 待审核产品列表
+    pendingProducts: [],
+    pendingPage: 1,
+    pendingLoading: false,
+    pendingNoMore: false,
+    auditFilter: 'all',
+    pendingStats: { autoBlocked: 0, manualReview: 0 },
     // 积分管理
     selectedUser: null,
     pointsModalVisible: false,
     pointsAction: 'add',
     pointsValue: '',
     pointsReason: '',
+    pointsUsers: [],
+    pointsPage: 1,
+    pointsLoading: false,
+    pointsNoMore: false,
+    pointsKeyword: '',
+    pointsFilter: 'all',
+    pointsStats: { totalUsers: 0, totalPoints: 0, avgPoints: 0 },
     // 信用分管理
     creditModalVisible: false,
     creditValue: '',
     creditReason: '',
+    creditUsers: [],
+    creditPage: 1,
+    creditLoading: false,
+    creditNoMore: false,
+    creditKeyword: '',
+    creditFilter: 'all',
+    creditDist: { excellent: 0, good: 0, normal: 0, poor: 0 },
     // 神秘特产
     mysteryProducts: [],
     mysteryPage: 1,
     mysteryLoading: false,
     mysteryNoMore: false,
+    mysteryFilter: 'all',
+    mysteryStats: { total: 0, active: 0, inSwap: 0 },
     mysteryModalVisible: false,
     editingMystery: null,
     // 用户编辑
@@ -66,8 +92,8 @@ Page({
     categoryIndex: -1,
     valueRangeList: VALUE_RANGES,
     valueRangeIndex: -1,
-    statusOptions: ['active', 'removed', 'banned'],
-    statusLabels: ['展示中', '已下架', '已封禁'],
+    statusOptions: ['active', 'pending_review', 'rejected', 'removed', 'banned'],
+    statusLabels: ['展示中', '待审核', '已拒绝', '已下架', '已封禁'],
     statusIndex: 0,
     // 功能开关
     featureFlags: {},
@@ -89,6 +115,60 @@ Page({
 
   onUnload() {
     if (this._searchTimer) clearTimeout(this._searchTimer)
+    if (this._pointsSearchTimer) clearTimeout(this._pointsSearchTimer)
+    if (this._creditSearchTimer) clearTimeout(this._creditSearchTimer)
+  },
+
+  // ========== 数据维护工具 ==========
+  // 清理重复用户记录
+  async cleanupDuplicateUsers() {
+    const confirmed = await new Promise((resolve) => {
+      wx.showModal({
+        title: '确认操作',
+        content: '此操作将清理数据库中重复的用户记录，统一使用 _openid 字段。是否继续？',
+        success: (res) => resolve(res.confirm),
+        fail: () => resolve(false)
+      })
+    })
+    
+    if (!confirmed) return
+    
+    wx.showLoading({ title: '清理中...', mask: true })
+    
+    try {
+      const res = await callCloud('resetData', { action: 'cleanupDuplicateUsers' })
+      wx.hideLoading()
+      
+      if (res.success) {
+        const msg = `清理完成！\n总用户: ${res.totalUsers}\n删除重复: ${res.duplicatesRemoved}\n字段迁移: ${res.migratedToOpenid}`
+        wx.showModal({
+          title: '清理成功',
+          content: msg,
+          showCancel: false,
+          success: () => {
+            // 刷新用户列表
+            this.setData({
+              users: [],
+              userPage: 1,
+              userNoMore: false,
+              pointsUsers: [],
+              pointsPage: 1,
+              pointsNoMore: false,
+              creditUsers: [],
+              creditPage: 1,
+              creditNoMore: false
+            })
+            this.loadStats()
+          }
+        })
+      } else {
+        wx.showToast({ title: res.error || '清理失败', icon: 'none' })
+      }
+    } catch (e) {
+      wx.hideLoading()
+      wx.showToast({ title: '操作失败', icon: 'none' })
+      console.error('清理重复用户失败:', e)
+    }
   },
 
   // 检查管理员权限
@@ -137,12 +217,12 @@ Page({
       this.loadProducts()
     } else if (index === 3 && this.data.orders.length === 0) {
       this.loadOrders()
-    } else if (index === 4 && this.data.reviews.length === 0) {
-      this.loadReviews()
-    } else if (index === 5 && this.data.users.length === 0) {
-      this.loadUsers()
-    } else if (index === 6 && this.data.users.length === 0) {
-      this.loadUsers()
+    } else if (index === 4 && this.data.pendingProducts.length === 0) {
+      this.loadPendingProducts()
+    } else if (index === 5 && this.data.pointsUsers.length === 0) {
+      this.loadPointsUsers()
+    } else if (index === 6 && this.data.creditUsers.length === 0) {
+      this.loadCreditUsers()
     } else if (index === 7 && this.data.mysteryProducts.length === 0) {
       this.loadMysteryProducts()
     } else if (index === 8) {
@@ -198,17 +278,25 @@ Page({
 
     this.setData({ productLoading: true })
     try {
-      const res = await callCloud('adminMgr', {
+      const params = {
         action: 'getProducts',
         page: this.data.productPage,
-        pageSize: 20,
-        filter: this.data.productFilter || 'all'
-      })
+        pageSize: 20
+      }
+      
+      // 根据筛选条件传递参数
+      if (this.data.productFilter === 'active') {
+        params.status = 'active'
+      } else if (this.data.productFilter === 'mystery') {
+        params.isMystery = 'true'
+      }
+
+      const res = await callCloud('adminMgr', params)
 
       const list = (res.list || []).map(p => ({
         ...p,
         coverUrl: p.images && p.images[0] ? p.images[0] : '',
-        statusText: p.status === 'active' ? '展示中' : p.status === 'in_swap' ? '分享中' : '已分享'
+        statusText: p.status === 'active' ? '展示中' : p.status === 'pending_review' ? '待审核' : p.status === 'rejected' ? '已拒绝' : p.status === 'in_swap' ? '分享中' : p.status === 'swapped' ? '已分享' : p.status === 'removed' ? '已下架' : p.status === 'banned' ? '已封禁' : '未知'
       }))
 
       this.setData({
@@ -232,24 +320,54 @@ Page({
       const res = await callCloud('adminMgr', {
         action: 'getOrders',
         page: this.data.orderPage,
-        pageSize: 20
+        pageSize: 20,
+        filter: this.data.orderFilter
       })
 
       const list = (res.list || []).map(o => ({
         ...o,
-        statusText: this.getOrderStatusText(o.status)
+        statusText: this.getOrderStatusText(o.status),
+        productCover: o.productCover || (o.productImages && o.productImages[0] ? o.productImages[0] : ''),
+        createTimeStr: o.createdAt ? this.formatTime(o.createdAt) : (o._createTime ? this.formatTime(o._createTime) : '')
       }))
 
       this.setData({
         orders: [...this.data.orders, ...list],
         orderPage: this.data.orderPage + 1,
-        orderNoMore: list.length < 20
+        orderNoMore: list.length < 20,
+        orderStats: res.stats || this.data.orderStats
       })
     } catch (e) {
       toast('加载订单失败')
     } finally {
       this.setData({ orderLoading: false })
     }
+  },
+
+  // 切换订单筛选
+  changeOrderFilter(e) {
+    const filter = e.currentTarget.dataset.filter
+    this.setData({
+      orderFilter: filter,
+      orders: [],
+      orderPage: 1,
+      orderNoMore: false
+    })
+    this.loadOrders()
+  },
+
+  // 格式化时间
+  formatTime(timestamp) {
+    if (!timestamp) return ''
+    const date = new Date(timestamp)
+    const now = new Date()
+    const diff = now - date
+    if (diff < 60000) return '刚刚'
+    if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前'
+    if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前'
+    const month = date.getMonth() + 1
+    const day = date.getDate()
+    return `${month}月${day}日`
   },
 
   // 加载审核列表
@@ -274,6 +392,115 @@ Page({
     } finally {
       this.setData({ reviewLoading: false })
     }
+  },
+
+  // ========== 待审核产品 ==========
+  async loadPendingProducts() {
+    if (this.data.pendingLoading || this.data.pendingNoMore) return
+    this.setData({ pendingLoading: true })
+    try {
+      const res = await callCloud('adminMgr', {
+        action: 'getPendingProducts',
+        page: this.data.pendingPage,
+        pageSize: 20,
+        filter: this.data.auditFilter
+      })
+      if (res.success) {
+        const list = (res.list || []).map(p => ({
+          ...p,
+          coverUrl: p.images && p.images[0] ? p.images[0] : '',
+          categoryName: this.getCategoryName(p.category)
+        }))
+        this.setData({
+          pendingProducts: [...this.data.pendingProducts, ...list],
+          pendingPage: this.data.pendingPage + 1,
+          pendingNoMore: list.length < 20,
+          pendingStats: res.stats || { autoBlocked: 0, manualReview: 0 }
+        })
+      }
+    } catch (e) {
+      toast('加载待审产品失败')
+    } finally {
+      this.setData({ pendingLoading: false })
+    }
+  },
+
+  // 切换审核筛选
+  changeAuditFilter(e) {
+    const filter = e.currentTarget.dataset.filter
+    this.setData({
+      auditFilter: filter,
+      pendingProducts: [],
+      pendingPage: 1,
+      pendingNoMore: false
+    })
+    this.loadPendingProducts()
+  },
+
+  // 获取分类名称
+  getCategoryName(categoryId) {
+    const category = PRODUCT_CATEGORIES.find(c => c.id === categoryId)
+    return category ? category.name : '未分类'
+  },
+
+  // 审核通过（产品）
+  async approvePendingProduct(e) {
+    const id = e.currentTarget.dataset.id
+    wx.showModal({
+      title: '确认通过',
+      content: '确定要让该产品通过审核吗？',
+      success: async (res) => {
+        if (res.confirm) {
+          try {
+            await callCloud('adminMgr', { action: 'approveProduct', productId: id })
+            toast('已通过', 'success')
+            this.setData({ pendingProducts: [], pendingPage: 1, pendingNoMore: false })
+            this.loadPendingProducts()
+          } catch (e) {
+            toast('操作失败')
+          }
+        }
+      }
+    })
+  },
+
+  // 审核拒绝（产品）
+  async rejectPendingProduct(e) {
+    const id = e.currentTarget.dataset.id
+    
+    // 弹出输入拒绝原因
+    const res = await new Promise(resolve => {
+      wx.showModal({
+        title: '拒绝原因',
+        content: '请输入拒绝原因（选填）',
+        editable: true,
+        placeholderText: '拒绝原因（选填）',
+        confirmText: '确认拒绝',
+        confirmColor: '#E63946',
+        success: resolve
+      })
+    })
+
+    if (!res.confirm) return
+
+    try {
+      await callCloud('adminMgr', { 
+        action: 'rejectProduct', 
+        productId: id,
+        reason: res.content || '管理员审核拒绝'
+      })
+      toast('已拒绝', 'success')
+      this.setData({ pendingProducts: [], pendingPage: 1, pendingNoMore: false })
+      this.loadPendingProducts()
+    } catch (e) {
+      toast('操作失败')
+    }
+  },
+
+  // 查看待审核产品详情
+  goToPendingProductDetail(e) {
+    const id = e.currentTarget.dataset.id
+    wx.navigateTo({ url: `/pages/detail/index?id=${id}` })
   },
 
   // 审核特产下架
@@ -362,6 +589,65 @@ Page({
   },
 
   // ========== 积分管理 ==========
+  // 加载积分用户列表
+  async loadPointsUsers() {
+    if (this.data.pointsLoading || this.data.pointsNoMore) return
+
+    this.setData({ pointsLoading: true })
+    try {
+      const res = await callCloud('adminMgr', {
+        action: 'getUsers',
+        page: this.data.pointsPage,
+        pageSize: 20,
+        keyword: this.data.pointsKeyword,
+        filter: this.data.pointsFilter
+      })
+
+      const list = (res.list || []).map((u, idx) => ({
+        ...u,
+        rank: (this.data.pointsPage - 1) * 20 + idx + 1
+      }))
+
+      this.setData({
+        pointsUsers: [...this.data.pointsUsers, ...list],
+        pointsPage: this.data.pointsPage + 1,
+        pointsNoMore: list.length < 20,
+        pointsStats: res.stats || { totalUsers: list.length, totalPoints: 0, avgPoints: 0 }
+      })
+    } catch (e) {
+      toast('加载用户失败')
+    } finally {
+      this.setData({ pointsLoading: false })
+    }
+  },
+
+  // 积分搜索
+  onPointsSearch(e) {
+    if (this._pointsSearchTimer) clearTimeout(this._pointsSearchTimer)
+    const keyword = e.detail.value
+    this._pointsSearchTimer = setTimeout(() => {
+      this.setData({
+        pointsKeyword: keyword,
+        pointsUsers: [],
+        pointsPage: 1,
+        pointsNoMore: false
+      })
+      this.loadPointsUsers()
+    }, 500)
+  },
+
+  // 切换积分筛选
+  changePointsFilter(e) {
+    const filter = e.currentTarget.dataset.filter
+    this.setData({
+      pointsFilter: filter,
+      pointsUsers: [],
+      pointsPage: 1,
+      pointsNoMore: false
+    })
+    this.loadPointsUsers()
+  },
+
   // 打开积分弹窗
   openPointsModal(e) {
     const { user, action } = e.currentTarget.dataset
@@ -393,19 +679,26 @@ Page({
   async confirmPoints() {
     const { selectedUser, pointsAction, pointsValue, pointsReason } = this.data
     const points = parseInt(pointsValue)
-    
+
     if (!points || points <= 0) {
       toast('请输入有效的积分数量')
+      return
+    }
+
+    // 确保使用 _openid 字段
+    const openid = selectedUser._openid
+    if (!openid) {
+      toast('用户数据异常，缺少 _openid')
       return
     }
 
     try {
       const action = pointsAction === 'add' ? 'addPoints' : 'deductPoints'
       const reason = pointsReason || (pointsAction === 'add' ? '管理员增加积分' : '管理员扣除积分')
-      
+
       const res = await callCloud('adminMgr', {
         action,
-        openid: selectedUser.openid || selectedUser._openid,
+        openid,  // 只使用 _openid
         points,
         reason
       })
@@ -417,9 +710,9 @@ Page({
 
       toast(res.message || '操作成功', 'success')
       this.setData({ pointsModalVisible: false })
-      // 刷新用户列表
-      this.setData({ users: [], userPage: 1, userNoMore: false })
-      this.loadUsers()
+      // 刷新积分用户列表
+      this.setData({ pointsUsers: [], pointsPage: 1, pointsNoMore: false })
+      this.loadPointsUsers()
     } catch (e) {
       toast('操作失败')
     }
@@ -431,6 +724,85 @@ Page({
   },
 
   // ========== 信用分管理 ==========
+  // 加载信用分用户列表
+  async loadCreditUsers() {
+    if (this.data.creditLoading || this.data.creditNoMore) return
+
+    this.setData({ creditLoading: true })
+    try {
+      const res = await callCloud('adminMgr', {
+        action: 'getUsers',
+        page: this.data.creditPage,
+        pageSize: 20,
+        keyword: this.data.creditKeyword,
+        filter: this.data.creditFilter
+      })
+
+      const list = (res.list || []).map(u => ({
+        ...u,
+        creditLevel: this.getCreditLevel(u.creditScore || 100)
+      }))
+
+      this.setData({
+        creditUsers: [...this.data.creditUsers, ...list],
+        creditPage: this.data.creditPage + 1,
+        creditNoMore: list.length < 20,
+        creditDist: res.creditDist || { excellent: 0, good: 0, normal: 0, poor: 0 }
+      })
+    } catch (e) {
+      toast('加载用户失败')
+    } finally {
+      this.setData({ creditLoading: false })
+    }
+  },
+
+  // 计算信用分布
+  calculateCreditDist(users) {
+    if (!users || users.length === 0) return { excellent: 0, good: 0, normal: 0, poor: 0 }
+    let excellent = 0, good = 0, normal = 0, poor = 0
+    users.forEach(u => {
+      const score = u.creditScore || 100
+      if (score >= 90) excellent++
+      else if (score >= 80) good++
+      else if (score >= 60) normal++
+      else poor++
+    })
+    const total = users.length
+    return {
+      excellent: Math.round(excellent / total * 100),
+      good: Math.round(good / total * 100),
+      normal: Math.round(normal / total * 100),
+      poor: Math.round(poor / total * 100)
+    }
+  },
+
+  // 信用分搜索
+  onCreditSearch(e) {
+    if (this._creditSearchTimer) clearTimeout(this._creditSearchTimer)
+    const keyword = e.detail.value
+    this._creditSearchTimer = setTimeout(() => {
+      this.setData({
+        creditKeyword: keyword,
+        creditUsers: [],
+        creditPage: 1,
+        creditNoMore: false
+      })
+      this.loadCreditUsers()
+    }, 500)
+  },
+
+  // 切换信用分筛选
+  changeCreditFilter(e) {
+    const filter = e.currentTarget.dataset.filter
+    this.setData({
+      creditFilter: filter,
+      creditUsers: [],
+      creditPage: 1,
+      creditNoMore: false
+    })
+    this.loadCreditUsers()
+  },
+
   // 打开信用分弹窗
   openCreditModal(e) {
     const user = e.currentTarget.dataset.user
@@ -458,16 +830,23 @@ Page({
   async confirmCredit() {
     const { selectedUser, creditValue, creditReason } = this.data
     const creditScore = parseInt(creditValue)
-    
+
     if (isNaN(creditScore) || creditScore < 0 || creditScore > 100) {
       toast('信用分范围为0-100')
+      return
+    }
+
+    // 确保使用 _openid 字段
+    const openid = selectedUser._openid
+    if (!openid) {
+      toast('用户数据异常，缺少 _openid')
       return
     }
 
     try {
       const res = await callCloud('adminMgr', {
         action: 'adjustCredit',
-        openid: selectedUser.openid || selectedUser._openid,
+        openid,  // 只使用 _openid
         creditScore,
         reason: creditReason || '管理员调整信用分'
       })
@@ -479,9 +858,9 @@ Page({
 
       toast(res.message || '操作成功', 'success')
       this.setData({ creditModalVisible: false })
-      // 刷新用户列表
-      this.setData({ users: [], userPage: 1, userNoMore: false })
-      this.loadUsers()
+      // 刷新信用分用户列表
+      this.setData({ creditUsers: [], creditPage: 1, creditNoMore: false })
+      this.loadCreditUsers()
     } catch (e) {
       toast('操作失败')
     }
@@ -493,6 +872,18 @@ Page({
   },
 
   // ========== 神秘特产管理 ==========
+  // 切换神秘特产筛选
+  changeMysteryFilter(e) {
+    const filter = e.currentTarget.dataset.filter
+    this.setData({
+      mysteryFilter: filter,
+      mysteryProducts: [],
+      mysteryPage: 1,
+      mysteryNoMore: false
+    })
+    this.loadMysteryProducts()
+  },
+
   // 加载神秘特产列表
   async loadMysteryProducts() {
     if (!this.data.isSuperAdmin) {
@@ -506,7 +897,8 @@ Page({
       const res = await callCloud('adminMgr', {
         action: 'getMysteryProducts',
         page: this.data.mysteryPage,
-        pageSize: 20
+        pageSize: 20,
+        filter: this.data.mysteryFilter
       })
 
       const list = (res.list || []).map(p => ({
@@ -518,7 +910,8 @@ Page({
       this.setData({
         mysteryProducts: [...this.data.mysteryProducts, ...list],
         mysteryPage: this.data.mysteryPage + 1,
-        mysteryNoMore: list.length < 20
+        mysteryNoMore: list.length < 20,
+        mysteryStats: res.stats || { total: 0, active: 0, inSwap: 0 }
       })
     } catch (e) {
       toast('加载神秘特产失败')
@@ -654,16 +1047,27 @@ Page({
       reviews: [],
       reviewPage: 1,
       reviewNoMore: false,
+      pendingProducts: [],
+      pendingPage: 1,
+      pendingNoMore: false,
+      pointsUsers: [],
+      pointsPage: 1,
+      pointsNoMore: false,
+      creditUsers: [],
+      creditPage: 1,
+      creditNoMore: false,
       mysteryProducts: [],
       mysteryPage: 1,
       mysteryNoMore: false
     })
     this.loadStats()
     const tab = this.data.currentTab
-    if (tab === 1 || tab === 5 || tab === 6) this.loadUsers()
+    if (tab === 1) this.loadUsers()
     else if (tab === 2) this.loadProducts()
     else if (tab === 3) this.loadOrders()
-    else if (tab === 4) this.loadReviews()
+    else if (tab === 4) this.loadPendingProducts()
+    else if (tab === 5) this.loadPointsUsers()
+    else if (tab === 6) this.loadCreditUsers()
     else if (tab === 7) this.loadMysteryProducts()
     else if (tab === 8) this.loadFeatureFlags()
     wx.stopPullDownRefresh()
@@ -671,10 +1075,12 @@ Page({
 
   onReachBottom() {
     const tab = this.data.currentTab
-    if (tab === 1 || tab === 5 || tab === 6) this.loadUsers()
+    if (tab === 1) this.loadUsers()
     else if (tab === 2) this.loadProducts()
     else if (tab === 3) this.loadOrders()
-    else if (tab === 4) this.loadReviews()
+    else if (tab === 4) this.loadPendingProducts()
+    else if (tab === 5) this.loadPointsUsers()
+    else if (tab === 6) this.loadCreditUsers()
     else if (tab === 7) this.loadMysteryProducts()
   },
 
@@ -691,7 +1097,8 @@ Page({
 
   updateUserField(e) {
     const field = e.currentTarget.dataset.field
-    const value = e.detail.value
+    // 优先使用 data-value（用于性别选择），其次使用 e.detail.value
+    const value = e.currentTarget.dataset.value !== undefined ? e.currentTarget.dataset.value : e.detail.value
     this.setData({ [`editingUser.${field}`]: value })
   },
 
@@ -705,7 +1112,9 @@ Page({
 
   async saveUserEdit() {
     const { editingUser } = this.data
-    if (!editingUser || !editingUser.openid) {
+    // 兼容 openid 和 _openid 两种字段
+    const openid = editingUser.openid || editingUser._openid
+    if (!editingUser || !openid) {
       toast('参数错误')
       return
     }
@@ -714,10 +1123,16 @@ Page({
       wx.showLoading({ title: '保存中...' })
       const res = await callCloud('adminMgr', {
         action: 'editUser',
-        openid: editingUser.openid,
+        openid: openid,
         updates: {
           nickName: editingUser.nickName,
-          province: editingUser.province
+          province: editingUser.province,
+          gender: editingUser.gender,
+          birthday: editingUser.birthday,
+          zodiac: editingUser.zodiac,
+          zodiacAnimal: editingUser.zodiacAnimal,
+          points: editingUser.points,
+          creditScore: editingUser.creditScore
         }
       })
       wx.hideLoading()
@@ -782,7 +1197,7 @@ Page({
     const idx = Number(e.detail.value)
     this.setData({
       statusIndex: idx,
-      'editingProduct.status': ['active', 'removed', 'banned'][idx]
+      'editingProduct.status': ['active', 'pending_review', 'rejected', 'removed', 'banned'][idx]
     })
   },
 

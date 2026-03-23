@@ -1,0 +1,28 @@
+<!-- components/phone-verify/index.wxml - 手机号快速验证组件(微信原生方案) -->
+<view class="phone-verify-container">
+  <!-- 已验证状态 -->
+  <view wx:if="{{isVerified}}" class="verified-box">
+    <view class="verified-icon">✓</view>
+    <view class="verified-content">
+      <view class="verified-label">已验证手机号</view>
+      <view class="verified-phone">{{maskedPhone}}</view>
+    </view>
+    <view class="verified-badge">已认证</view>
+  </view>
+
+  <!-- 未验证状态 -->
+  <view wx:else class="unverified-box">
+    <button 
+      class="get-phone-btn" 
+      open-type="getPhoneNumber" 
+      bindgetphonenumber="onGetPhoneNumber"
+      disabled="{{loading}}"
+    >
+      <view class="btn-icon">📱</view>
+      <view class="btn-text">
+        <view class="btn-title">{{loading ? '验证中...' : '快速验证手机号'}}</view>
+        <view class="btn-desc">一键授权,提升信用分 +5</view>
+      </view>
+    </button>
+  </view>
+</view>

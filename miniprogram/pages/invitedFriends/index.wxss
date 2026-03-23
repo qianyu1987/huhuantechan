@@ -308,3 +308,35 @@
   height: 50rpx;
   background: rgba(255, 255, 255, 0.3);
 }
+
+/* 积分规则入口 */
+.points-rule-entry {
+  display: flex;
+  align-items: center;
+  margin: 24rpx 0;
+  padding: 24rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16rpx;
+}
+
+.points-rule-entry:active {
+  opacity: 0.9;
+  transform: scale(0.99);
+}
+
+.points-rule-icon {
+  font-size: 36rpx;
+  margin-right: 16rpx;
+}
+
+.points-rule-text {
+  flex: 1;
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #FFFFFF;
+}
+
+.points-rule-arrow {
+  font-size: 36rpx;
+  color: rgba(255, 255, 255, 0.8);
+}

@@ -155,5 +155,10 @@ Page({
       withShareTicket: true,
       menus: ['shareAppMessage', 'shareTimeline']
     })
+  },
+
+  // 跳转积分规则页面
+  goToPointsRule() {
+    wx.navigateTo({ url: '/pages/points-rule/index' })
   }
 })

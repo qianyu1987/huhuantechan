@@ -279,11 +279,35 @@
 
 .pub-info { flex: 1; }
 
+.pub-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
 .pub-name {
   font-size: 30rpx;
   font-weight: 700;
   color: var(--color-text);
   display: block;
+}
+
+/* 性别标签 */
+.gender-badge {
+  font-size: 24rpx;
+  padding: 2rpx 8rpx;
+  border-radius: 8rpx;
+  display: inline-block;
+}
+
+.gender-male {
+  background: rgba(10, 132, 255, 0.15);
+  color: #0A84FF;
+}
+
+.gender-female {
+  background: rgba(255, 45, 85, 0.15);
+  color: #FF2D55;
 }
 
 .pub-meta {

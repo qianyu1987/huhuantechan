@@ -114,7 +114,7 @@
   -webkit-backdrop-filter: blur(25px);
   border-radius: 24rpx;
   border: 1rpx solid rgba(255, 255, 255, 0.08);
-  padding: 32rpx;
+  padding: 24rpx 20rpx;
   margin-top: 32rpx;
 }
 
@@ -133,7 +133,7 @@
 
 /* 功能区 */
 .features-section {
-  margin-top: 40rpx;
+  margin-top: 32rpx;
 }
 
 .section-title {
@@ -174,7 +174,7 @@
 
 /* 平台亮点 */
 .highlights-section {
-  margin-top: 40rpx;
+  margin-top: 32rpx;
 }
 
 .highlights-list {
@@ -235,7 +235,7 @@
 
 /* 联系方式 */
 .contact-section {
-  margin-top: 40rpx;
+  margin-top: 32rpx;
 }
 
 .contact-list {
@@ -319,7 +319,7 @@
   align-items: center;
   gap: 8rpx;
   margin-top: 60rpx;
-  padding: 32rpx 0;
+  padding: 32rpx 20rpx 0;
 }
 
 .copyright text {

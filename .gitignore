@@ -1,7 +1,3 @@
-node_modules/
-miniprogram_npm/
-.workbuddy/
-project.private.config.json
-cloudfunctions/**/node_modules/
-miniprogram/nul
-qiange/
+# 短信配置文件 - 包含敏感信息,请勿提交!
+cloudfunctions/common/sms/sms-config.js
+node_modules

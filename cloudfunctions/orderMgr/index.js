@@ -88,11 +88,11 @@ exports.main = async (event, context) => {
       // 检查自己的特产
       const myProduct = await db.collection('products').doc(myProductId).get()
       if (myProduct.data.openid !== openid) return { success: false, message: '这不是你的特产' }
-      if (myProduct.data.status !== 'active') return { success: false, message: '特产不可用' }
+      if (myProduct.data.status !== 'active') return { success: false, message: '你的特产当前不可用' }
 
       // 检查目标特产
       const targetProduct = await db.collection('products').doc(targetProductId).get()
-      if (targetProduct.data.status !== 'active') return { success: false, message: '对方特产已下架' }
+      if (targetProduct.data.status !== 'active') return { success: false, message: '对方特产当前不可用' }
       if (targetProduct.data.openid === openid) return { success: false, message: '不能和自己互换' }
 
       // 神秘特产检查：只能与神秘特产互换，普通特产不能与神秘特产互换
@@ -195,12 +195,13 @@ exports.main = async (event, context) => {
       let userMap = {}
       if (uniqueOpenids.length > 0) {
         const usersRes = await db.collection('users')
-          .where({ openid: _.in(uniqueOpenids) })
-          .field({ openid: true, nickName: true, avatarUrl: true, creditScore: true, rating: true, ratingCount: true })
+          .where({ _openid: _.in(uniqueOpenids) })
+          .field({ _openid: true, nickName: true, avatarUrl: true, creditScore: true, rating: true, ratingCount: true })
           .get()
         for (const u of usersRes.data) {
           u.avatarUrl = await resolveCloudUrl(u.avatarUrl)
-          userMap[u.openid] = u
+          u.openid = u._openid  // 确保前端可通过 openid 跳转用户主页
+          userMap[u._openid] = u
         }
       }
 
@@ -288,12 +289,13 @@ exports.main = async (event, context) => {
       const uniqueOpenids = [...new Set(openids)]
       if (uniqueOpenids.length > 0) {
         const usersRes = await db.collection('users')
-          .where({ openid: _.in(uniqueOpenids) })
-          .field({ openid: true, nickName: true, avatarUrl: true })
+          .where({ _openid: _.in(uniqueOpenids) })
+          .field({ _openid: true, nickName: true, avatarUrl: true })
           .get()
         for (const u of usersRes.data) {
           u.avatarUrl = await resolveCloudUrl(u.avatarUrl)
-          userMap[u.openid] = u
+          u.openid = u._openid  // 确保前端可通过 openid 跳转用户主页
+          userMap[u._openid] = u
         }
       }
 
@@ -409,7 +411,7 @@ exports.main = async (event, context) => {
 
       // 扣分
       if (creditDelta !== 0) {
-        await db.collection('users').where({ openid }).update({
+        await db.collection('users').where({ _openid: openid }).update({
           data: { creditScore: _.inc(creditDelta) }
         })
         await db.collection('credit_logs').add({
@@ -482,14 +484,43 @@ exports.main = async (event, context) => {
 
       // 完成时加信用分 + 更新统计
       if (newStatus === 'completed') {
+        // 先读取双方用户信息（在 swapCount 递增之前），用于判断首次互换
+        const [initiatorUserBeforeRes, receiverUserBeforeRes] = await Promise.all([
+          db.collection('users').where({ _openid: o.initiatorOpenid }).limit(1).get(),
+          db.collection('users').where({ _openid: o.receiverOpenid }).limit(1).get()
+        ])
+        const initiatorBefore = initiatorUserBeforeRes.data && initiatorUserBeforeRes.data[0]
+        const receiverBefore = receiverUserBeforeRes.data && receiverUserBeforeRes.data[0]
+        const initiatorIsFirstSwap = initiatorBefore && (initiatorBefore.swapCount || 0) === 0
+        const receiverIsFirstSwap = receiverBefore && (receiverBefore.swapCount || 0) === 0
+
         await Promise.all([
           db.collection('products').doc(o.initiatorProductId).update({ data: { status: 'swapped' } }),
           db.collection('products').doc(o.receiverProductId).update({ data: { status: 'swapped' } }),
-          db.collection('users').where({ openid: o.initiatorOpenid }).update({
+          db.collection('users').where({ _openid: o.initiatorOpenid }).update({
             data: { creditScore: _.inc(CREDIT_DELTA.complete), swapCount: _.inc(1) }
           }),
-          db.collection('users').where({ openid: o.receiverOpenid }).update({
+          db.collection('users').where({ _openid: o.receiverOpenid }).update({
             data: { creditScore: _.inc(CREDIT_DELTA.complete), swapCount: _.inc(1) }
+          }),
+          // 记录信用日志
+          db.collection('credit_logs').add({
+            data: {
+              openid: o.initiatorOpenid,
+              delta: CREDIT_DELTA.complete,
+              reason: '完成互换',
+              orderId: event.orderId,
+              createTime: db.serverDate()
+            }
+          }),
+          db.collection('credit_logs').add({
+            data: {
+              openid: o.receiverOpenid,
+              delta: CREDIT_DELTA.complete,
+              reason: '完成互换',
+              orderId: event.orderId,
+              createTime: db.serverDate()
+            }
           })
         ])
 
@@ -497,29 +528,52 @@ exports.main = async (event, context) => {
         const initiatorProduct = await db.collection('products').doc(o.initiatorProductId).get()
         const receiverProduct = await db.collection('products').doc(o.receiverProductId).get()
 
-        await db.collection('users').where({ openid: o.initiatorOpenid }).update({
+        await db.collection('users').where({ _openid: o.initiatorOpenid }).update({
           data: { provincesBadges: _.addToSet(receiverProduct.data.province) }
         })
-        await db.collection('users').where({ openid: o.receiverOpenid }).update({
+        await db.collection('users').where({ _openid: o.receiverOpenid }).update({
           data: { provincesBadges: _.addToSet(initiatorProduct.data.province) }
         })
+
+        // ====== 完成互换积分奖励（双方各得10积分）======
+        const SWAP_COMPLETE_REWARD = 10
+        await Promise.all([
+          db.collection('users').where({ _openid: o.initiatorOpenid }).update({
+            data: { points: _.inc(SWAP_COMPLETE_REWARD) }
+          }),
+          db.collection('users').where({ _openid: o.receiverOpenid }).update({
+            data: { points: _.inc(SWAP_COMPLETE_REWARD) }
+          }),
+          db.collection('points_log').add({
+            data: {
+              openid: o.initiatorOpenid,
+              type: 'swap_complete',
+              amount: SWAP_COMPLETE_REWARD,
+              desc: '完成互换奖励',
+              orderId: event.orderId,
+              createTime: db.serverDate()
+            }
+          }),
+          db.collection('points_log').add({
+            data: {
+              openid: o.receiverOpenid,
+              type: 'swap_complete',
+              amount: SWAP_COMPLETE_REWARD,
+              desc: '完成互换奖励',
+              orderId: event.orderId,
+              createTime: db.serverDate()
+            }
+          })
+        ])
 
         // ====== 邀请好友首次互换奖励（双方各得20积分）======
         const FIRST_SWAP_REWARD = 20
         try {
-          // 获取双方最新用户信息（swapCount 已经 +1 了）
-          const [initiatorUserRes, receiverUserRes] = await Promise.all([
-            db.collection('users').where({ openid: o.initiatorOpenid }).limit(1).get(),
-            db.collection('users').where({ openid: o.receiverOpenid }).limit(1).get()
-          ])
-          const initiatorUser = initiatorUserRes.data && initiatorUserRes.data[0]
-          const receiverUser = receiverUserRes.data && receiverUserRes.data[0]
-
-          // 检查发起方是否是被邀请用户且首次完成互换
-          if (initiatorUser && initiatorUser.invitedBy && initiatorUser.swapCount === 1) {
-            const inviterOpenid = initiatorUser.invitedBy
+          // 检查发起方是否是被邀请用户且首次完成互换（使用递增前的 swapCount）
+          if (initiatorIsFirstSwap && initiatorBefore.invitedBy) {
+            const inviterOpenid = initiatorBefore.invitedBy
             // 给被邀请人（发起方）加20积分
-            await db.collection('users').where({ openid: o.initiatorOpenid }).update({
+            await db.collection('users').where({ _openid: o.initiatorOpenid }).update({
               data: { points: _.inc(FIRST_SWAP_REWARD) }
             })
             await db.collection('points_log').add({
@@ -533,7 +587,7 @@ exports.main = async (event, context) => {
               }
             })
             // 给邀请人加20积分
-            await db.collection('users').where({ openid: inviterOpenid }).update({
+            await db.collection('users').where({ _openid: inviterOpenid }).update({
               data: { points: _.inc(FIRST_SWAP_REWARD) }
             })
             await db.collection('points_log').add({
@@ -549,11 +603,11 @@ exports.main = async (event, context) => {
             })
           }
 
-          // 检查接收方是否是被邀请用户且首次完成互换
-          if (receiverUser && receiverUser.invitedBy && receiverUser.swapCount === 1) {
-            const inviterOpenid = receiverUser.invitedBy
+          // 检查接收方是否是被邀请用户且首次完成互换（使用递增前的 swapCount）
+          if (receiverIsFirstSwap && receiverBefore.invitedBy) {
+            const inviterOpenid = receiverBefore.invitedBy
             // 给被邀请人（接收方）加20积分
-            await db.collection('users').where({ openid: o.receiverOpenid }).update({
+            await db.collection('users').where({ _openid: o.receiverOpenid }).update({
               data: { points: _.inc(FIRST_SWAP_REWARD) }
             })
             await db.collection('points_log').add({
@@ -567,7 +621,7 @@ exports.main = async (event, context) => {
               }
             })
             // 给邀请人加20积分
-            await db.collection('users').where({ openid: inviterOpenid }).update({
+            await db.collection('users').where({ _openid: inviterOpenid }).update({
               data: { points: _.inc(FIRST_SWAP_REWARD) }
             })
             await db.collection('points_log').add({
@@ -634,7 +688,7 @@ exports.main = async (event, context) => {
       })
 
       // 更新被评价用户的评分统计
-      const targetUserRes = await db.collection('users').where({ openid: targetOpenid }).limit(1).get()
+      const targetUserRes = await db.collection('users').where({ _openid: targetOpenid }).limit(1).get()
       if (targetUserRes.data.length > 0) {
         const targetUser = targetUserRes.data[0]
         const currentRating = targetUser.rating || 5
@@ -642,7 +696,7 @@ exports.main = async (event, context) => {
         const newCount = currentCount + 1
         const newRating = ((currentRating * currentCount) + rating) / newCount
 
-        await db.collection('users').where({ openid: targetOpenid }).update({
+        await db.collection('users').where({ _openid: targetOpenid }).update({
           data: {
             rating: Math.round(newRating * 10) / 10,
             ratingCount: newCount
@@ -697,8 +751,8 @@ exports.main = async (event, context) => {
 
       // 获取双方用户信息
       const [initiatorUserRes, receiverUserRes] = await Promise.all([
-        db.collection('users').where({ openid: order.initiatorOpenid }).limit(1).get(),
-        db.collection('users').where({ openid: order.receiverOpenid }).limit(1).get()
+        db.collection('users').where({ _openid: order.initiatorOpenid }).limit(1).get(),
+        db.collection('users').where({ _openid: order.receiverOpenid }).limit(1).get()
       ])
 
       // 获取评价信息
@@ -712,14 +766,20 @@ exports.main = async (event, context) => {
       // 处理产品图片URL
       await processProductImages([initiatorProduct, receiverProduct])
 
+      const initiatorUser = initiatorUserRes.data[0] || {}
+      const receiverUser = receiverUserRes.data[0] || {}
+      // 确保前端能通过 openid 字段跳转用户主页
+      initiatorUser.openid = initiatorUser._openid || order.initiatorOpenid
+      receiverUser.openid = receiverUser._openid || order.receiverOpenid
+
       return {
         success: true,
         order: {
           ...order,
           initiatorProduct,
           receiverProduct,
-          initiator: initiatorUserRes.data[0] || {},
-          receiver: receiverUserRes.data[0] || {},
+          initiator: initiatorUser,
+          receiver: receiverUser,
           reviews: reviewsRes.data || []
         },
         isInitiator

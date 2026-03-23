@@ -10,8 +10,10 @@
   background: var(--color-surface);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  padding: 20rpx 32rpx;
+  padding: 20rpx 32rpx 24rpx;
   border-bottom: 1rpx solid var(--color-divider);
+  border-bottom-left-radius: var(--radius-2xl);
+  border-bottom-right-radius: var(--radius-2xl);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -139,7 +141,7 @@
   background: var(--color-bg);
   border-radius: var(--radius-xl);
   padding: 20rpx 28rpx;
-  margin-bottom: 20rpx;
+  margin-bottom: 28rpx;
   transition: all 0.2s ease;
 }
 
@@ -193,12 +195,15 @@
 .category-bar {
   background: var(--color-surface-solid);
   padding: 32rpx 0;
+  margin-top: 16rpx;
   border-bottom: 1rpx solid var(--color-divider);
+  border-bottom-left-radius: var(--radius-2xl);
+  border-bottom-right-radius: var(--radius-2xl);
 }
 
 .category-scroll {
   white-space: nowrap;
-  padding: 0 32rpx;
+  padding: 0 20rpx;
   box-sizing: border-box;
 }
 
@@ -257,7 +262,7 @@
 
 /* ===== 产品网格 - 三列正方形卡片 ===== */
 .product-content {
-  padding: 24rpx 24rpx 0;
+  padding: 24rpx 12rpx 0;
 }
 
 .product-grid {

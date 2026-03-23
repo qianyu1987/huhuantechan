@@ -397,7 +397,11 @@ button {
 .m-6 { margin: 24rpx; }
 .m-8 { margin: 32rpx; }
 
+/* 页面左右边距 - 更贴近边缘 */
+.mx-sm { margin-left: 12rpx; margin-right: 12rpx; }
 .mx-4 { margin-left: 16rpx; margin-right: 16rpx; }
+.mx-5 { margin-left: 20rpx; margin-right: 20rpx; }
+.mx-md { margin-left: 20rpx; margin-right: 20rpx; }
 .mx-6 { margin-left: 24rpx; margin-right: 24rpx; }
 .mx-8 { margin-left: 32rpx; margin-right: 32rpx; }
 
@@ -413,6 +417,24 @@ button {
 .mb-4 { margin-bottom: 16rpx; }
 .mb-6 { margin-bottom: 24rpx; }
 .mb-8 { margin-bottom: 32rpx; }
+
+/* 通用 padding 工具类 - 统一全站上下间距 */
+.p-4 { padding: 16rpx; }
+.p-5 { padding: 20rpx; }
+.p-6 { padding: 24rpx; }  /* 标准 section/card padding */
+.p-8 { padding: 32rpx; }
+.p-10 { padding: 40rpx; }
+
+.py-4 { padding-top: 16rpx; padding-bottom: 16rpx; }
+.py-5 { padding-top: 20rpx; padding-bottom: 20rpx; }
+.py-6 { padding-top: 24rpx; padding-bottom: 24rpx; }  /* 标准上下间距 */
+.py-8 { padding-top: 32rpx; padding-bottom: 32rpx; }
+.py-10 { padding-top: 40rpx; padding-bottom: 40rpx; }
+
+.px-4 { padding-left: 16rpx; padding-right: 16rpx; }
+.px-5 { padding-left: 20rpx; padding-right: 20rpx; }
+.px-6 { padding-left: 24rpx; padding-right: 24rpx; }
+.px-8 { padding-left: 32rpx; padding-right: 32rpx; }
 
 .p-0 { padding: 0; }
 .p-4 { padding: 16rpx; }

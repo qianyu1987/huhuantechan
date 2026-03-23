@@ -17,16 +17,16 @@
       <view class="logo-circle">
         <text class="logo-icon">🎁</text>
       </view>
-      <view class="app-name">换特产</view>
+      <view class="app-name">风物之情</view>
       <view class="app-version">Version 6.2.2</view>
       <view class="app-slogan">一方水土一方味，以物易物见真情</view>
     </view>
 
     <!-- 简介 -->
     <view class="intro-card">
-      <view class="intro-title">关于换特产</view>
+      <view class="intro-title">关于风物之情</view>
       <view class="intro-text">
-        「换特产」是一款基于地域文化的特产分享社交平台。我们相信，每一份特产背后都承载着一方水土的味道和一段故事。平台以"分享家乡味"为核心理念，让天南海北的用户通过分享家乡特产，足不出户就能品尝到全国各地的地道风味。
+        「风物之情」是一款基于地域文化的特产分享社交平台。我们相信，每一份特产背后都承载着一方水土的味道和一段故事。平台以"分享家乡味"为核心理念，让天南海北的用户通过分享家乡特产，足不出户就能品尝到全国各地的地道风味。
       </view>
       <view class="intro-text" style="margin-top: 20rpx;">
         无论是东北的松子、新疆的红枣、四川的花椒，还是广东的陈皮、云南的鲜花饼、福建的铁观音，在这里都能找到懂得欣赏它的新主人。我们致力于搭建一个诚信、安全、有温度的特产社区，让分享成为一种生活方式。
@@ -161,10 +161,10 @@
             <text class="copy-btn">复制</text>
           </view>
         </view>
-        <view class="contact-item" bindtap="copyText" data-id="换特产">
+        <view class="contact-item" bindtap="copyText" data-id="风物之情">
           <text class="contact-label">公众号</text>
           <view class="contact-value">
-            <text>换特产</text>
+            <text>风物之情</text>
             <text class="copy-btn">复制</text>
           </view>
         </view>

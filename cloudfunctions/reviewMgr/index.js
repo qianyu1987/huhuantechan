@@ -59,7 +59,7 @@ exports.main = async (event, context) => {
 
       // 更新被评价者信用分
       const delta = rating === 1 ? CREDIT_DELTA.good_review : CREDIT_DELTA.bad_review
-      await db.collection('users').where({ openid: revieweeOpenid }).update({
+      await db.collection('users').where({ _openid: revieweeOpenid }).update({
         data: { creditScore: _.inc(delta) }
       })
 
@@ -138,13 +138,13 @@ exports.main = async (event, context) => {
       let userMap = {}
       if (reviewerIds.length > 0) {
         const usersRes = await db.collection('users')
-          .where({ openid: _.in(reviewerIds) })
-          .field({ openid: true, nickName: true, avatarUrl: true })
+          .where({ _openid: _.in(reviewerIds) })
+          .field({ _openid: true, nickName: true, avatarUrl: true })
           .get()
         // 转换所有 reviewer 头像 cloud:// → https
         for (const u of usersRes.data) {
           u.avatarUrl = await resolveCloudUrl(u.avatarUrl)
-          userMap[u.openid] = u
+          userMap[u._openid] = u
         }
       }
 
@@ -163,7 +163,7 @@ exports.main = async (event, context) => {
   if (action === 'creditLogs') {
     try {
       const res = await db.collection('credit_logs')
-        .where({ openid })
+        .where(_.or([{ openid }, { _openid: openid }]))
         .orderBy('createTime', 'desc')
         .limit(50)
         .get()
@@ -234,12 +234,12 @@ exports.main = async (event, context) => {
       let userMap = {}
       if (revieweeIds.length > 0) {
         const usersRes = await db.collection('users')
-          .where({ openid: _.in(revieweeIds) })
-          .field({ openid: true, nickName: true, avatarUrl: true })
+          .where({ _openid: _.in(revieweeIds) })
+          .field({ _openid: true, nickName: true, avatarUrl: true })
           .get()
         for (const u of usersRes.data) {
           u.avatarUrl = await resolveCloudUrl(u.avatarUrl)
-          userMap[u.openid] = u
+          userMap[u._openid] = u
         }
       }
 
@@ -318,12 +318,12 @@ exports.main = async (event, context) => {
       let userMap = {}
       if (reviewerIds.length > 0) {
         const usersRes = await db.collection('users')
-          .where({ openid: _.in(reviewerIds) })
-          .field({ openid: true, nickName: true, avatarUrl: true })
+          .where({ _openid: _.in(reviewerIds) })
+          .field({ _openid: true, nickName: true, avatarUrl: true })
           .get()
         for (const u of usersRes.data) {
           u.avatarUrl = await resolveCloudUrl(u.avatarUrl)
-          userMap[u.openid] = u
+          userMap[u._openid] = u
         }
       }
 
@@ -345,13 +345,13 @@ exports.main = async (event, context) => {
   if (action === 'pointsLogs') {
     try {
       const res = await db.collection('points_log')
-        .where({ openid })
+        .where(_.or([{ openid }, { _openid: openid }]))
         .orderBy('createTime', 'desc')
         .limit(50)
         .get()
       return { success: true, list: res.data }
     } catch (e) {
-      return { success: true, list: [] }
+      return { success: false, list: [] }
     }
   }
 

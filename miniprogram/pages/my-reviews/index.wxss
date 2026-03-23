@@ -24,7 +24,7 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  padding: 20rpx 32rpx;
+  padding: 20rpx 24rpx;
   padding-top: calc(20rpx + env(safe-area-inset-top));
   background: rgba(30, 30, 32, 0.7);
   backdrop-filter: blur(30px);
@@ -399,7 +399,7 @@
   align-items: center;
   justify-content: center;
   gap: 16rpx;
-  padding: 32rpx;
+  padding: 32rpx 20rpx;
   color: rgba(255, 255, 255, 0.5);
   font-size: 24rpx;
 }
@@ -419,7 +419,7 @@
 
 .no-more {
   text-align: center;
-  padding: 32rpx;
+  padding: 32rpx 20rpx;
   color: rgba(255, 255, 255, 0.3);
   font-size: 24rpx;
 }

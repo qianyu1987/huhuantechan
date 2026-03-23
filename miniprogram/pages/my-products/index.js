@@ -5,6 +5,8 @@ const { callCloud, formatTime, getProvinceByCode, toast, showLoading, hideLoadin
 const STATUS_TABS = [
   { id: 'all', label: '全部' },
   { id: 'active', label: '展示中' },
+  { id: 'pending_review', label: '待审核' },
+  { id: 'rejected', label: '已拒绝' },
   { id: 'in_swap', label: '分享中' },
   { id: 'swapped', label: '已分享' },
   { id: 'removed', label: '已下架' }
@@ -12,6 +14,8 @@ const STATUS_TABS = [
 
 const STATUS_CONFIG = {
   active: { label: '展示中' },
+  pending_review: { label: '待审核' },
+  rejected: { label: '已拒绝' },
   in_swap: { label: '分享中' },
   swapped: { label: '已分享' },
   removed: { label: '已下架' }

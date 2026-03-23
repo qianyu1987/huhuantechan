@@ -26,13 +26,13 @@
               <view class="icon-mystery"></view>
             </view>
             <view class="mystery-toggle-info">
-              <text class="mystery-toggle-title">神秘特产</text>
-              <text class="mystery-toggle-desc">以盲盒形式发布，匹配后揭晓</text>
+              <text class="mystery-toggle-title">惊喜特产</text>
+              <text class="mystery-toggle-desc">分享身边好物，寻找爱的方向</text>
             </view>
           </view>
-          <switch 
-            class="mystery-switch" 
-            checked="{{form.isMystery}}" 
+          <switch
+            class="mystery-switch"
+            checked="{{form.isMystery}}"
             bindchange="toggleMystery"
             color="#BF5AF2"
           />
@@ -131,6 +131,30 @@
               data-id="{{item.id}}"
             >{{item.emoji}} {{item.label}}</view>
           </block>
+        </view>
+      </view>
+
+      <!-- 性别选择 -->
+      <view class="section">
+        <view class="section-label">你的性别 <text class="required">*</text></view>
+        <view class="section-sub">用于特产展示时标注，方便对方了解</view>
+        <view class="gender-select-wrap">
+          <view 
+            class="gender-select-item {{form.gender === 'male' ? 'selected' : ''}}"
+            bindtap="selectGender"
+            data-gender="male"
+          >
+            <text class="gender-emoji">👨</text>
+            <text class="gender-text">男生</text>
+          </view>
+          <view 
+            class="gender-select-item {{form.gender === 'female' ? 'selected' : ''}}"
+            bindtap="selectGender"
+            data-gender="female"
+          >
+            <text class="gender-emoji">👩</text>
+            <text class="gender-text">女生</text>
+          </view>
         </view>
       </view>
 

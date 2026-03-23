@@ -13,20 +13,21 @@
     "pages/profile-edit/index",
     "pages/address/index",
     "pages/invitedFriends/index",
+    "pages/points-rule/index",
     "pages/credit/index",
-    "pages/help/index",
     "pages/settings/index",
     "pages/about/index",
     "pages/favorites/index",
     "pages/my-reviews/index",
     "pages/mystery/index",
     "pages/admin/index",
-    "pages/user-profile/index"
+    "pages/user-profile/index",
+    "pages/test-phone/index"
   ],
   "window": {
     "backgroundTextStyle": "light",
     "navigationBarBackgroundColor": "#000000",
-    "navigationBarTitleText": "发现特产",
+    "navigationBarTitleText": "感悟华夏",
     "navigationBarTextStyle": "white",
     "backgroundColor": "#000000"
   },

@@ -63,7 +63,7 @@
 
 /* ===== 统计栏 ===== */
 .stats-bar {
-  padding: 24rpx 32rpx 8rpx;
+  padding: 24rpx 20rpx 8rpx;
 }
 
 .stats-text {

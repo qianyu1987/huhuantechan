@@ -57,7 +57,7 @@ page {
 .card {
   background: #fff;
   border-radius: 20rpx;
-  padding: 30rpx;
+  padding: 24rpx;
   margin-bottom: 24rpx;
   position: relative;
   z-index: 1;
@@ -443,7 +443,7 @@ page {
 
 /* 提交按钮 - iOS 风格 */
 .submit-section {
-  margin-top: 40rpx;
+  margin-top: 32rpx;
   padding: 0 10rpx;
 }
 

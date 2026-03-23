@@ -861,10 +861,12 @@ Page({
   },
 
   contactService() {
-    wx.openCustomerServiceChat({
-      extInfo: { url: '' },
-      corpId: '',
-      success: () => {}
+    // 暂时不开放企业微信客服，有问题请通过小程序反馈
+    wx.showModal({
+      title: '联系客服',
+      content: '如有需要，请通过小程序底部"我的"-设置-帮助中心反馈问题',
+      showCancel: false,
+      confirmText: '知道了'
     })
   },
 

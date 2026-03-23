@@ -6,10 +6,10 @@
   </view>
 
   <block wx:elif="{{product}}">
-    <!-- 神秘特产头图 -->
+    <!-- 惊喜特产头图 -->
     <view class="mystery-hero {{mysteryColorClass}}" wx:if="{{product.isMystery}}">
       <view class="mystery-emoji">{{mysteryEmoji}}</view>
-      <view class="mystery-label">神秘特产</view>
+      <view class="mystery-label">惊喜特产</view>
     </view>
 
     <!-- 普通特产 - 图片轮播（圆角+渐变融入） -->
@@ -27,7 +27,7 @@
 
     <!-- 基础信息卡 -->
     <view class="glass-card info-card">
-      <text class="product-name">{{product.isMystery ? '神秘特产' : product.name}}</text>
+      <text class="product-name">{{product.isMystery ? '惊喜特产' : product.name}}</text>
 
       <!-- 标签行：地区 + 品类 + 估值 -->
       <view class="tags-row">
@@ -41,9 +41,9 @@
         <view class="desc-pill" wx:for="{{descTagList}}" wx:key="id">{{item.emoji}} {{item.label}}</view>
       </view>
 
-      <!-- 神秘提示 -->
+      <!-- 惊喜提示 -->
       <view class="mystery-hint-box" wx:if="{{product.isMystery}}">
-        <text class="mystery-hint-text">🎁 这是一份神秘特产，匹配成功后才能揭晓内容</text>
+        <text class="mystery-hint-text">🎁 这是一份惊喜特产，匹配成功后才能揭晓内容</text>
       </view>
     </view>
 
@@ -61,10 +61,15 @@
     </view>
 
     <!-- 发布者卡片 -->
-    <view class="glass-card publisher-card" bindtap="goToUserProfile" data-openid="{{publisher.openid}}">
-      <image class="pub-avatar" src="{{publisher.avatarUrl || 'https://img.icons8.com/ios-filled/100/cccccc/user.png'}}" mode="aspectFill"/>
+    <view class="glass-card publisher-card" bindtap="goToUserProfile" data-openid="{{publisher.openid || publisher._openid}}">
+      <image class="pub-avatar" src="{{publisher.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"/>
       <view class="pub-info">
-        <text class="pub-name">{{publisher.nickName || '特产达人'}}</text>
+        <view class="pub-name-row">
+          <text class="pub-name">{{publisher.nickName || '特产达人'}}</text>
+          <view class="gender-badge {{product.gender === 'male' ? 'gender-male' : (product.gender === 'female' ? 'gender-female' : '')}}" wx:if="{{product.gender}}">
+            {{product.gender === 'male' ? '👨' : (product.gender === 'female' ? '👩' : '')}}
+          </view>
+        </view>
         <view class="pub-meta">
           <text class="{{creditClass}}">信用 {{publisher.creditScore || 100}}分</text>
           <text class="pub-dot">·</text>
@@ -84,7 +89,7 @@
       <view class="reviews-list" wx:if="{{reviews.length > 0}}">
         <view class="review-item" wx:for="{{reviews}}" wx:key="_id">
           <view class="review-top">
-            <image class="review-avatar" src="{{item.reviewerAvatar || 'https://img.icons8.com/ios-filled/100/cccccc/user.png'}}" mode="aspectFill"/>
+            <image class="review-avatar" src="{{item.reviewerAvatar || '/images/default-avatar.png'}}" mode="aspectFill"/>
             <view class="review-info">
               <text class="review-name">{{item.reviewerName}}</text>
               <text class="review-time">{{item.timeText}}</text>
@@ -116,7 +121,7 @@
       </view>
       <view wx:else class="bottom-bar-inner">
         <view class="fav-btn" bindtap="toggleFav">
-          <text class="fav-icon">{{isFav ? '❤️' : '🤍'}}</text>
+          <text class="fav-icon">{{isFav ? '🩷' : '🤍'}}</text>
           <text class="fav-label" style="color:{{isFav ? '#FF453A' : ''}}">收藏</text>
         </view>
         <button wx:if="{{featureFlags.feature_swap !== false}}" class="bar-btn bar-btn-swap" bindtap="initiateSwap">🔄 我想要</button>

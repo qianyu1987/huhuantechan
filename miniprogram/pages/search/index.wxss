@@ -8,7 +8,7 @@
 .search-header {
   display: flex;
   align-items: center;
-  padding: 20rpx 30rpx;
+  padding: 20rpx 24rpx;
   background: #fff;
   border-bottom: 1rpx solid #E5E5EA;
 }
@@ -66,7 +66,7 @@
 .search-section {
   background: #fff;
   margin-bottom: 20rpx;
-  padding: 30rpx;
+  padding: 24rpx;
 }
 
 .section-header {

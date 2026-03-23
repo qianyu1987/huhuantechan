@@ -1,9 +1,6 @@
 // pages/mystery/index.js - 神秘特产
 const { callCloud, getProvinceByCode } = require('../../utils/util')
-const { PRODUCT_CATEGORIES, VALUE_RANGES } = require('../../utils/constants')
-
-// 神秘特产emoji列表
-const MYSTERY_EMOJIS = ['🎁', '🎀', '🎄', '🎃', '🎉', '🎈', '🎎', '🎏', '🎑', '🎭']
+const { PRODUCT_CATEGORIES, VALUE_RANGES, MYSTERY_EMOJIS } = require('../../utils/constants')
 
 // 省份到颜色的映射（基于省份简称生成稳定的颜色）
 const PROVINCE_COLORS = {

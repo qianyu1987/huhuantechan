@@ -290,7 +290,7 @@ page {
 .import-content {
   display: flex;
   align-items: center;
-  padding: 32rpx;
+  padding: 32rpx 20rpx;
 }
 
 .import-icon-wrap {
@@ -612,7 +612,7 @@ page {
 .delete-card {
   background: var(--bg-card);
   border-radius: var(--radius-lg);
-  padding: 32rpx;
+  padding: 32rpx 20rpx;
   display: flex;
   align-items: center;
   justify-content: center;

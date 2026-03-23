@@ -70,11 +70,109 @@ exports.main = async (event, context) => {
   const openid = wxContext.OPENID
   const { action } = event
 
-  // ========== 发布特产 ==========
+  // ========== 文本内容安全检测 ==========
+async function checkTextContent(text) {
+  try {
+    const result = await cloud.openapi.security.msgSecCheck({
+      openid: openid,
+      scene: 2,  // 资料审核场景
+      version: 2,
+      content: text
+    })
+    // result.result.label: 100=正常, 其他=违规
+    if (result.result && result.result.suggest === 'risky') {
+      return { pass: false, reason: '内容包含违规信息' }
+    }
+    return { pass: true }
+  } catch (e) {
+    // 接口调用失败时宽容处理，让内容通过
+    console.warn('文本检测失败:', e.message)
+    return { pass: true }
+  }
+}
+
+// ========== 图片安全检测（异步版） ==========
+async function checkImage(fileId) {
+  try {
+    // 先获取临时链接
+    const tempRes = await cloud.getTempFileURL({ fileList: [fileId] })
+    const tempUrl = tempRes.fileList && tempRes.fileList[0] && tempRes.fileList[0].tempFileURL
+    if (!tempUrl) {
+      return { pass: false, reason: '图片获取失败' }
+    }
+    
+    const result = await cloud.openapi.security.mediaCheckAsync({
+      media_url: tempUrl,
+      media_type: 2,  // 2=图片
+      version: 2,
+      openid: openid,
+      scene: 2  // 资料审核场景
+    })
+    // 异步接口返回 trace_id，实际结果通过回调通知
+    // 这里只能做同步检测：先放行，后续通过异步回调处理
+    // 如果需要同步阻断，可用旧版 imgSecCheck（传 Buffer）
+    return { pass: true, traceId: result.trace_id }
+  } catch (e) {
+    console.warn('图片检测失败:', e.message)
+    return { pass: true }
+  }
+}
+
+// ========== 发布特产 ==========
   if (action === 'create') {
     try {
       const { data } = event
       const isMystery = data.isMystery || false
+
+      // ========== 发布积分门槛 ==========
+      const PUBLISH_COST = isMystery ? 10 : 5  // 神秘特产消耗更多
+      const MIN_POINTS_TO_PUBLISH = 5  // 最低保留积分
+
+      // 获取用户当前积分（支持 _openid 和 openid 两种字段）
+      let userRes = await db.collection('users').where({ _openid: openid }).get()
+      let user = userRes.data && userRes.data[0]
+      
+      // 如果没找到，尝试用 openid 字段查询（兼容旧数据）
+      if (!user) {
+        userRes = await db.collection('users').where({ openid: openid }).get()
+        user = userRes.data && userRes.data[0]
+      }
+      
+      const currentPoints = user?.points || 0
+      
+      console.log('[productMgr/create] 积分检查:', {
+        openid,
+        userId: user?._id,
+        currentPoints,
+        publishCost: PUBLISH_COST,
+        minReserve: MIN_POINTS_TO_PUBLISH,
+        isMystery
+      })
+      
+      // 检查积分是否足够（发布消耗的积分，无需预留）
+      if (currentPoints < PUBLISH_COST) {
+        console.log('[productMgr/create] 积分不足:', {
+          currentPoints,
+          required: PUBLISH_COST
+        })
+        return { 
+          success: false, 
+          message: `积分不足，发布${isMystery ? '神秘特产' : '特产'}需要${PUBLISH_COST}积分，当前积分${currentPoints}`,
+          needPoints: PUBLISH_COST - currentPoints
+        }
+      }
+
+      // ========== 发布频率限制 ==========
+      // 检查最近1小时内发布数量
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+      const recentCount = await db.collection('products').where({
+        openid: openid,
+        createTime: _.gte(oneHourAgo)
+      }).count()
+      
+      if (recentCount.total >= 10) {
+        return { success: false, message: '发布太频繁，请稍后再试' }
+      }
 
       // 神秘特产只需要省份，其他可选
       if (isMystery) {
@@ -87,6 +185,46 @@ exports.main = async (event, context) => {
           return { success: false, message: '请填写完整信息' }
         }
       }
+
+      // ========== 自动审核 ==========
+      let auditPass = true
+      let auditReason = ''
+
+      // 神秘特产也需要审核（不能直接上线）
+      if (isMystery) {
+        // 神秘特产直接进入待审核状态
+        auditPass = false
+        auditReason = '神秘特产需人工审核'
+      } else {
+        // 1. 文本检测（名称 + 描述标签）
+        const textToCheck = data.name + ' ' + (data.descTags || []).join(' ')
+        if (textToCheck.trim()) {
+          const textResult = await checkTextContent(textToCheck)
+          if (!textResult.pass) {
+            auditPass = false
+            auditReason = textResult.reason
+          }
+        }
+        
+        // 2. 图片检测（逐张检测）
+        if (auditPass && data.images && data.images.length > 0) {
+          for (const img of data.images) {
+            // 跳过已经是 http/https 的图片（已经是临时链接）
+            if (img.startsWith('http://') || img.startsWith('https://')) {
+              continue
+            }
+            const imgResult = await checkImage(img)
+            if (!imgResult.pass) {
+              auditPass = false
+              auditReason = imgResult.reason
+              break
+            }
+          }
+        }
+      }
+
+      // 3. 根据审核结果设置状态
+      const status = auditPass ? 'active' : 'pending_review'
       
       const productId = await db.collection('products').add({
         data: {
@@ -104,7 +242,9 @@ exports.main = async (event, context) => {
           wantDistrict: data.wantDistrict || '',
           wantCategory: data.wantCategory || '',
           isMystery: isMystery,
-          status: 'active',
+          gender: data.gender || '',  // 发布者性别
+          status: status,
+          auditReason: auditReason,  // 审核不通过原因
           viewCount: 0,
           swapRequestCount: 0,
           createTime: db.serverDate(),
@@ -112,12 +252,31 @@ exports.main = async (event, context) => {
         }
       })
 
-      // 更新用户发布数（使用 _openid 精准定位）
-      await db.collection('users').where({ _openid: openid }).update({
-        data: { publishCount: _.inc(1) }
+      // 更新用户发布数，同时扣除积分（用 _id 精准更新）
+      await db.collection('users').doc(user._id).update({
+        data: { 
+          publishCount: _.inc(1),
+          points: _.inc(-PUBLISH_COST)
+        }
       })
 
-      return { success: true, productId: productId._id }
+      // 记录积分变动
+      await db.collection('points_log').add({
+        data: {
+          _openid: openid,
+          type: 'publish',
+          amount: -PUBLISH_COST,
+          desc: isMystery ? '发布神秘特产' : '发布特产',
+          createTime: db.serverDate()
+        }
+      })
+
+      return { 
+        success: true, 
+        productId: productId._id,
+        auditPass: auditPass,  // 返回审核结果，供前端提示
+        message: auditPass ? '发布成功' : '已提交，系统审核中'
+      }
     } catch (e) {
       return { success: false, message: e.message }
     }
@@ -137,12 +296,46 @@ exports.main = async (event, context) => {
         return { success: false, message: '无权操作' }
       }
 
-      // 只允许 active 或 removed 状态的特产编辑
-      if (!['active', 'removed'].includes(product.data.status)) {
+      // 只允许 active、removed 或 rejected 状态的特产编辑
+      // rejected 状态编辑后需要重新审核
+      const canEditStatuses = ['active', 'removed', 'rejected']
+      if (!canEditStatuses.includes(product.data.status)) {
         return { success: false, message: '当前状态不允许编辑' }
       }
 
       const isMystery = product.data.isMystery || false
+      const needReAudit = product.data.status === 'rejected'  // 被拒绝的产品重新编辑后需要重新审核
+
+      // 如果是编辑被拒绝的产品，需要重新审核
+      let auditPass = true
+      let auditReason = ''
+      
+      if (needReAudit && !isMystery) {
+        // 重新检测文本
+        const textToCheck = data.name + ' ' + (data.descTags || []).join(' ')
+        if (textToCheck.trim()) {
+          const textResult = await checkTextContent(textToCheck)
+          if (!textResult.pass) {
+            auditPass = false
+            auditReason = textResult.reason
+          }
+        }
+        
+        // 重新检测图片
+        if (auditPass && data.images && data.images.length > 0) {
+          for (const img of data.images) {
+            if (img.startsWith('http://') || img.startsWith('https://')) {
+              continue
+            }
+            const imgResult = await checkImage(img)
+            if (!imgResult.pass) {
+              auditPass = false
+              auditReason = imgResult.reason
+              break
+            }
+          }
+        }
+      }
 
       const updateData = {
         province: data.province,
@@ -164,11 +357,21 @@ exports.main = async (event, context) => {
         updateData.images = data.images || []
       }
 
+      // 根据审核结果设置状态
+      if (needReAudit) {
+        updateData.status = auditPass ? 'active' : 'pending_review'
+        updateData.auditReason = auditPass ? '' : auditReason
+      }
+
       await db.collection('products').doc(productId).update({
         data: updateData
       })
 
-      return { success: true }
+      return { 
+        success: true,
+        auditPass: needReAudit ? auditPass : true,
+        message: needReAudit ? (auditPass ? '保存成功' : '已提交，系统审核中') : '保存成功'
+      }
     } catch (e) {
       return { success: false, message: e.message }
     }
@@ -179,9 +382,10 @@ exports.main = async (event, context) => {
     try {
       const { province, status, page = 1, pageSize = 20, isMystery, random } = event
       
-      // 构建查询条件（无指定状态时排除 banned/removed）
+      // 构建查询条件（无指定状态时只显示有效状态：active/swapped/in_swap）
+      // 使用 _.in() 比 _.nin() 更安全，避免 status 为 null/undefined 的数据通过
       let whereClause = {
-        ...(status ? { status } : { status: _.nin(['banned', 'removed']) }),
+        ...(status ? { status } : { status: _.in(['active', 'swapped', 'in_swap']) }),
         ...(province ? { province } : {}),
         ...(isMystery !== undefined ? { isMystery } : {})
       }
@@ -212,20 +416,21 @@ exports.main = async (event, context) => {
           .get()
       }
 
-      // 补充用户信息
-      const openids = [...new Set(res.data.map(p => p.openid))]
+      // 补充用户信息（products 存 openid，users 用 _openid）
+      const openids = [...new Set(res.data.map(p => p.openid || p._openid))]
       const usersRes = await db.collection('users')
-        .where({ openid: _.in(openids) })
-        .field({ openid: true, nickName: true, avatarUrl: true, creditScore: true })
+        .where({ _openid: _.in(openids) })
+        .field({ _openid: true, nickName: true, avatarUrl: true, creditScore: true })
         .get()
       const userMap = {}
       for (const u of usersRes.data) {
         u.avatarUrl = await resolveCloudUrl(u.avatarUrl)
-        userMap[u.openid] = u
+        u.openid = u._openid
+        userMap[u._openid] = u
       }
 
       let list = res.data.map(p => {
-        const user = userMap[p.openid] || {}
+        const user = userMap[p.openid || p._openid] || {}
         const isMystery = p.isMystery || false
         
         // 神秘特产隐藏用户信息
@@ -465,22 +670,23 @@ exports.main = async (event, context) => {
       // 截取到 pageSize
       resultData = resultData.slice(0, pageSize)
 
-      // 补充用户信息
-      const openids = [...new Set(resultData.map(p => p.openid))]
+      // 补充用户信息（recommend）
+      const openids = [...new Set(resultData.map(p => p.openid || p._openid))]
       let userMap = {}
       if (openids.length > 0) {
         const usersRes = await db.collection('users')
-          .where({ openid: _.in(openids) })
-          .field({ openid: true, nickName: true, avatarUrl: true, creditScore: true })
+          .where({ _openid: _.in(openids) })
+          .field({ _openid: true, nickName: true, avatarUrl: true, creditScore: true })
           .get()
         for (const u of usersRes.data) {
           u.avatarUrl = await resolveCloudUrl(u.avatarUrl)
-          userMap[u.openid] = u
+          u.openid = u._openid
+          userMap[u._openid] = u
         }
       }
 
       let list = resultData.map(p => {
-        const user = userMap[p.openid] || {}
+        const user = userMap[p.openid || p._openid] || {}
         const isMystery = p.isMystery || false
         
         return {
@@ -526,15 +732,33 @@ exports.main = async (event, context) => {
         data: { viewCount: _.inc(1) }
       })
 
-      // 获取发布者信息
-      const userRes = await db.collection('users')
-        .where({ openid: product.data.openid })
-        .field({ openid: true, nickName: true, avatarUrl: true, creditScore: true, swapCount: true, provincesBadges: true })
-        .limit(1)
-        .get()
+      // 获取发布者信息（products 存 openid 显式字段，users 用 _openid 系统字段）
+      const publisherOpenid = product.data.openid || product.data._openid
+      let userRes
+      let publisher
+
+      // 尝试用 _openid 查询
+      if (publisherOpenid) {
+        userRes = await db.collection('users')
+          .where({ _openid: publisherOpenid })
+          .field({ _openid: true, nickName: true, avatarUrl: true, creditScore: true, swapCount: true, provincesBadges: true, gender: true })
+          .limit(1)
+          .get()
+        publisher = userRes.data[0]
+      }
+
+      // 如果没找到，尝试用 openid 字段查询（兼容旧数据）
+      if (!publisher && product.data.openid) {
+        userRes = await db.collection('users')
+          .where({ openid: product.data.openid })
+          .field({ _openid: true, nickName: true, avatarUrl: true, creditScore: true, swapCount: true, provincesBadges: true, gender: true })
+          .limit(1)
+          .get()
+        publisher = userRes.data[0]
+      }
 
       // 是否是自己的特产
-      const isMine = product.data.openid === openid
+      const isMine = publisherOpenid === openid
       const isMystery = product.data.isMystery || false
 
       // 统计发布者完成的互换数
@@ -558,8 +782,23 @@ exports.main = async (event, context) => {
       }
 
       // 转换发布者头像 cloud:// → https
-      const publisher = userRes.data[0] || {}
-      publisher.avatarUrl = await resolveCloudUrl(publisher.avatarUrl)
+      if (publisher) {
+        publisher.avatarUrl = await resolveCloudUrl(publisher.avatarUrl)
+        // 统一用 openid 字段供前端跳转使用
+        publisher.openid = publisher._openid || product.data.openid || publisherOpenid
+      } else {
+        // 如果没找到用户，创建空对象避免报错
+        publisher = {
+          _openid: publisherOpenid,
+          nickName: '未知用户',
+          avatarUrl: '',
+          creditScore: 100,
+          swapCount: 0,
+          provincesBadges: [],
+          gender: '',
+          openid: publisherOpenid
+        }
+      }
 
       return {
         success: true,
@@ -671,6 +910,15 @@ exports.main = async (event, context) => {
       const { productId } = event
       if (!productId) return { success: false, message: '参数错误' }
 
+      // 检查产品是否存在且可收藏
+      const product = await db.collection('products').doc(productId).get()
+      if (!product.data) return { success: false, message: '产品不存在' }
+      
+      // 检查产品状态是否可收藏（只允许收藏 active 状态）
+      if (!['active', 'in_swap', 'swapped'].includes(product.data.status)) {
+        return { success: false, message: '该产品不可收藏' }
+      }
+
       // 检查是否已收藏
       const exists = await db.collection('favorites')
         .where({ openid, productId })
@@ -748,7 +996,7 @@ exports.main = async (event, context) => {
       for (let i = 0; i < productIds.length; i += BATCH) {
         const batch = productIds.slice(i, i + BATCH)
         const pRes = await db.collection('products')
-          .where({ _id: _.in(batch), status: _.nin(['banned', 'removed']) })
+          .where({ _id: _.in(batch), status: _.in(['active', 'swapped', 'in_swap']) })
           .get()
         products = products.concat(pRes.data)
       }
@@ -840,21 +1088,22 @@ exports.main = async (event, context) => {
         .get()
 
       // 补充用户信息
-      const openids = [...new Set(res.data.map(p => p.openid))]
+      const openids = [...new Set(res.data.map(p => p.openid || p._openid))]
       let userMap = {}
       if (openids.length > 0) {
         const usersRes = await db.collection('users')
-          .where({ openid: _.in(openids) })
-          .field({ openid: true, nickName: true, avatarUrl: true, creditScore: true })
+          .where({ _openid: _.in(openids) })
+          .field({ _openid: true, nickName: true, avatarUrl: true, creditScore: true })
           .get()
         for (const u of usersRes.data) {
           u.avatarUrl = await resolveCloudUrl(u.avatarUrl)
-          userMap[u.openid] = u
+          u.openid = u._openid
+          userMap[u._openid] = u
         }
       }
 
       let list = res.data.map(p => {
-        const user = userMap[p.openid] || {}
+        const user = userMap[p.openid || p._openid] || {}
         return {
           ...p,
           userAvatar: user.avatarUrl || '',

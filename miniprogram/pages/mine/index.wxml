@@ -25,7 +25,7 @@
         <block wx:else>
           <!-- 新版头像昵称填写组件 -->
           <button class="avatar-nickname-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
-            <image class="user-avatar" src="{{userInfo.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"/>
+            <image class="user-avatar" src="{{userInfo.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill" binderror="onAvatarError"/>
             <view class="avatar-mask">
               <view class="icon-camera-w"></view>
             </view>
@@ -50,6 +50,11 @@
         <view class="stat-item credit-stat" bindtap="goToCredit">
           <view class="credit-score-big {{creditClass}}">{{creditScore}}</view>
           <view class="stat-label">信用分</view>
+        </view>
+        <view class="stat-divider"/>
+        <view class="stat-item points-stat" bindtap="goToPoints">
+          <view class="stat-num points-num">{{points || 0}}</view>
+          <view class="stat-label">积分</view>
         </view>
         <view class="stat-divider"/>
         <view wx:if="{{featureFlags.tab_publish !== false}}" class="stat-item" bindtap="goToMyProducts">
@@ -78,7 +83,7 @@
         <text class="section-title">省份集章</text>
         <view class="badge-header-right">
           <text class="section-sub-text">{{badgeCount}}/34</text>
-          <view class="expand-icon {{badgeExpanded ? 'expanded' : ''}}"></view>
+          <text class="expand-icon">{{badgeExpanded ? '⬆️' : '⬇️'}}</text>
         </view>
       </view>
       <view class="badge-grid {{badgeExpanded ? 'expanded' : 'collapsed'}}">
@@ -93,6 +98,18 @@
       <view class="badge-collapse-hint" wx:if="{{!badgeExpanded && badgeCount > 0}}" bindtap="toggleBadgeExpand">
         <text>已收集 {{badgeCount}} 个省份，点击展开全部</text>
       </view>
+    </view>
+
+    <!-- 手机号验证 -->
+    <view class="section card mx-md mt-md">
+      <view class="section-hd">
+        <text class="section-title">账号安全</text>
+      </view>
+      <phone-verify 
+        phone="{{phoneNumber}}" 
+        verified="{{phoneVerified}}" 
+        bind:verified="onPhoneVerified"
+      />
     </view>
 
     <!-- 我的特产 -->
@@ -182,10 +199,6 @@
         <view class="menu-pill" bindtap="goToCredit">
           <view class="pill-icon pill-ic-credit"></view>
           <text class="pill-label">信用中心</text>
-        </view>
-        <view class="menu-pill" bindtap="goToHelp">
-          <view class="pill-icon pill-ic-guide"></view>
-          <text class="pill-label">使用指南</text>
         </view>
         <view class="menu-pill" bindtap="showService">
           <view class="pill-icon pill-ic-ai"></view>

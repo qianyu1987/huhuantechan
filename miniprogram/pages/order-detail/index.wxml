@@ -23,7 +23,7 @@
       <view class="counterpart-card card">
         <view class="counterpart-header">
           <image class="counterpart-avatar" 
-            src="{{counterpart.avatarUrl || 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lxia07jQodd2SJFCMicVXGAsz0B1gLq1uA1gLq1uA1gLq1uA1gLq1uA1gLq1uA1g/0'}}" 
+            src="{{counterpart.avatarUrl || '/images/default-avatar.png'}}" 
             mode="aspectFill"
             binderror="handleAvatarError"
             bindtap="goToUserProfile"

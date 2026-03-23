@@ -1,0 +1,9 @@
+{
+  "name": "migratePoints",
+  "version": "1.0.0",
+  "description": "给老用户补充积分字段",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

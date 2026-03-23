@@ -1,7 +1,6 @@
 // pages/review/index.js - 评价页面
 const { callCloud, toast, showLoading, hideLoading, processImageUrl } = require('../../utils/util')
-
-const MYSTERY_EMOJIS = ['🎁', '🎀', '🎉', '🎊', '🎄', '🎃', '🎈', '🎯', '🎲', '🎳']
+const { MYSTERY_EMOJIS } = require('../../utils/constants')
 
 Page({
   data: {

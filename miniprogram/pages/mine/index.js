@@ -1,6 +1,6 @@
 // pages/mine/index.js
 const { PROVINCES, PRODUCT_CATEGORIES } = require('../../utils/constants')
-const { callCloud, getCreditLevel, getProvinceByCode, toast, processImageUrl } = require('../../utils/util')
+const { callCloud, getCreditLevel, getProvinceByCode, toast, processImageUrl, uploadImage, showLoading } = require('../../utils/util')
 
 // ===== AI 客服知识库 =====
 const SERVICE_KB = [
@@ -100,6 +100,9 @@ Page({
     myProducts: [],
     provinces: [],
     badgeExpanded: false,
+    phoneNumber: '',
+    phoneVerified: false,
+    _phoneJustVerified: false, // 标记是否刚刚验证过手机号
     orderStats: {
       pending: 0,
       confirmed: 0,
@@ -148,6 +151,13 @@ Page({
   },
 
   async loadUserData() {
+    // 如果刚刚验证过手机号，跳过本次加载（避免覆盖刚更新的数据）
+    if (this.data._phoneJustVerified) {
+      console.log('[mine] 跳过本次 loadUserData（刚刚验证过手机号）')
+      this.setData({ _phoneJustVerified: false })
+      return
+    }
+    
     const app = getApp()
     const appInstance = this
     
@@ -160,14 +170,25 @@ Page({
         app.globalData.userInfo = userInfo
         app.globalData.creditScore = userRes.creditScore
         app.globalData.province = userRes.province
+        app.globalData.points = userRes.points || 0
 
         const creditInfo = getCreditLevel(userRes.creditScore || 100)
         const province = getProvinceByCode(userRes.province)
+        
+        console.log('[mine] loadUserData 返回的手机号信息:', {
+          phoneNumber: userRes.phoneNumber,
+          phoneVerified: userRes.phoneVerified
+        })
+        
         this.setData({
           userInfo: userInfo,
           creditScore: userRes.creditScore || 100,
           creditClass: creditInfo.class,
-          provinceName: province ? province.name : ''
+          provinceName: province ? province.name : '',
+          points: userRes.points || 0,
+          // 手机号验证状态
+          phoneNumber: userRes.phoneNumber || '',
+          phoneVerified: userRes.phoneVerified || false
         })
       }
     } catch (e) {
@@ -180,6 +201,13 @@ Page({
       this.setData({ isAdmin: !!(adminRes && adminRes.isSuperAdmin) })
     } catch (e) {
       this.setData({ isAdmin: false })
+    }
+
+    // 先修复统计数据（防止数据不同步）
+    try {
+      await callCloud('userInit', { action: 'fixMyStats' })
+    } catch (e) {
+      console.log('[mine] 修复统计数据失败（忽略）:', e.message)
     }
 
     try {
@@ -234,11 +262,22 @@ Page({
   },
 
   // 选择头像（使用新版组件）
-  onChooseAvatar(e) {
-    const avatarUrl = e.detail.avatarUrl
-    const userInfo = this.data.userInfo || {}
-    userInfo.avatarUrl = avatarUrl
-    this.setData({ userInfo })
+  async onChooseAvatar(e) {
+    const tempPath = e.detail.avatarUrl
+    if (!tempPath) return
+    showLoading('上传中...')
+    try {
+      // 上传到云存储，得到 cloud:// fileID
+      const fileID = await uploadImage(tempPath, 'avatars')
+      wx.hideLoading()
+      const userInfo = this.data.userInfo || {}
+      userInfo.avatarUrl = fileID
+      this.setData({ userInfo })
+    } catch (err) {
+      wx.hideLoading()
+      console.error('头像上传失败', err)
+      toast('头像上传失败')
+    }
   },
 
   // 输入昵称
@@ -312,8 +351,8 @@ Page({
     wx.navigateTo({ url: '/pages/credit/index' })
   },
 
-  goToHelp() {
-    wx.navigateTo({ url: '/pages/help/index' })
+  goToPoints() {
+    wx.navigateTo({ url: '/pages/points-rule/index' })
   },
 
   // ===== AI 客服面板 =====
@@ -465,5 +504,28 @@ Page({
       myProducts[index].coverUrl = '/images/default-product.png'
       this.setData({ myProducts })
     }
+  },
+
+  // 手机号验证成功回调
+  onPhoneVerified(e) {
+    console.log('手机号验证成功:', e.detail)
+    const { phoneNumber, creditScore } = e.detail
+    
+    // 更新页面数据
+    this.setData({
+      phoneNumber: phoneNumber,
+      phoneVerified: true,
+      creditScore: creditScore,
+      _phoneJustVerified: true // 标记刚刚验证过，防止 onShow 覆盖
+    })
+
+    // 更新全局数据
+    const app = getApp()
+    app.globalData.creditScore = creditScore
+    
+    console.log('[mine] 更新后的数据:', {
+      phoneNumber: this.data.phoneNumber,
+      phoneVerified: this.data.phoneVerified
+    })
   }
 })

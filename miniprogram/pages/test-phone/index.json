@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "手机验证测试",
+  "navigationBarBackgroundColor": "#000000",
+  "navigationBarTextStyle": "white",
+  "usingComponents": {
+    "phone-verify": "/components/phone-verify/index"
+  }
+}

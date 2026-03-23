@@ -1,8 +1,6 @@
 // pages/detail/index.js
-const { PRODUCT_CATEGORIES_V2, VALUE_RANGES_V2, DESC_TAGS } = require('../../utils/constants')
+const { PRODUCT_CATEGORIES_V2, VALUE_RANGES_V2, DESC_TAGS, MYSTERY_EMOJIS } = require('../../utils/constants')
 const { callCloud, formatTime, getCreditLevel, getProvinceByCode, toast, processImageUrls } = require('../../utils/util')
-
-const MYSTERY_EMOJIS = ['🎁', '🎀', '🎄', '🎃', '🎉', '🎈', '🎎', '🎏', '🎑', '🎭']
 
 Page({
   data: {
@@ -24,7 +22,7 @@ Page({
     wantCategoryEmoji: '',
     timeLabel: '',
     creditClass: 'credit-high',
-    // 神秘特产
+    // 惊喜特产
     isMystery: false,
     mysteryEmoji: '🎁',
     mysteryColorClass: 'color-1',
@@ -69,6 +67,23 @@ Page({
       }
 
       const p = res.product
+      
+      // 检查产品状态
+      if (p.status === 'pending_review') {
+        toast('该特产待审核中', 'none')
+        setTimeout(() => wx.navigateBack(), 1500)
+        return
+      }
+      if (p.status === 'rejected') {
+        toast('该特产未通过审核', 'none')
+        setTimeout(() => wx.navigateBack(), 1500)
+        return
+      }
+      if (p.status === 'banned') {
+        toast('该特产已被下架')
+        setTimeout(() => wx.navigateBack(), 1500)
+        return
+      }
       const province = getProvinceByCode(p.province)
       const valueRange = VALUE_RANGES_V2.find(v => v.id === p.valueRange)
       const category = PRODUCT_CATEGORIES_V2.find(c => c.id === p.category)
@@ -127,7 +142,7 @@ Page({
       // 加载发布者评价
       this.loadReviews(res.product.openid)
 
-      wx.setNavigationBarTitle({ title: isMystery ? '神秘特产' : p.name })
+      wx.setNavigationBarTitle({ title: isMystery ? '惊喜特产' : p.name })
     } catch (e) {
       toast('加载失败')
     } finally {

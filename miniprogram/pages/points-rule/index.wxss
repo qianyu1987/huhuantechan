@@ -1,0 +1,211 @@
+/* pages/points-rule/index.wxss - iOS风格积分规则 */
+
+.points-rule-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #F2F2F7 0%, #FFFFFF 100%);
+  padding-bottom: 140rpx;
+}
+
+/* 头部 */
+.header {
+  padding: 60rpx 40rpx 40rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 0 0 40rpx 40rpx;
+}
+
+.header-content {
+  text-align: center;
+}
+
+.header-title {
+  display: block;
+  font-size: 48rpx;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: 2rpx;
+}
+
+.header-subtitle {
+  display: block;
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 8rpx;
+}
+
+/* 当前积分卡片 */
+.current-points-card {
+  display: flex;
+  align-items: center;
+  margin: -40rpx 32rpx 32rpx;
+  padding: 40rpx;
+  background: #FFFFFF;
+  border-radius: 24rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.08);
+}
+
+.points-icon {
+  font-size: 48rpx;
+  margin-right: 24rpx;
+}
+
+.points-info {
+  flex: 1;
+}
+
+.points-label {
+  display: block;
+  font-size: 26rpx;
+  color: #8E8E93;
+  margin-bottom: 8rpx;
+}
+
+.points-value {
+  display: block;
+  font-size: 56rpx;
+  font-weight: 800;
+  color: #1C1C1E;
+  letter-spacing: -1rpx;
+}
+
+/* 区块 */
+.section {
+  margin: 0 32rpx 24rpx;
+  background: #FFFFFF;
+  border-radius: 20rpx;
+  overflow: hidden;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 28rpx;
+  border-bottom: 1rpx solid #F2F2F7;
+}
+
+.section-icon {
+  font-size: 28rpx;
+  margin-right: 12rpx;
+}
+
+.earn-icon {
+  color: #34C759;
+}
+
+.cost-icon {
+  color: #FF3B30;
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1C1C1E;
+}
+
+/* 规则列表 */
+.rule-list {
+  padding: 0 28rpx;
+}
+
+.rule-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #F2F2F7;
+}
+
+.rule-item:last-child {
+  border-bottom: none;
+}
+
+.rule-name {
+  font-size: 30rpx;
+  color: #1C1C1E;
+}
+
+.rule-points {
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.rule-right.earn .rule-points {
+  color: #34C759;
+}
+
+.rule-right.cost .rule-points {
+  color: #FF3B30;
+}
+
+/* 温馨提示 */
+.tips-card {
+  display: flex;
+  margin: 0 20rpx 32rpx;
+  padding: 32rpx 20rpx;
+  background: linear-gradient(135deg, #FFF9E6 0%, #FFFBF0 100%);
+  border-radius: 24rpx;
+  border: 1rpx solid rgba(255, 204, 0, 0.3);
+}
+
+.tips-icon {
+  font-size: 40rpx;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+}
+
+.tips-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.tips-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #B8860B;
+  margin-bottom: 8rpx;
+}
+
+.tips-text {
+  font-size: 26rpx;
+  color: #8B7355;
+  line-height: 1.6;
+}
+
+/* 底部按钮 */
+.bottom-action {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24rpx 32rpx;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  background: #FFFFFF;
+  border-top: 1rpx solid #F2F2F7;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 24rpx;
+  box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.4);
+}
+
+.action-btn:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+.action-btn-icon {
+  font-size: 36rpx;
+  margin-right: 12rpx;
+}
+
+.action-btn-text {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+}

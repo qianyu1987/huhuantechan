@@ -35,12 +35,12 @@
     
     <scroll-view scroll-x enable-flex class="my-product-scroll" wx:else>
       <block wx:for="{{myProducts}}" wx:key="_id">
-        <view 
+        <view
           class="my-product-item {{selectedMyId === item._id ? 'selected' : ''}}"
           bindtap="selectMine"
           data-id="{{item._id}}"
         >
-          <!-- 神秘特产：渐变+emoji -->
+          <!-- 惊喜特产：渐变+emoji -->
           <view wx:if="{{item.isMystery}}" class="my-product-mystery {{item.colorClass}}">
             <text class="mystery-mini-emoji">{{item.emoji || '🎁'}}</text>
           </view>
@@ -70,7 +70,7 @@
         <text class="section-icon">🔄</text>
         <text class="section-title rec-title">可兑换特产</text>
       </view>
-      <text wx:if="{{selectedProduct}}" class="filter-hint">{{selectedProduct.isMystery ? '匹配神秘特产' : '按兑换规则匹配'}}</text>
+      <text wx:if="{{selectedProduct}}" class="filter-hint">{{selectedProduct.isMystery ? '匹配惊喜特产' : '按兑换规则匹配'}}</text>
       <text wx:else class="filter-hint hint-default">选择上方特产开始匹配</text>
     </view>
 
@@ -91,7 +91,7 @@
       <!-- 空状态 -->
       <view wx:elif="{{recommends.length === 0 && !loading}}" class="empty-wrap">
         <text class="empty-icon">🔍</text>
-        <text class="empty-desc">{{selectedMyId ? (selectedProduct.isMystery ? '暂无匹配的神秘特产' : '暂无匹配的特产，试试其他') : '选择你的特产，开始匹配'}}</text>
+        <text class="empty-desc">{{selectedMyId ? (selectedProduct.isMystery ? '暂无匹配的惊喜特产' : '暂无匹配的特产，试试其他') : '选择你的特产，开始匹配'}}</text>
       </view>
 
       <!-- 网格列表 -->
@@ -117,12 +117,12 @@
             </view>
             <!-- 信息区 -->
             <view class="grid-info">
-              <view class="grid-name">{{item.isMystery ? '神秘特产' : item.name}}</view>
+              <view class="grid-name">{{item.isMystery ? '惊喜特产' : item.name}}</view>
               <view class="grid-meta">
                 <text class="grid-province-tag" style="background:{{item.provinceColor}}22;color:{{item.provinceColor}}">{{item.provinceEmoji}} {{item.provinceName}}</text>
               </view>
               <view class="grid-action">
-                <button class="grid-btn" catchtap="initiateSwap" data-id="{{item._id}}" data-name="{{item.isMystery ? '神秘特产' : item.name}}">换它</button>
+                <button class="grid-btn" catchtap="initiateSwap" data-id="{{item._id}}" data-name="{{item.isMystery ? '惊喜特产' : item.name}}">换它</button>
               </view>
             </view>
           </view>
@@ -229,17 +229,17 @@
           </view>
         </view>
 
-        <!-- 神秘特产 -->
+        <!-- 惊喜特产 -->
         <view class="rules-card">
           <view class="rules-card-title">
             <text class="rules-card-num">3</text>
-            <text>神秘特产</text>
+            <text>惊喜特产</text>
           </view>
           <view class="rules-mystery-row">
             <text class="mystery-box-emoji">🎁</text>
             <view class="mystery-box-info">
-              <text class="mystery-box-title">盲盒模式</text>
-              <text class="mystery-box-desc">神秘特产只显示来自哪个省份，不透露具体内容。只能与其他神秘特产配对，配对后双方同时揭晓。</text>
+              <text class="mystery-box-title">分享身边好物</text>
+              <text class="mystery-box-desc">惊喜特产只显示来自哪个省份，不透露具体内容。只能与其他惊喜特产配对，配对后双方同时揭晓。寻找爱的方向，碰擦出火花，让焰火绽放，相信你一定能实现美好的愿望！</text>
             </view>
           </view>
         </view>

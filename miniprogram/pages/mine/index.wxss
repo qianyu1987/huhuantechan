@@ -9,7 +9,7 @@
 .user-hero {
   position: relative;
   background: linear-gradient(180deg, #1C1C1E 0%, #2C2C2E 100%);
-  padding: 48rpx 32rpx 32rpx;
+  padding: 48rpx 20rpx 32rpx;
   border-radius: 0 0 var(--radius-2xl) var(--radius-2xl);
   overflow: hidden;
   border-bottom: 1rpx solid rgba(255, 255, 255, 0.08);
@@ -213,11 +213,6 @@
 }
 
 /* ===== 卡片区域 ===== */
-.mx-md {
-  margin-left: 32rpx;
-  margin-right: 32rpx;
-}
-
 .mt-md {
   margin-top: 24rpx;
 }
@@ -225,7 +220,7 @@
 .section {
   background: var(--color-surface-solid);
   border-radius: var(--radius-xl);
-  padding: 28rpx;
+  padding: 24rpx;
   box-shadow: var(--shadow-sm);
   border: 1rpx solid rgba(255, 255, 255, 0.5);
   transition: all 0.2s ease;
@@ -276,24 +271,19 @@
 }
 
 .expand-icon {
-  width: 32rpx;
-  height: 32rpx;
-  border-right: 4rpx solid var(--color-text-tertiary);
-  border-bottom: 4rpx solid var(--color-text-tertiary);
-  transform: rotate(45deg);
+  font-size: 28rpx;
+  color: var(--color-text-tertiary);
   transition: transform 0.3s ease;
-}
-
-.expand-icon.expanded {
-  transform: rotate(-135deg);
+  display: inline-block;
 }
 
 .badge-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(100rpx, 1fr));
   gap: 16rpx;
   transition: all 0.3s ease;
   overflow: hidden;
+  justify-content: center;
 }
 
 .badge-grid.collapsed {
@@ -328,9 +318,46 @@
   transition: all 0.2s ease;
 }
 
+/* ===== iOS 26 已收集省份样式 ===== */
 .badge-item.collected .badge-circle {
-  border-width: 2rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.2);
+  position: relative;
+  border-width: 3rpx;
+  box-shadow: 
+    0 4rpx 16rpx rgba(0, 0, 0, 0.25),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1rpx 0 rgba(0, 0, 0, 0.1);
+}
+
+/* 玻璃光泽效果 */
+.badge-item.collected .badge-circle::before {
+  content: '';
+  position: absolute;
+  top: 6rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40rpx;
+  height: 12rpx;
+  background: linear-gradient(180deg, 
+    rgba(255, 255, 255, 0.4) 0%, 
+    rgba(255, 255, 255, 0.1) 100%);
+  border-radius: 50%;
+  filter: blur(2rpx);
+}
+
+/* 底部光晕 */
+.badge-item.collected .badge-circle::after {
+  content: '';
+  position: absolute;
+  bottom: -8rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 56rpx;
+  height: 16rpx;
+  background: radial-gradient(ellipse, 
+    rgba(255, 255, 255, 0.15) 0%, 
+    transparent 70%);
+  border-radius: 50%;
+  filter: blur(4rpx);
 }
 
 .badge-name {
@@ -341,7 +368,8 @@
 
 .badge-item.collected .badge-name {
   color: var(--color-text);
-  font-weight: 600;
+  font-weight: 700;
+  text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.2);
 }
 
 .badge-collapse-hint {
@@ -1275,4 +1303,18 @@
   font-size: 22rpx;
   color: rgba(255, 255, 255, 0.7);
   font-weight: 500;
+}
+
+/* 积分样式 */
+.points-stat {
+  position: relative;
+}
+
+.points-num {
+  color: #FFD700;
+  text-shadow: 0 0 10rpx rgba(255, 215, 0, 0.3);
+}
+
+.points-stat:active {
+  opacity: 0.8;
 }
