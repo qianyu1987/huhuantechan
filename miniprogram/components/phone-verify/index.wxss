@@ -88,6 +88,32 @@
   opacity: 0.5;
 }
 
+/* 先登录按钮 */
+.login-first-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(255, 149, 0, 0.15), rgba(255, 149, 0, 0.05));
+  border: 1rpx solid rgba(255, 149, 0, 0.3);
+  border-radius: 24rpx;
+  padding: 32rpx;
+  backdrop-filter: blur(20rpx);
+  transition: all 0.3s ease;
+}
+
+.login-first-btn::after {
+  border: none;
+}
+
+.login-first-btn:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+.login-first-btn .btn-icon {
+  background: linear-gradient(135deg, #FF9500, #FF6B00);
+}
+
 .btn-icon {
   width: 64rpx;
   height: 64rpx;

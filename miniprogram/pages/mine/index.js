@@ -109,13 +109,20 @@ Page({
       shipped: 0,
       completed: 0
     },
+    points: 0,
+    featureFlags: {},
     isAdmin: false,
     showServicePanel: false,
     serviceMessages: [],
     serviceInput: '',
     scrollToView: '',
     quickQuestions: QUICK_QUESTIONS,
-    keyboardHeight: 0
+    keyboardHeight: 0,
+    // 授权引导弹窗
+    showProfileGuide: false,
+    guideNickName: '',
+    guideAvatarUrl: '',
+    _guideSaving: false
   },
 
   onLoad() {
@@ -161,6 +168,26 @@ Page({
     const app = getApp()
     const appInstance = this
     
+    // ✅ 等待 app.js 完成 initUser，避免与 app.js 并发创建新用户
+    // app.initUser 是异步的，mine 页面 onLoad 可能比它先跑完
+    const waitForAppInit = () => new Promise(resolve => {
+      if (app.globalData.openid) {
+        resolve()
+        return
+      }
+      // 轮询等待，最多等 5 秒
+      let count = 0
+      const timer = setInterval(() => {
+        count++
+        if (app.globalData.openid || count > 50) {
+          clearInterval(timer)
+          resolve()
+        }
+      }, 100)
+    })
+    
+    await waitForAppInit()
+    
     // 先获取用户信息
     try {
       const userRes = await callCloud('userInit', { action: 'init' })
@@ -180,6 +207,8 @@ Page({
           phoneVerified: userRes.phoneVerified
         })
         
+        const needGuide = !userInfo.nickName || userInfo.nickName === '微信用户' || !userInfo.avatarUrl || userInfo.avatarUrl.includes('default-avatar')
+
         this.setData({
           userInfo: userInfo,
           creditScore: userRes.creditScore || 100,
@@ -188,7 +217,11 @@ Page({
           points: userRes.points || 0,
           // 手机号验证状态
           phoneNumber: userRes.phoneNumber || '',
-          phoneVerified: userRes.phoneVerified || false
+          phoneVerified: userRes.phoneVerified || false,
+          // 若未完善信息，自动弹出引导
+          showProfileGuide: needGuide,
+          guideAvatarUrl: (needGuide ? (userInfo.avatarUrl || '') : ''),
+          guideNickName: (needGuide ? (userInfo.nickName === '微信用户' ? '' : (userInfo.nickName || '')) : '')
         })
       }
     } catch (e) {
@@ -264,7 +297,24 @@ Page({
   // 选择头像（使用新版组件）
   async onChooseAvatar(e) {
     const tempPath = e.detail.avatarUrl
-    if (!tempPath) return
+    
+    // 模拟器环境检测
+    if (!tempPath) {
+      // 检测是否在模拟器中
+      const systemInfo = wx.getSystemInfoSync()
+      if (systemInfo.platform === 'devtools') {
+        wx.showModal({
+          title: '模拟器限制',
+          content: '头像选择功能需要在真机上测试。\n\n请使用"真机调试"功能，在真实手机上扫码测试。',
+          confirmText: '知道了',
+          showCancel: false
+        })
+      } else {
+        toast('请重新点击头像选择')
+      }
+      return
+    }
+    
     showLoading('上传中...')
     try {
       // 上传到云存储，得到 cloud:// fileID
@@ -313,7 +363,20 @@ Page({
       if (saveRes && saveRes.success) {
         const app = getApp()
         app.globalData.userInfo = userInfo
+        
+        // 登录成功后更新 openid（如果云函数返回）
+        if (saveRes.openid) {
+          app.globalData.openid = saveRes.openid
+        }
+        
         this.setData({ userInfo })
+        
+        // 更新 phone-verify 组件的登录状态
+        const phoneVerify = this.selectComponent('#phoneVerify')
+        if (phoneVerify) {
+          phoneVerify.checkLoginStatus()
+        }
+        
         toast('保存成功', 'success')
       } else {
         toast('保存失败')
@@ -327,6 +390,77 @@ Page({
   // 旧方法保留（兼容）
   async getUserInfo() {
     toast('请点击头像和昵称进行设置')
+  },
+
+  // ===== 授权引导弹窗 =====
+  // 弹窗内选择头像
+  async onGuideChooseAvatar(e) {
+    const tempPath = e.detail.avatarUrl
+    if (!tempPath) return
+    showLoading('上传中...')
+    try {
+      const fileID = await uploadImage(tempPath, 'avatars')
+      wx.hideLoading()
+      this.setData({ guideAvatarUrl: fileID })
+    } catch (err) {
+      wx.hideLoading()
+      toast('头像上传失败，请重试')
+    }
+  },
+
+  // 弹窗内输入昵称
+  onGuideNickNameInput(e) {
+    this.setData({ guideNickName: e.detail.value })
+  },
+
+  // 弹窗内保存
+  async saveGuideProfile() {
+    if (this.data._guideSaving) return
+    const avatarUrl = this.data.guideAvatarUrl
+    const nickName = (this.data.guideNickName || '').trim()
+
+    if (!avatarUrl) {
+      toast('请先点击头像获取微信头像')
+      return
+    }
+    if (!nickName || nickName.length < 2) {
+      toast('请输入昵称（至少2个字）')
+      return
+    }
+
+    this.setData({ _guideSaving: true })
+    showLoading('保存中...')
+    try {
+      const saveRes = await callCloud('userInit', {
+        action: 'updateProfile',
+        avatarUrl,
+        nickName
+      })
+      wx.hideLoading()
+      if (saveRes && saveRes.success) {
+        const userInfo = { ...(this.data.userInfo || {}), avatarUrl, nickName }
+        const app = getApp()
+        app.globalData.userInfo = userInfo
+        this.setData({
+          userInfo,
+          showProfileGuide: false,
+          _guideSaving: false
+        })
+        toast('设置成功，欢迎加入！', 'success')
+      } else {
+        this.setData({ _guideSaving: false })
+        toast('保存失败，请重试')
+      }
+    } catch (e) {
+      wx.hideLoading()
+      this.setData({ _guideSaving: false })
+      toast('保存失败，请重试')
+    }
+  },
+
+  // 跳过引导
+  skipProfileGuide() {
+    this.setData({ showProfileGuide: false })
   },
 
   // 编辑个人资料（头像、昵称、家乡）

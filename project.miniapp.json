@@ -1,8 +1,8 @@
 {
   "miniVersion": "v2",
-  "name": "换特产",
+  "name": "互换特产",
   "version": "0.0.1",
-  "versionCode": 100,
+  "versionCode": 10,
   "i18nFilePath": "i18n",
   "mini-ohos": {
     "sdkVersion": "0.5.1"
@@ -19,15 +19,15 @@
       "xweb": false
     },
     "icons": {
-      "hdpi": "",
-      "xhdpi": "",
-      "xxhdpi": "",
-      "xxxhdpi": ""
+      "hdpi": "miniprogram/images/android/android-icon-72.png",
+      "xhdpi": "miniprogram/images/android/android-icon-96.png",
+      "xxhdpi": "miniprogram/images/android/android-icon-144.png",
+      "xxxhdpi": "miniprogram/images/android/android-icon-192.png"
     },
     "splashscreen": {
-      "hdpi": "",
-      "xhdpi": "",
-      "xxhdpi": ""
+      "hdpi": "miniprogram/images/android/splash-screen-new.png",
+      "xhdpi": "miniprogram/images/android/splash-screen-new.png",
+      "xxhdpi": "miniprogram/images/splash-screen-new.png"
     },
     "enableVConsole": "open",
     "privacy": {
@@ -55,18 +55,18 @@
     },
     "enableVConsole": "open",
     "icons": {
-      "mainIcon120": "",
-      "mainIcon180": "",
-      "spotlightIcon80": "",
-      "spotlightIcon120": "",
-      "settingsIcon58": "",
-      "settingsIcon87": "",
-      "notificationIcon40": "",
-      "notificationIcon60": "",
-      "appStore1024": ""
+      "mainIcon120": "miniprogram/images/ios/icon_mainIcon120.png",
+      "mainIcon180": "miniprogram/images/ios/icon_mainIcon180.png",
+      "spotlightIcon80": "miniprogram/images/ios/icon_spotlightIcon80.png",
+      "spotlightIcon120": "miniprogram/images/ios/icon_spotlightIcon120.png",
+      "settingsIcon58": "miniprogram/images/ios/icon_settingsIcon58.png",
+      "settingsIcon87": "miniprogram/images/ios/icon_settingsIcon87.png",
+      "notificationIcon40": "miniprogram/images/ios/icon_notificationIcon40.png",
+      "notificationIcon60": "miniprogram/images/ios/icon_notificationIcon60.png",
+      "appStore1024": "miniprogram/images/ios/icon_appStore1024.png"
     },
     "splashScreen": {
-      "customImage": ""
+      "customImage": "miniprogram/images/ios/splash_custom.png"
     },
     "privacy": {
       "enable": false

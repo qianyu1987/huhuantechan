@@ -8,6 +8,7 @@ App({
     openid: null,
     envId: 'cloud1-3g4sjhqr5e28e54e', // 你的云开发环境ID
     creditScore: 100,
+    points: 0, // ✅ 补充 points 初始值
     province: '',
     provincesBadges: [], // 已集章省份
     platform: 'weixin', // 平台：weixin/ohos/android/ios
@@ -34,32 +35,41 @@ App({
     }
     
     // 使用指定的环境ID初始化
-    try {
-      // 多端应用和 HarmonyOS 的云初始化
-      const $io = {
-        env: this.globalData.envId,
-        traceUser: true
+    // 多端应用扩展库在 Windows 开发工具上需要特殊处理
+    const $initCloud = () => {
+      try {
+        // 方案1：不指定 env，让扩展库自动选择环境
+        wx.cloud.init({
+          traceUser: true
+        })
+        console.log('[App] 云开发初始化成功（自动环境）')
+        return true
+      } catch ($ex) {
+        console.error('[App] 云开发初始化失败（自动环境）', $ex)
+        return false
       }
-      
-      wx.cloud.init($io)
-      console.log('[App] 云开发初始化成功', $io)
-    } catch ($ex) {
-      console.error('[App] 云开发初始化失败', $ex)
-      // 降级初始化
-      if ($pi.isOhos || $pi.isApp) {
-        try {
-          wx.cloud.init({ traceUser: false })
-          console.log('[App] 降级初始化成功（使用默认环境）')
-        } catch ($he) {
-          console.error('[App] 降级初始化也失败', $he)
-          wx.showModal({
-            title: '云服务初始化失败',
-            content: '云开发初始化失败，部分功能可能无法使用。错误: ' + $ex.message,
-            showCancel: false
-          })
-        }
-      } else {
-        wx.showToast({ title: '云开发初始化失败', icon: 'none' })
+    }
+
+    const $initCloudWithEnv = () => {
+      try {
+        // 方案2：显式指定环境ID
+        wx.cloud.init({
+          env: this.globalData.envId,
+          traceUser: true
+        })
+        console.log('[App] 云开发初始化成功（指定环境）', this.globalData.envId)
+        return true
+      } catch ($ex) {
+        console.error('[App] 云开发初始化失败（指定环境）', $ex)
+        return false
+      }
+    }
+
+    // 优先尝试自动环境，失败后再尝试指定环境
+    if (!$initCloud()) {
+      if (!$initCloudWithEnv()) {
+        // 两种方案都失败，但不要弹窗打断用户
+        console.error('[App] 云开发初始化完全失败，将在调用云函数时重试')
       }
     }
 
@@ -222,6 +232,7 @@ App({
         this.globalData.creditScore = $r7.result.creditScore || 100
         this.globalData.province = $r7.result.province || ''
         this.globalData.provincesBadges = $r7.result.provincesBadges || []
+        this.globalData.points = $r7.result.points || 0 // ✅ 补充 points
 
         // 检查并绑定邀请关系
         await this.bindInviteIfNeeded()

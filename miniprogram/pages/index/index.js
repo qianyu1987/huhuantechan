@@ -33,6 +33,12 @@ Page({
     const flags = getApp().globalData.featureFlags || {}
     this.setData({ featureFlags: flags })
 
+    // 预加载分享配置（热更新）
+    this._loadShareConfig()
+
+    // 开启分享按钮（包括右上角菜单和朋友圈）
+    wx.showShareMenu({ withShareTicket: true, menus: ['shareAppMessage', 'shareTimeline'] })
+
     // 处理邀请码（分享链接直接带 inviteCode 参数）
     if (options.inviteCode) {
       this.handleInviteCode(options.inviteCode)
@@ -407,6 +413,69 @@ Page({
       const products = this.data.products
       products[index].coverUrl = '/images/default-product.png'
       this.setData({ products })
+    }
+  },
+
+  // ========== 分享功能 ==========
+
+  /**
+   * 分享给朋友
+   * 首页分享：展示当前筛选省份，吸引特定地区的用户
+   */
+  onShareAppMessage() {
+    const cfg = this.data._shareConfig || {}
+    const province = this.data.activeProvince
+
+    let title = cfg.indexTitle || '全国特产在这里，找到你想换的那份！'
+    let path = '/pages/index/index'
+
+    // 如果用户正在看某个省的特产，分享时带上省份参数
+    if (province) {
+      const pInfo = (this.data.provinceList || []).find(p => p.code === province)
+      const pName = pInfo ? pInfo.name : province
+      title = cfg.indexProvinceTitle
+        ? cfg.indexProvinceTitle.replace('{province}', pName)
+        : `${pName}的特产来了！快来看看有没有你喜欢的~`
+      path = `/pages/index/index?province=${province}`
+    }
+
+    return {
+      title,
+      path,
+      imageUrl: cfg.indexImage || '/images/share-default.png'
+    }
+  },
+
+  /**
+   * 分享到朋友圈
+   */
+  onShareTimeline() {
+    const cfg = this.data._shareConfig || {}
+    const province = this.data.activeProvince
+    const pInfo = province
+      ? (this.data.provinceList || []).find(p => p.code === province)
+      : null
+    const pName = pInfo ? pInfo.name : ''
+
+    return {
+      title: pName
+        ? `${pName}的特产，快来互换吧！`
+        : (cfg.timelineTitle || '特产互换，让美食走遍全国 🌏'),
+      query: province ? `province=${province}` : ''
+    }
+  },
+
+  /**
+   * 预加载云端分享配置（热更新入口）
+   */
+  async _loadShareConfig() {
+    try {
+      const res = await callCloud('productMgr', { action: 'getShareConfig' })
+      if (res && res.success && res.config) {
+        this.data._shareConfig = res.config
+      }
+    } catch (e) {
+      // 静默失败
     }
   }
 })

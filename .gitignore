@@ -1,3 +1,29 @@
 # 短信配置文件 - 包含敏感信息,请勿提交!
 cloudfunctions/common/sms/sms-config.js
 node_modules
+
+# Android 签名证书
+android-keystore/
+*.keystore
+*.jks
+cert-info.txt
+
+# 临时调试/测试脚本
+_check_*.js
+_fix_*.js
+_find_*.js
+_scan_*.js
+_test_*.js
+_run_test.bat
+_check_output.txt
+_fix_out.txt
+_fixstats_out.txt
+_gs_output.txt
+_init_output.txt
+_mine_init_out.txt
+_pub_output.txt
+_test_output.txt
+splash-screen.png
+
+# 独立子项目（含自己的 git 仓库）
+qiange/

@@ -23,7 +23,8 @@
     "pages/mystery/index",
     "pages/admin/index",
     "pages/user-profile/index",
-    "pages/test-phone/index"
+    "pages/test-phone/index",
+    "pages/network-test/index"
   ],
   "window": {
     "backgroundTextStyle": "light",

@@ -106,6 +106,7 @@
         <text class="section-title">账号安全</text>
       </view>
       <phone-verify 
+        id="phoneVerify"
         phone="{{phoneNumber}}" 
         verified="{{phoneVerified}}" 
         bind:verified="onPhoneVerified"
@@ -277,4 +278,45 @@
     </view>
   </view>
 
+</view>
+
+<!-- 授权引导弹窗：首次进入/未完善信息时自动弹出 -->
+<view class="guide-overlay {{showProfileGuide ? 'show' : ''}}" catchtap="noop">
+  <view class="guide-sheet">
+    <view class="guide-title">完善个人信息</view>
+    <view class="guide-subtitle">一键获取微信头像和昵称，让大家认识你</view>
+
+    <!-- 头像选择 -->
+    <view class="guide-avatar-wrap">
+      <button class="guide-avatar-btn" open-type="chooseAvatar" bindchooseavatar="onGuideChooseAvatar">
+        <image
+          class="guide-avatar-img"
+          src="{{guideAvatarUrl || '/images/default-avatar.png'}}"
+          mode="aspectFill"
+        />
+        <view class="guide-avatar-mask">
+          <text class="guide-camera-icon">📷</text>
+        </view>
+      </button>
+      <view class="guide-avatar-tip">{{guideAvatarUrl ? '✅ 头像已获取' : '点击获取微信头像'}}</view>
+    </view>
+
+    <!-- 昵称输入 -->
+    <view class="guide-input-wrap">
+      <input
+        class="guide-nickname-input"
+        type="nickname"
+        placeholder="点击自动填入微信昵称"
+        placeholder-class="guide-placeholder"
+        value="{{guideNickName}}"
+        bindinput="onGuideNickNameInput"
+      />
+    </view>
+
+    <!-- 按钮区 -->
+    <view class="guide-btn-row">
+      <view class="guide-skip-btn" bindtap="skipProfileGuide">稍后设置</view>
+      <view class="guide-save-btn {{guideAvatarUrl && guideNickName ? 'active' : ''}}" bindtap="saveGuideProfile">完成设置</view>
+    </view>
+  </view>
 </view>

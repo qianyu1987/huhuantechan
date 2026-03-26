@@ -120,7 +120,7 @@
       <view class="list-item" wx:for="{{users}}" wx:key="_id" bindtap="goToUserDetail" data-openid="{{item._openid}}">
         <image class="li-avatar" src="{{item.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"/>
         <view class="li-body">
-          <view class="li-title">{{item.nickName || '未知'}}</view>
+          <view class="li-title">{{item.nickName || '未设置昵称'}}</view>
           <view class="li-sub">
             <text>{{item.province || '未设置'}}</text>
             <text class="tag tag-credit {{item.creditLevel.class}}">信用 {{item.creditScore || 100}}</text>

@@ -133,10 +133,24 @@ async function ensurePhoneVerifyCollection() {
 
 exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
+  
+  // 支持 HTTP 触发：HTTP 请求时 event 结构不同
+  let actualEvent = event
+  if (event.httpMethod && event.body) {
+    // HTTP 触发，解析 body
+    try {
+      actualEvent = typeof event.body === 'string' ? JSON.parse(event.body) : event.body
+      console.log('[HTTP触发] 解析后的数据:', actualEvent)
+    } catch (e) {
+      console.error('[HTTP触发] 解析 body 失败:', e)
+      return { success: false, error: '请求格式错误' }
+    }
+  }
+  
   const openid = wxContext.OPENID
   const unionid = wxContext.UNIONID // 多端统一标识
 
-  const action = event.action || 'init'
+  const action = actualEvent.action || 'init'
 
   // ========== 初始化/获取用户 ==========
   if (action === 'init') {
@@ -176,7 +190,7 @@ exports.main = async (event, context) => {
         // 新用户，创建记录
         const NEW_USER_POINTS = 50
         
-        await db.collection('users').add({
+        const addRes = await db.collection('users').add({
           data: {
             // 多端统一标识
             unionid: unionid || '', // 存储 UNIONID 用于跨平台识别
@@ -205,10 +219,22 @@ exports.main = async (event, context) => {
           }
         })
         
-        // 重新获取用户数据
-        const newUserRes = await db.collection('users').where({ _openid: openid }).get()
-        userData = newUserRes.data && newUserRes.data[0]
-        console.log('[userInit] 创建新用户成功')
+        // ✅ 直接用 add 返回的 _id 精准查询，避免因索引延迟导致 points 读到 0
+        try {
+          const newUserRes = await db.collection('users').doc(addRes._id).get()
+          userData = newUserRes.data
+        } catch (e) {
+          // 极少数情况下 doc 查询也失败，降级用 where 查
+          const newUserRes = await db.collection('users').where({ _openid: openid }).get()
+          userData = newUserRes.data && newUserRes.data[0]
+        }
+        
+        // ✅ 兜底：如果 userData 里 points 字段为空（极端情况），用已知值补充
+        if (userData && (userData.points === undefined || userData.points === null)) {
+          userData.points = NEW_USER_POINTS
+        }
+        
+        console.log('[userInit] 创建新用户成功, points:', userData && userData.points)
       } else {
         // 如果用户存在但没有 unionid，补充 unionid
         if (unionid && !userData.unionid) {
@@ -222,19 +248,31 @@ exports.main = async (event, context) => {
       // 不再转换 cloud:// 为临时链接，直接返回原始链接
       // 前端展示时由 WXML 处理（小程序 image 组件支持 cloud://）
       const avatarUrl = userData.avatarUrl || ''
+
+      // 判断用户信息是否"未完善"：
+      // 昵称为空、或是默认昵称"微信用户"，视为未设置
+      // 头像为空、或是旧版默认头像路径，视为未设置
+      const DEFAULT_NICK_NAMES = ['微信用户', 'WeChat User', '用户']
+      const isDefaultNick = !userData.nickName || DEFAULT_NICK_NAMES.includes(userData.nickName.trim())
+      const isDefaultAvatar = !avatarUrl || avatarUrl.includes('default-avatar') || avatarUrl.includes('defaultAvatar')
+      // 若昵称或头像未完善，返回空值，让前端显示设置引导组件
+      const returnNickName = isDefaultNick ? '' : userData.nickName
+      const returnAvatarUrl = isDefaultAvatar ? '' : avatarUrl
       
       console.log('[init] 用户数据:', {
         _id: userData._id,
         phoneNumber: userData.phoneNumber,
-        phoneVerified: userData.phoneVerified
+        phoneVerified: userData.phoneVerified,
+        isDefaultNick,
+        isDefaultAvatar
       })
 
       return {
         success: true,
         openid,
         userInfo: {
-          nickName: userData.nickName || '',
-          avatarUrl: avatarUrl
+          nickName: returnNickName,
+          avatarUrl: returnAvatarUrl
         },
         creditScore: userData.creditScore || 100,
         province: userData.province || '',
@@ -252,6 +290,8 @@ exports.main = async (event, context) => {
   // ========== 更新资料(mine页面头像+昵称) ==========
   if (action === 'updateProfile') {
     try {
+      console.log('[updateProfile] 收到请求, openid:', openid, 'actualEvent:', JSON.stringify(actualEvent))
+      
       const unionid = wxContext.UNIONID
       
       // 尝试多种方式查询用户
@@ -261,22 +301,26 @@ exports.main = async (event, context) => {
       if (unionid) {
         const unionRes = await db.collection('users').where({ unionid: unionid }).get()
         currentUser = unionRes.data && unionRes.data[0]
+        console.log('[updateProfile] UNIONID 查询:', currentUser ? '找到' : '未找到')
       }
       
       // 如果没有 UNIONID 或未找到，尝试用 _openid
       if (!currentUser) {
         const openRes = await db.collection('users').where({ _openid: openid }).get()
         currentUser = openRes.data && openRes.data[0]
+        console.log('[updateProfile] _openid 查询:', currentUser ? '找到' : '未找到')
       }
       
       // 最后尝试用 openid 字段
       if (!currentUser) {
         const oldRes = await db.collection('users').where({ openid: openid }).get()
         currentUser = oldRes.data && oldRes.data[0]
+        console.log('[updateProfile] openid 字段查询:', currentUser ? '找到' : '未找到')
       }
 
       if (!currentUser) {
-        return { success: false, error: '用户不存在' }
+        console.log('[updateProfile] 用户不存在')
+        return { success: false, error: '用户不存在，请先点击头像完成登录' }
       }
       const currentProvince = currentUser.province
 
@@ -284,25 +328,25 @@ exports.main = async (event, context) => {
       const updateData = { updateTime: db.serverDate() }
 
       // 头像：只接受 cloud:// 格式（防止临时链接覆盖原始链接）
-      if (event.avatarUrl && event.avatarUrl.startsWith('cloud://')) {
-        updateData.avatarUrl = event.avatarUrl
+      if (actualEvent.avatarUrl && actualEvent.avatarUrl.startsWith('cloud://')) {
+        updateData.avatarUrl = actualEvent.avatarUrl
       }
       // 昵称：只接受非空字符串
-      if (event.nickName && typeof event.nickName === 'string' && event.nickName.trim().length > 0) {
-        updateData.nickName = event.nickName.trim()
+      if (actualEvent.nickName && typeof actualEvent.nickName === 'string' && actualEvent.nickName.trim().length > 0) {
+        updateData.nickName = actualEvent.nickName.trim()
       }
 
       // 只有当没有设置过家乡时，才能设置家乡
-      if (event.province !== undefined) {
-        if (currentProvince && currentProvince !== event.province) {
+      if (actualEvent.province !== undefined) {
+        if (currentProvince && currentProvince !== actualEvent.province) {
           return {
             success: false,
             error: '家乡已设置，不能修改',
             currentProvince: currentProvince
           }
         }
-        if (!currentProvince && event.province) {
-          updateData.province = event.province
+        if (!currentProvince && actualEvent.province) {
+          updateData.province = actualEvent.province
         }
       }
 
@@ -310,7 +354,10 @@ exports.main = async (event, context) => {
       await db.collection('users').doc(currentUser._id).update({
         data: updateData
       })
-      return { success: true }
+      return { 
+        success: true,
+        openid: openid  // 返回 openid，供前端判断登录状态
+      }
     } catch (e) {
       return { success: false, error: e.message }
     }
@@ -320,7 +367,7 @@ exports.main = async (event, context) => {
   if (action === 'saveProfile') {
     try {
       console.log('[saveProfile] 收到请求, openid:', openid)
-      console.log('[saveProfile] event:', JSON.stringify(event))
+      console.log('[saveProfile] actualEvent:', JSON.stringify(actualEvent))
       
       const unionid = wxContext.UNIONID
       
@@ -358,36 +405,36 @@ exports.main = async (event, context) => {
       const updateData = { updateTime: db.serverDate() }
 
       // 头像和昵称：可随意修改（但头像只接受 cloud:// 格式）
-      if (event.nickName !== undefined && event.nickName !== '') {
-        updateData.nickName = event.nickName
+      if (actualEvent.nickName !== undefined && actualEvent.nickName !== '') {
+        updateData.nickName = actualEvent.nickName
       }
-      if (event.avatarUrl && typeof event.avatarUrl === 'string' && event.avatarUrl.startsWith('cloud://')) {
-        updateData.avatarUrl = event.avatarUrl
+      if (actualEvent.avatarUrl && typeof actualEvent.avatarUrl === 'string' && actualEvent.avatarUrl.startsWith('cloud://')) {
+        updateData.avatarUrl = actualEvent.avatarUrl
       }
       // 性别：可随意修改
-      if (event.gender !== undefined && event.gender !== '') {
-        updateData.gender = event.gender
+      if (actualEvent.gender !== undefined && actualEvent.gender !== '') {
+        updateData.gender = actualEvent.gender
       }
       // 省份：只能设置一次
-      if (event.province !== undefined && event.province !== '') {
-        if (currentUser.province && currentUser.province !== event.province) {
+      if (actualEvent.province !== undefined && actualEvent.province !== '') {
+        if (currentUser.province && currentUser.province !== actualEvent.province) {
           return { success: false, error: '省份只能设置一次，无法修改' }
         }
         if (!currentUser.province) {
-          updateData.province = event.province
+          updateData.province = actualEvent.province
         }
       }
       // 生日、属相、星座：只能设置一次
-      if (event.birthday !== undefined && event.birthday !== '') {
+      if (actualEvent.birthday !== undefined && actualEvent.birthday !== '') {
         // 如果已有生日，且传来的新值不同，则拒绝修改
-        if (currentUser.birthday && String(currentUser.birthday) !== String(event.birthday)) {
+        if (currentUser.birthday && String(currentUser.birthday) !== String(actualEvent.birthday)) {
           return { success: false, error: '生日只能设置一次，无法修改' }
         }
         // 首次设置生日，或者值相同也不需要更新
         if (!currentUser.birthday) {
-          updateData.birthday = event.birthday
+          updateData.birthday = actualEvent.birthday
           // 自动计算并存储属相和星座
-          const zodiacInfo = calculateZodiacInfo(event.birthday)
+          const zodiacInfo = calculateZodiacInfo(actualEvent.birthday)
           updateData.zodiac = zodiacInfo.zodiac
           updateData.zodiacAnimal = zodiacInfo.zodiacAnimal
         }
@@ -515,7 +562,8 @@ exports.main = async (event, context) => {
   // ========== 获取用户公开主页 ==========
   if (action === 'publicProfile') {
     try {
-      const { targetOpenid } = event
+      // 修复：使用 actualEvent 而非 event，确保 HTTP 触发（APK/鸿蒙）时也能正确读取参数
+      const { targetOpenid } = actualEvent
       if (!targetOpenid) return { success: false, message: '缺少参数' }
 
       const userFields = { nickName: true, avatarUrl: true, province: true, creditScore: true, publishCount: true, swapCount: true, provincesBadges: true, createTime: true, gender: true, _openid: true, openid: true }
@@ -540,11 +588,31 @@ exports.main = async (event, context) => {
       user.avatarUrl = await resolveCloudUrl(user.avatarUrl)
 
       // 用户所有特产（含各状态）
-      const productsRes = await db.collection('products')
-        .where({ _openid: actualOpenid, status: _.in(['active', 'in_swap', 'swapped']) })
+      // 注意：products 集合存的是 valueRange 字段，没有 valueMin/valueMax
+      // 查询策略：先用 _openid 查，再用显式 openid 字段查，合并去重（兼容新旧数据）
+      const productFields = { _id: true, name: true, images: true, province: true, category: true, valueRange: true, viewCount: true, isMystery: true, status: true }
+      const statusFilter = _.in(['active', 'in_swap', 'swapped'])
+
+      let productsRes = await db.collection('products')
+        .where({ _openid: actualOpenid, status: statusFilter })
         .orderBy('createTime', 'desc').limit(100)
-        .field({ _id: true, name: true, images: true, province: true, category: true, valueMin: true, valueMax: true, viewCount: true, isMystery: true, status: true })
+        .field(productFields)
         .get()
+
+      // 如果 _openid 查不到，再用显式 openid 字段查（兼容旧数据或 openid 字段不一致的情况）
+      if (!productsRes.data || productsRes.data.length === 0) {
+        productsRes = await db.collection('products')
+          .where({ openid: actualOpenid, status: statusFilter })
+          .orderBy('createTime', 'desc').limit(100)
+          .field(productFields)
+          .get()
+      }
+
+      console.log('[publicProfile] 查询结果:', {
+        targetOpenid,
+        actualOpenid,
+        productCount: productsRes.data.length
+      })
 
       const products = []
       for (const p of productsRes.data) {
@@ -558,7 +626,7 @@ exports.main = async (event, context) => {
           _id: p._id,
           name: p.isMystery ? '神秘特产' : p.name,
           coverUrl, province: p.province, category: p.category,
-          valueMin: p.valueMin, valueMax: p.valueMax,
+          valueRange: p.valueRange || '',
           viewCount: p.viewCount || 0,
           isMystery: p.isMystery || false,
           status: p.status || 'active'
@@ -587,7 +655,7 @@ exports.main = async (event, context) => {
       // 确保 addresses 集合存在
       await ensureAddressesCollection()
       
-      const addressRes = await db.collection('addresses').where({ openid }).get()
+      const addressRes = await db.collection('addresses').where({ _openid: openid }).get()
       return {
         success: true,
         addresses: addressRes.data || []
@@ -603,12 +671,12 @@ exports.main = async (event, context) => {
       // 确保 addresses 集合存在
       await ensureAddressesCollection()
       
-      const address = event.address
+      const address = actualEvent.address
       if (!address || !address.contactName || !address.contactPhone || !address.detailAddress) {
         return { success: false, message: '请填写完整信息' }
       }
       
-      const addressRes = await db.collection('addresses').where({ openid }).count()
+      const addressRes = await db.collection('addresses').where({ _openid: openid }).count()
       if (addressRes.total >= 5 && !address._id) {
         return { success: false, message: '最多只能保存5个地址' }
       }
@@ -616,7 +684,7 @@ exports.main = async (event, context) => {
       // 如果设置为默认地址，先取消其他默认地址
       if (address.isDefault) {
         await db.collection('addresses').where({
-          openid,
+          _openid: openid,
           isDefault: true
         }).update({
           data: { isDefault: false }
@@ -663,7 +731,7 @@ exports.main = async (event, context) => {
   // ========== 删除收货地址 ==========
   if (action === 'deleteAddress') {
     try {
-      const addressId = event.addressId
+      const addressId = actualEvent.addressId
       if (!addressId) {
         return { success: false, message: '地址ID不能为空' }
       }
@@ -677,14 +745,14 @@ exports.main = async (event, context) => {
   // ========== 设置默认收货地址 ==========
   if (action === 'setDefaultAddress') {
     try {
-      const addressId = event.addressId
+      const addressId = actualEvent.addressId
       if (!addressId) {
         return { success: false, message: '地址ID不能为空' }
       }
       
       // 取消其他默认地址
       await db.collection('addresses').where({
-        openid,
+        _openid: openid,
         isDefault: true
       }).update({
         data: { isDefault: false }
@@ -704,7 +772,7 @@ exports.main = async (event, context) => {
   // ========== 获取单个收货地址 ==========
   if (action === 'getAddress') {
     try {
-      const addressId = event.addressId
+      const addressId = actualEvent.addressId
       if (addressId) {
         // 获取指定地址
         const addressRes = await db.collection('addresses').doc(addressId).get()
@@ -714,12 +782,12 @@ exports.main = async (event, context) => {
         }
       } else {
         // 获取默认地址，如果没有默认则返回第一个
-        const defaultRes = await db.collection('addresses').where({ openid, isDefault: true }).get()
+        const defaultRes = await db.collection('addresses').where({ _openid: openid, isDefault: true }).get()
         if (defaultRes.data && defaultRes.data.length > 0) {
           return { success: true, address: defaultRes.data[0] }
         }
         // 没有默认地址，返回第一个
-        const listRes = await db.collection('addresses').where({ openid }).get()
+        const listRes = await db.collection('addresses').where({ _openid: openid }).get()
         return {
           success: true,
           address: listRes.data && listRes.data[0] ? listRes.data[0] : null
@@ -755,10 +823,18 @@ exports.main = async (event, context) => {
         })
       }
 
-      // 获取邀请列表（查询邀请人为当前 openid 的用户）
+      // 获取邀请列表（查询 invitedBy = 当前用户 openid 的被邀请用户）
+      // 云函数使用服务端权限，可查任意用户数据
+      // 同时兼容 inviteCode 字段（老数据可能 invitedBy 存的是邀请码而非 openid）
+      const inviteQueryValues = [openid]
+      if (inviteCode && inviteCode !== openid) {
+        inviteQueryValues.push(inviteCode)
+      }
+      console.log('[getInviteData] 查询邀请列表，invitedBy in:', inviteQueryValues)
       const inviteRes = await db.collection('users').where({
-        invitedBy: openid
-      }).get()
+        invitedBy: _.in(inviteQueryValues)
+      }).limit(100).get()
+      console.log('[getInviteData] 查询结果数量:', inviteRes.data ? inviteRes.data.length : 0)
 
       // 获取邀请详情（包含首次互换状态）
       const inviteList = await Promise.all((inviteRes.data || []).map(async invitedUser => {
@@ -810,7 +886,7 @@ exports.main = async (event, context) => {
   // ========== 绑定邀请关系 ==========
   if (action === 'bindInvite') {
     try {
-      const inviteCode = event.inviteCode
+      const inviteCode = actualEvent.inviteCode
 
       if (!inviteCode) {
         return { success: false, error: '邀请码不能为空' }
@@ -820,7 +896,8 @@ exports.main = async (event, context) => {
       let currentUserRes = await db.collection('users').where({ _openid: openid }).get()
       let currentUser = currentUserRes.data && currentUserRes.data[0]
       if (!currentUser) {
-        currentUserRes = await db.collection('users').where({ _openid: openid }).get()
+        // 兼容旧数据（openid 字段）
+        currentUserRes = await db.collection('users').where({ openid: openid }).get()
         currentUser = currentUserRes.data && currentUserRes.data[0]
       }
 
@@ -905,7 +982,7 @@ exports.main = async (event, context) => {
   // ========== 生成小程序码 ==========
   if (action === 'getQrcode') {
     try {
-      const inviteCode = event.inviteCode
+      const inviteCode = actualEvent.inviteCode
       if (!inviteCode) {
         return { success: false, error: '邀请码不能为空' }
       }
@@ -936,7 +1013,7 @@ exports.main = async (event, context) => {
   // ========== 发送手机验证码 ==========
   if (action === 'sendPhoneVerifyCode') {
     try {
-      const { cloudID, encryptedData, iv } = event
+      const { cloudID, encryptedData, iv } = actualEvent
       
       if (!cloudID && !encryptedData) {
         return { success: false, message: '缺少手机号数据' }
@@ -1015,7 +1092,7 @@ exports.main = async (event, context) => {
   // ========== 重发验证码 ==========
   if (action === 'resendPhoneVerifyCode') {
     try {
-      const { verifyId } = event
+      const { verifyId } = actualEvent
       
       if (!verifyId) {
         return { success: false, message: '缺少验证ID' }
@@ -1104,7 +1181,7 @@ exports.main = async (event, context) => {
   // ========== 验证手机验证码 ==========
   if (action === 'verifyPhoneCode') {
     try {
-      const { verifyId, code, phoneNumber } = event
+      const { verifyId, code, phoneNumber } = actualEvent
       
       if (!verifyId || !code || !phoneNumber) {
         return { success: false, message: '参数不完整' }
@@ -1198,7 +1275,7 @@ exports.main = async (event, context) => {
   // ========== 微信原生手机号验证(无需验证码) ==========
   if (action === 'verifyPhoneNumber') {
     try {
-      const { code, cloudID, encryptedData, iv } = event
+      const { code, cloudID, encryptedData, iv } = actualEvent
       
       // 微信新版本使用 code,旧版本使用 cloudID 或 encryptedData
       let phoneNumber = ''
@@ -1336,7 +1413,7 @@ exports.main = async (event, context) => {
   // ========== 调试：修复用户积分 ==========
   if (action === 'debugFixPoints') {
     try {
-      const targetPoints = event.points || 50
+      const targetPoints = actualEvent.points || 50
       
       let userRes = await db.collection('users').where({ _openid: openid }).get()
       let user = userRes.data && userRes.data[0]
@@ -1387,9 +1464,9 @@ exports.main = async (event, context) => {
         return { success: false, error: '用户不存在' }
       }
 
-      // 统计实际特产数量（所有状态）
+      // 统计实际特产数量（所有状态，使用 _openid 精准定位）
       const countRes = await db.collection('products')
-        .where({ openid: openid })
+        .where({ _openid: openid })
         .count()
       
       const actualCount = countRes.total
@@ -1433,11 +1510,16 @@ exports.main = async (event, context) => {
         return { success: false, error: '用户不存在' }
       }
 
-      // 1. 统计实际特产数量（所有状态）
-      const productCountRes = await db.collection('products')
+      // 1. 统计实际特产数量（所有状态，兼容 _openid 和 openid 两种字段）
+      // 注意：不能用 $or 在 count() 上，要分两次查再取最大值（云数据库限制）
+      const productCountByOpenid = await db.collection('products')
         .where({ openid: openid })
         .count()
-      const actualPublishCount = productCountRes.total
+      const productCountByUnderOpenid = await db.collection('products')
+        .where({ _openid: openid })
+        .count()
+      // 取两者中较大的值（防止字段不一致时取到 0）
+      const actualPublishCount = Math.max(productCountByOpenid.total, productCountByUnderOpenid.total)
       const storedPublishCount = user.publishCount || 0
       
       // 2. 统计实际完成的订单数（分享数）

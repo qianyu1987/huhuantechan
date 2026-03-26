@@ -1,0 +1,43 @@
+<!--pages/network-test/index.wxml-->
+<view class="network-test-page">
+  <view class="header">
+    <text class="title">网络诊断</text>
+    <text class="subtitle" wx:if="{{envId}}">环境: {{envId}}</text>
+  </view>
+
+  <view class="status-section">
+    <view class="status-item">
+      <text class="label">云开发:</text>
+      <text class="value {{cloudInited ? 'success' : 'error'}}">{{cloudInited ? '✅ 正常' : '❌ 异常'}}</text>
+    </view>
+    <view class="status-item" wx:if="{{openid}}">
+      <text class="label">OpenID:</text>
+      <text class="value">{{openid}}</text>
+    </view>
+  </view>
+
+  <view class="btn-group">
+    <button class="test-btn" bindtap="testCloudFunction" loading="{{testing}}">
+      测试云函数
+    </button>
+    <button class="test-btn" bindtap="testAdmin">
+      测试管理员
+    </button>
+  </view>
+
+  <view class="logs-section">
+    <view class="logs-header">
+      <text class="logs-title">诊断日志</text>
+      <view class="logs-actions">
+        <text class="action-btn" bindtap="clearLogs">清空</text>
+        <text class="action-btn" bindtap="copyLogs">复制</text>
+      </view>
+    </view>
+    <scroll-view scroll-y class="logs-list">
+      <view wx:for="{{logs}}" wx:key="time" class="log-item {{item.type}}">
+        <text class="log-time">[{{item.time}}]</text>
+        <text class="log-msg">{{item.msg}}</text>
+      </view>
+    </scroll-view>
+  </view>
+</view>

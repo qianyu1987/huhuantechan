@@ -1318,3 +1318,130 @@
 .points-stat:active {
   opacity: 0.8;
 }
+
+/* ===== 授权引导弹窗 ===== */
+.guide-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 9999;
+  display: flex;
+  align-items: flex-end;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.28s;
+}
+.guide-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.guide-sheet {
+  width: 100%;
+  background: #fff;
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 48rpx 40rpx 60rpx;
+  box-sizing: border-box;
+  transform: translateY(60rpx);
+  transition: transform 0.28s cubic-bezier(0.34,1.26,0.64,1);
+}
+.guide-overlay.show .guide-sheet {
+  transform: translateY(0);
+}
+.guide-title {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #1a1a1a;
+  text-align: center;
+  margin-bottom: 12rpx;
+}
+.guide-subtitle {
+  font-size: 26rpx;
+  color: #999;
+  text-align: center;
+  margin-bottom: 48rpx;
+}
+.guide-avatar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 36rpx;
+}
+.guide-avatar-btn {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 50%;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+.guide-avatar-btn::after { border: none; }
+.guide-avatar-img {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 50%;
+  display: block;
+}
+.guide-avatar-mask {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 56rpx;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.guide-camera-icon {
+  font-size: 28rpx;
+}
+.guide-avatar-tip {
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  color: #07c160;
+}
+.guide-input-wrap {
+  background: #f5f5f5;
+  border-radius: 20rpx;
+  padding: 0 32rpx;
+  margin-bottom: 48rpx;
+}
+.guide-nickname-input {
+  height: 96rpx;
+  font-size: 32rpx;
+  color: #1a1a1a;
+  width: 100%;
+}
+.guide-placeholder {
+  color: #bbb;
+}
+.guide-btn-row {
+  display: flex;
+  gap: 24rpx;
+}
+.guide-skip-btn {
+  flex: 1;
+  height: 96rpx;
+  line-height: 96rpx;
+  text-align: center;
+  border-radius: 48rpx;
+  background: #f0f0f0;
+  color: #999;
+  font-size: 30rpx;
+}
+.guide-save-btn {
+  flex: 2;
+  height: 96rpx;
+  line-height: 96rpx;
+  text-align: center;
+  border-radius: 48rpx;
+  background: #ddd;
+  color: #fff;
+  font-size: 32rpx;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+.guide-save-btn.active {
+  background: #07c160;
+}

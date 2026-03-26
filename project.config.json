@@ -7,7 +7,7 @@
   "setting": {
     "bundle": false,
     "userConfirmedBundleSwitch": false,
-    "urlCheck": true,
+    "urlCheck": false,
     "scopeDataCheck": false,
     "coverView": true,
     "es6": true,
@@ -51,7 +51,7 @@
     }
   },
   "compileType": "miniprogram",
-  "libVersion": "latest",
+  "libVersion": "3.14.3",
   "appid": "wx7354d924501a001b",
   "projectname": "specialty-swap",
   "condition": {},
@@ -62,7 +62,7 @@
   "miniprogramRoot": "miniprogram/",
   "cloudfunctionRoot": "cloudfunctions/",
   "simulatorPluginLibVersion": {
-    "wxext14566970e7e9f62": "2.27.3"
+    "wxext14566970e7e9f62": "3.6.5-41"
   },
   "cloudfunctionTemplateRoot": "cloudfunctionTemplate/",
   "projectArchitecture": "multiPlatform"

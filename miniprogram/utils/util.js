@@ -253,24 +253,26 @@ function hideLoading() {
 }
 
 /**
- * 调用云函数（含重试机制和多端兼容）
- * 支持 HarmonyOS 多端开发环境
+ * 调用云函数（含重试机制）
+ * 使用微信云开发 SDK 的 wx.cloud.callFunction
  */
 async function callCloud(name, data = {}, maxRetries = 3) {
   let lastError = null
+  
+  console.log('[callCloud] 函数:', name, '数据:', JSON.stringify(data))
   
   for (let retryCount = 0; retryCount < maxRetries; retryCount++) {
     try {
       const res = await wx.cloud.callFunction({ 
         name, 
         data,
-        timeout: 15000  // HarmonyOS 可能需要更长的超时时间
+        timeout: 15000
       })
+      console.log('[Cloud] 响应:', JSON.stringify(res.result).substring(0, 200))
       return res.result
     } catch (e) {
       lastError = e
       
-      // 记录错误日志
       const errInfo = {
         funcName: name,
         retry: retryCount + 1,
@@ -279,24 +281,20 @@ async function callCloud(name, data = {}, maxRetries = 3) {
         errMsg: e.errMsg || e.message
       }
       
-      // 只在最后一次或非可重试错误时输出错误日志
       if (retryCount === maxRetries - 1 || !isRetryableError(e.errCode)) {
         console.error(`[cloud:${name}] 调用失败 (重试${retryCount + 1}/${maxRetries}):`, errInfo)
       } else {
         console.warn(`[cloud:${name}] 调用失败，将重试 (${retryCount + 1}/${maxRetries}):`, errInfo)
       }
       
-      // 如果不是可重试的错误，直接抛出
       if (!isRetryableError(e.errCode)) {
         throw e
       }
       
-      // 如果已经是最后一次重试，抛出错误
       if (retryCount === maxRetries - 1) {
         throw e
       }
       
-      // 指数退避：延迟一段时间后重试
       const delayMs = Math.min(1000 * (retryCount + 1), 5000)
       await new Promise(resolve => setTimeout(resolve, delayMs))
     }

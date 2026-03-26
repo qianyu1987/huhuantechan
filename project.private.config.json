@@ -1,9 +1,9 @@
 {
   "libVersion": "3.14.3",
-  "projectname": "specialty-swap",
+  "projectname": "%E4%BA%92%E6%8D%A2",
   "condition": {},
   "setting": {
-    "urlCheck": true,
+    "urlCheck": false,
     "coverView": true,
     "lazyloadPlaceholderEnable": false,
     "skylineRenderEnable": false,

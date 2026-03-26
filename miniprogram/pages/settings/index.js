@@ -72,13 +72,25 @@ Page({
           // 清理缓存
           wx.showLoading({ title: '清理中...' })
           setTimeout(() => {
-            wx.hideLoading()
-            this.setData({ cacheSize: '0 KB' })
-            wx.showToast({ title: '清理完成', icon: 'success' })
-          }, 1000)
+            try {
+              // 清理功能开关缓存
+              wx.removeStorageSync('featureFlags')
+              wx.removeStorageSync('featureFlagsTTL')
+              this.setData({ cacheSize: '0 MB' })
+              wx.hideLoading()
+              wx.showToast({ title: '清理完成', icon: 'success' })
+            } catch (e) {
+              wx.hideLoading()
+              wx.showToast({ title: '清理失败', icon: 'none' })
+            }
+          }, 500)
         }
       }
     })
+  },
+
+  goToNetworkTest() {
+    wx.navigateTo({ url: '/pages/network-test/index' })
   },
 
   logout() {

@@ -1,0 +1,8 @@
+# 不属于小程序包的资源文件
+images/android/
+images/ios/
+images/splash*.png
+vibe_images/
+
+# 单个大于 500KB 的图片不应进入小程序包
+# 请将图片上传到云存储后通过 URL 引用

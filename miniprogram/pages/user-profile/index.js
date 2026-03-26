@@ -1,5 +1,5 @@
 // pages/user-profile/index.js
-const { PROVINCES, MYSTERY_EMOJIS } = require('../../utils/constants')
+const { PROVINCES, MYSTERY_EMOJIS, VALUE_RANGES_V2 } = require('../../utils/constants')
 const { callCloud, formatTime, formatValue, getCreditLevel, getProvinceByCode, getProvinceByName, toast, processImageUrl } = require('../../utils/util')
 
 const STATUS_MAP = {
@@ -72,7 +72,9 @@ Page({
         const prov = item.province ? getProvinceByCode(item.province) : (item.provinceName ? getProvinceByName(item.provinceName) : null)
         const provinceName = prov ? prov.name : (item.provinceName || '')
         const provinceColor = prov ? prov.color : '#FF375F'
-        const valueLabel = (item.valueMin && item.valueMax) ? formatValue(item.valueMin, item.valueMax) : ''
+        // 通过 valueRange 字段查找价格区间标签（products 集合存的是 valueRange，非 valueMin/valueMax）
+        const vr = VALUE_RANGES_V2.find(v => v.id === item.valueRange)
+        const valueLabel = vr ? vr.label : ''
 
         const isMystery = item.isMystery || false
         const sm = STATUS_MAP[item.status] || STATUS_MAP.active

@@ -12,7 +12,22 @@
 
   <!-- 未验证状态 -->
   <view wx:else class="unverified-box">
+    <!-- 未登录：先引导登录 -->
     <button 
+      wx:if="{{!isLoggedIn}}"
+      class="login-first-btn" 
+      bindtap="onLoginFirst"
+    >
+      <view class="btn-icon">🔐</view>
+      <view class="btn-text">
+        <view class="btn-title">先登录微信</view>
+        <view class="btn-desc">点击头像授权后再验证手机号</view>
+      </view>
+    </button>
+
+    <!-- 已登录：可以验证手机号 -->
+    <button 
+      wx:else
       class="get-phone-btn" 
       open-type="getPhoneNumber" 
       bindgetphonenumber="onGetPhoneNumber"

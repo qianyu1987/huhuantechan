@@ -47,6 +47,12 @@ Page({
     const app = getApp()
     this.setData({ featureFlags: app.globalData.featureFlags || {} })
 
+    // 预加载云端分享配置（热更新：不改代码就能调整分享话术）
+    this._loadShareConfig()
+
+    // 开启右上角分享按钮
+    wx.showShareMenu({ withShareTicket: true, menus: ['shareAppMessage', 'shareTimeline'] })
+
     const { id } = options
     if (id) {
       this.loadDetail(id)
@@ -238,5 +244,103 @@ Page({
 
   goToUserProfile(e) {
     wx.navigateTo({ url: `/pages/user-profile/index?openid=${e.currentTarget.dataset.openid}` })
+  },
+
+  // ========== 分享功能 ==========
+
+  /**
+   * 分享给朋友（转发）
+   * 标题：商品名 + 来自省份
+   * 图片：商品第一张图（https链接）
+   * 路径：直接跳转到该商品详情，支持深链
+   */
+  onShareAppMessage() {
+    const p = this.data.product
+    const cfg = this.data._shareConfig || {}
+
+    if (!p) {
+      // 商品未加载完成时降级到默认分享
+      return {
+        title: cfg.defaultTitle || '来特产互换平台，发现全国好物！',
+        path: '/pages/index/index',
+        imageUrl: cfg.defaultImage || '/images/share-default.png'
+      }
+    }
+
+    // 惊喜特产单独处理
+    if (p.isMystery) {
+      const province = this.data.locationText || ''
+      return {
+        title: cfg.mysteryTitle
+          ? cfg.mysteryTitle.replace('{province}', province)
+          : `🎁 来自${province}的惊喜特产，猜猜是什么？`,
+        path: `/pages/detail/index?id=${p._id}`,
+        imageUrl: cfg.mysteryImage || '/images/mystery-share.png'
+      }
+    }
+
+    // 普通特产：拼接标题
+    const province = this.data.locationText || ''
+    const category = this.data.categoryName ? `【${this.data.categoryEmoji}${this.data.categoryName}】` : ''
+    const titleTemplate = cfg.productTitleTemplate || '{name} · 来自{province} {category}'
+    const title = titleTemplate
+      .replace('{name}', p.name || '特产')
+      .replace('{province}', province)
+      .replace('{category}', category)
+      .trim()
+      .replace(/\s+/g, ' ')
+
+    // 图片：优先用商品第一张图，其次用云端配置的默认图
+    const imageUrl = (p.images && p.images[0] && !p.images[0].startsWith('cloud://'))
+      ? p.images[0]
+      : (cfg.defaultProductImage || '/images/share-default.png')
+
+    return {
+      title,
+      path: `/pages/detail/index?id=${p._id}`,
+      imageUrl
+    }
+  },
+
+  /**
+   * 分享到朋友圈（小程序码）
+   * 注意：朋友圈分享只支持自定义标题，路径固定为当前页
+   */
+  onShareTimeline() {
+    const p = this.data.product
+    const cfg = this.data._shareConfig || {}
+
+    if (!p) {
+      return { title: cfg.defaultTitle || '来特产互换平台，发现全国好物！' }
+    }
+
+    if (p.isMystery) {
+      const province = this.data.locationText || ''
+      return {
+        title: `🎁 来自${province}的惊喜特产等你揭晓`,
+        query: `id=${p._id}`
+      }
+    }
+
+    const province = this.data.locationText || ''
+    return {
+      title: `${p.name} · 来自${province}，快来跟我互换特产！`,
+      query: `id=${p._id}`
+    }
+  },
+
+  /**
+   * 预加载云端分享配置（热更新入口）
+   * 云数据库 share_configs 集合中可随时修改话术，无需发版
+   */
+  async _loadShareConfig() {
+    try {
+      const res = await callCloud('productMgr', { action: 'getShareConfig' })
+      if (res && res.success && res.config) {
+        this.data._shareConfig = res.config  // 直接写 data，不触发渲染
+      }
+    } catch (e) {
+      // 静默失败，降级用本地默认值
+    }
   }
 })

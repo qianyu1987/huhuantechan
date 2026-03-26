@@ -22,7 +22,17 @@ async function getAllUsers() {
 }
 
 exports.main = async (event, context) => {
-  const { action } = event
+  // 支持 HTTP 触发
+  let actualEvent = event
+  if (event.httpMethod && event.body) {
+    try {
+      actualEvent = typeof event.body === 'string' ? JSON.parse(event.body) : event.body
+    } catch (e) {
+      return { success: false, error: '请求格式错误' }
+    }
+  }
+  
+  const { action } = actualEvent
 
   // ========== 清理重复用户记录 ==========
   if (action === 'dedupeUsers') {
