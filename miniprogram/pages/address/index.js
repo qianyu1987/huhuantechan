@@ -74,47 +74,44 @@ Page({
     }
     
     try {
-      const res = await wx.chooseAddress({
-        success: (result) => {
-          if (!result) {
-            toast('未获取到地址')
-            return
-          }
-          
-          const address = {
-            contactName: result.userName || '',
-            contactPhone: result.telNumber || '',
-            province: result.provinceName || '',
-            city: result.cityName || '',
-            district: result.districtName || '',
-            detailAddress: result.detailInfo || '',
-            isDefault: this.data.addresses.length === 0 // 第一个设为默认
-          }
-          
-          // 验证必填字段
-          if (!address.contactName || !address.contactPhone || !address.detailAddress) {
-            toast('地址信息不完整，请补充')
-            this.setData({
-              isEditing: true,
-              editForm: { ...address, _id: '' },
-              region: [address.province, address.city, address.district]
-            })
-            return
-          }
-          
-          // 直接保存
-          this.saveAddress(address)
-        },
-        fail: (err) => {
-          console.error('chooseAddress fail:', err)
-          if (err.errMsg && err.errMsg.indexOf('cancel') === -1) {
-            toast('获取地址失败')
-          }
-        }
-      })
+      // 使用 Promise 风格调用
+      const result = await wx.chooseAddress()
+      
+      if (!result) {
+        toast('未获取到地址')
+        return
+      }
+      
+      const address = {
+        contactName: result.userName || '',
+        contactPhone: result.telNumber || '',
+        province: result.provinceName || '',
+        city: result.cityName || '',
+        district: result.districtName || '',
+        detailAddress: result.detailInfo || '',
+        isDefault: this.data.addresses.length === 0 // 第一个设为默认
+      }
+      
+      // 验证必填字段
+      if (!address.contactName || !address.contactPhone || !address.detailAddress) {
+        toast('地址信息不完整，请补充')
+        this.setData({
+          isEditing: true,
+          editForm: { ...address, _id: '' },
+          region: [address.province, address.city, address.district]
+        })
+        return
+      }
+      
+      // 直接保存
+      this.saveAddress(address)
     } catch (e) {
       console.error('chooseAddress error:', e)
-      toast('获取地址失败')
+      // 用户取消不算错误
+      const errMsg = e && (e.errMsg || e.message || '')
+      if (errMsg && !errMsg.includes('cancel') && !errMsg.includes('取消')) {
+        toast('获取地址失败，请检查是否授权')
+      }
     }
   },
 

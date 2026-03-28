@@ -1,0 +1,224 @@
+<!-- pages/daigou-order-list/index.wxml - 代购订单列表 iOS 26 毛玻璃风格 -->
+<view class="page-root">
+
+  <!-- ══════════ 顶部信息栏 ══════════ -->
+  <view class="top-hero">
+    <!-- 背景光晕 -->
+    <view class="hero-blob blob-1"></view>
+    <view class="hero-blob blob-2"></view>
+
+    <!-- 积分徽章 -->
+    <view class="points-badge glass" bindtap="goPointsCenter">
+      <view class="points-icon">🪙</view>
+      <view class="points-info">
+        <text class="points-num">{{userPoints}}</text>
+        <text class="points-label">积分</text>
+      </view>
+      <view class="credit-dot credit-{{creditScore >= 90 ? 'high' : (creditScore >= 70 ? 'mid' : 'low')}}"></view>
+    </view>
+
+    <!-- 角色切换 -->
+    <view class="role-switcher glass">
+      <view
+        class="role-item {{role === 'buyer' ? 'role-active' : ''}}"
+        bindtap="switchRole"
+        data-role="buyer"
+      >
+        <text class="role-icon">🛍</text>
+        <text class="role-text">我买的</text>
+        <view wx:if="{{buyerStats.pending > 0}}" class="role-badge">{{buyerStats.pending}}</view>
+      </view>
+      <view class="role-divider"></view>
+      <view
+        class="role-item {{role === 'seller' ? 'role-active' : ''}}"
+        bindtap="switchRole"
+        data-role="seller"
+      >
+        <text class="role-icon">🏪</text>
+        <text class="role-text">我卖的</text>
+        <view wx:if="{{sellerStats.pending > 0}}" class="role-badge">{{sellerStats.pending}}</view>
+      </view>
+    </view>
+
+    <!-- 小统计 -->
+    <view class="mini-stats">
+      <view class="stat-item">
+        <text class="stat-num">{{role === 'buyer' ? buyerStats.total : sellerStats.total}}</text>
+        <text class="stat-label">全部订单</text>
+      </view>
+      <view class="stat-sep"></view>
+      <view class="stat-item">
+        <text class="stat-num">{{role === 'buyer' ? buyerStats.completed : sellerStats.completed}}</text>
+        <text class="stat-label">已完成</text>
+      </view>
+      <view class="stat-sep"></view>
+      <view class="stat-item">
+        <text class="stat-num stat-warn">{{role === 'buyer' ? buyerStats.pending : sellerStats.pending}}</text>
+        <text class="stat-label">待处理</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- ══════════ 状态筛选 Tab ══════════ -->
+  <view class="filter-wrap">
+    <scroll-view scroll-x class="status-scroll" enhanced="{{true}}" show-scrollbar="{{false}}">
+      <view class="status-tabs">
+        <view
+          class="s-tab {{!filterStatus ? 's-tab-active' : ''}}"
+          bindtap="switchStatus"
+          data-status=""
+        >全部</view>
+        <view
+          class="s-tab {{filterStatus === 'pending_payment' ? 's-tab-active' : ''}}"
+          bindtap="switchStatus"
+          data-status="pending_payment"
+        >
+          <text class="tab-dot dot-orange"></text>待付款
+        </view>
+        <view
+          class="s-tab {{filterStatus === 'pending_shipment' ? 's-tab-active' : ''}}"
+          bindtap="switchStatus"
+          data-status="pending_shipment"
+        >
+          <text class="tab-dot dot-blue"></text>待发货
+        </view>
+        <view
+          class="s-tab {{filterStatus === 'shipped' ? 's-tab-active' : ''}}"
+          bindtap="switchStatus"
+          data-status="shipped"
+        >
+          <text class="tab-dot dot-purple"></text>已发货
+        </view>
+        <view
+          class="s-tab {{filterStatus === 'completed' ? 's-tab-active' : ''}}"
+          bindtap="switchStatus"
+          data-status="completed"
+        >
+          <text class="tab-dot dot-green"></text>已完成
+        </view>
+        <view
+          class="s-tab {{filterStatus === 'cancelled' ? 's-tab-active' : ''}}"
+          bindtap="switchStatus"
+          data-status="cancelled"
+        >已取消</view>
+        <view
+          class="s-tab {{filterStatus === 'refunding' ? 's-tab-active' : ''}}"
+          bindtap="switchStatus"
+          data-status="refunding"
+        >
+          <text class="tab-dot dot-red"></text>退款中
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- ══════════ 安全横幅提示 ══════════ -->
+  <view class="safety-banner">
+    <text class="banner-icon">⚠️</text>
+    <text class="banner-text">平台不经手资金，不对交易纠纷负责，请谨慎交易</text>
+  </view>
+
+  <!-- ══════════ 内容区 ══════════ -->
+  <view class="content-area">
+
+    <!-- 加载中 -->
+    <view wx:if="{{loading}}" class="loading-wrap">
+      <view class="spinner-ring"></view>
+      <text class="loading-text">加载中...</text>
+    </view>
+
+    <!-- 空态 -->
+    <view wx:elif="{{list.length === 0}}" class="empty-wrap">
+      <view class="empty-illus">🛒</view>
+      <text class="empty-title">暂无{{filterStatus ? statusLabel[filterStatus] : ''}}订单</text>
+      <text class="empty-sub">{{role === 'buyer' ? '去逛逛，买点喜欢的特产吧' : '发布代购商品，等待买家下单'}}</text>
+    </view>
+
+    <!-- 订单列表 -->
+    <scroll-view
+      wx:else
+      scroll-y
+      class="order-scroll"
+      bindscrolltolower="loadMore"
+      enhanced="{{true}}"
+      show-scrollbar="{{false}}"
+    >
+      <view
+        class="order-card glass"
+        wx:for="{{list}}"
+        wx:key="_id"
+        bindtap="goDetail"
+        data-id="{{item._id}}"
+        hover-class="card-hover"
+        hover-stay-time="150"
+      >
+        <!-- 卡片顶部：订单号 + 状态 -->
+        <view class="card-top">
+          <view class="order-no-wrap">
+            <text class="order-no-icon">📋</text>
+            <text class="order-no">{{item.orderNo}}</text>
+          </view>
+          <view class="status-chip chip-{{item.status}}">
+            <view class="chip-dot"></view>
+            <text>{{statusLabel[item.status]}}</text>
+          </view>
+        </view>
+
+        <!-- 卡片中部：商品行 -->
+        <view class="card-body">
+          <view class="product-img-wrap">
+            <image
+              class="product-img"
+              src="{{item.productImage || '/images/default-product.png'}}"
+              mode="aspectFill"
+              lazy-load="{{true}}"
+            />
+            <!-- 状态遮罩（已完成/已取消） -->
+            <view wx:if="{{item.status === 'completed'}}" class="img-mask mask-done">
+              <text>✓</text>
+            </view>
+            <view wx:if="{{item.status === 'cancelled' || item.status === 'refunded'}}" class="img-mask mask-cancel">
+              <text>✕</text>
+            </view>
+          </view>
+          <view class="product-detail">
+            <text class="product-name">{{item.productName}}</text>
+            <text class="product-price">¥{{item.price}}</text>
+            <!-- 积分提示（完成订单有积分奖励） -->
+            <view wx:if="{{item.status === 'completed'}}" class="points-reward">
+              <text class="reward-icon">🪙</text>
+              <text class="reward-text">+{{item.pointsRewarded || 5}} 积分</text>
+            </view>
+            <view wx:if="{{item.status === 'pending_shipment' && role === 'buyer'}}" class="points-hint">
+              <text class="reward-icon">🪙</text>
+              <text class="reward-text">完成后可得积分</text>
+            </view>
+          </view>
+          <view class="card-arrow">
+            <text class="arrow-icon">›</text>
+          </view>
+        </view>
+
+        <!-- 卡片底部：时间 -->
+        <view class="card-footer">
+          <text class="order-time">{{item.createTimeText || ''}}</text>
+        </view>
+      </view>
+
+      <!-- 加载更多 -->
+      <view class="load-more" wx:if="{{hasMore && !loading}}">
+        <view class="spinner-ring-sm"></view>
+        <text>加载更多...</text>
+      </view>
+      <view class="list-end" wx:elif="{{list.length > 0 && !hasMore}}">
+        <view class="end-line"></view>
+        <text>已显示全部订单</text>
+        <view class="end-line"></view>
+      </view>
+
+      <view style="height:40rpx"></view>
+    </scroll-view>
+
+  </view>
+
+</view>

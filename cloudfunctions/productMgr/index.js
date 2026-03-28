@@ -5,6 +5,23 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
+// 简单的内存缓存
+const _cache = new Map()
+const simpleCache = {
+  get: (key) => {
+    const item = _cache.get(key)
+    if (!item) return null
+    if (Date.now() > item.expireAt) {
+      _cache.delete(key)
+      return null
+    }
+    return item.value
+  },
+  set: (key, value, ttlMs = 5 * 60 * 1000) => {
+    _cache.set(key, { value, expireAt: Date.now() + ttlMs })
+  }
+}
+
 // 将单个 cloud:// fileID 转为 https 临时链接
 async function resolveCloudUrl(url) {
   if (!url || !url.startsWith('cloud://')) return url
@@ -17,7 +34,10 @@ async function resolveCloudUrl(url) {
 }
 
 // 处理图片URL，将cloud://转换为临时链接
+// ✅ 优化：内存缓存临时链接（有效期1.5小时），减少重复调用 getTempFileURL
 // 注意：getTempFileURL 单次最多50个fileID，需分批处理
+const IMG_CACHE_TTL = 90 * 60 * 1000 // 1.5小时（临时链接2小时有效）
+
 async function processImages(products) {
   // 收集所有需要转换的fileID（去重）
   const fileIDSet = new Set()
@@ -34,21 +54,35 @@ async function processImages(products) {
   const fileIDs = [...fileIDSet]
   if (fileIDs.length === 0) return products
 
-  // 分批获取临时链接，每批最多50个
-  const BATCH_SIZE = 50
-  let tempUrlMap = {}
-  try {
-    for (let i = 0; i < fileIDs.length; i += BATCH_SIZE) {
-      const batch = fileIDs.slice(i, i + BATCH_SIZE)
-      const tempRes = await cloud.getTempFileURL({ fileList: batch })
-      tempRes.fileList.forEach(f => {
-        if (f.tempFileURL) {
-          tempUrlMap[f.fileID] = f.tempFileURL
-        }
-      })
+  // ✅ 先从内存缓存里取，只请求未命中的
+  const tempUrlMap = {}
+  const missIDs = []
+  fileIDs.forEach(fid => {
+    const cached = simpleCache.get(`img:${fid}`)
+    if (cached) {
+      tempUrlMap[fid] = cached
+    } else {
+      missIDs.push(fid)
     }
-  } catch (e) {
-    console.error('获取临时链接失败:', e)
+  })
+
+  // 分批获取临时链接，每批最多50个
+  if (missIDs.length > 0) {
+    const BATCH_SIZE = 50
+    try {
+      for (let i = 0; i < missIDs.length; i += BATCH_SIZE) {
+        const batch = missIDs.slice(i, i + BATCH_SIZE)
+        const tempRes = await cloud.getTempFileURL({ fileList: batch })
+        tempRes.fileList.forEach(f => {
+          if (f.tempFileURL) {
+            tempUrlMap[f.fileID] = f.tempFileURL
+            simpleCache.set(`img:${f.fileID}`, f.tempFileURL, IMG_CACHE_TTL) // 写入缓存
+          }
+        })
+      }
+    } catch (e) {
+      console.error('获取临时链接失败:', e)
+    }
   }
 
   // 替换图片URL
@@ -138,7 +172,18 @@ async function checkImage(fileId) {
         user = userRes.data && userRes.data[0]
       }
       
-      const currentPoints = user?.points || 0
+      // 如果用户不存在，返回错误
+      if (!user || !user._id) {
+        console.log('[productMgr/create] 用户不存在:', { openid })
+        return { 
+          success: false, 
+          message: '用户不存在，请先完善个人资料'
+        }
+      }
+      
+      // 确保积分和发布数是数字类型
+      const currentPoints = Number(user.points) || 0
+      const currentPublishCount = Number(user.publishCount) || 0
       
       console.log('[productMgr/create] 积分检查:', {
         openid,
@@ -166,7 +211,7 @@ async function checkImage(fileId) {
       // 检查最近1小时内发布数量
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
       const recentCount = await db.collection('products').where({
-        openid: openid,
+        _openid: openid,
         createTime: _.gte(oneHourAgo)
       }).count()
       
@@ -226,10 +271,27 @@ async function checkImage(fileId) {
       // 3. 根据审核结果设置状态
       const status = auditPass ? 'active' : 'pending_review'
       
+      // ========== 代购字段 ==========
+      let daigouData = null
+      if (!isMystery && data.daigou && data.daigou.enabled) {
+        const price = parseFloat(data.daigou.price) || 0
+        if (price > 0) {
+          daigouData = {
+            enabled: true,
+            price: price,
+            originalPrice: parseFloat(data.daigou.originalPrice) || 0,
+            stock: parseInt(data.daigou.stock) || 0,
+            soldCount: 0,
+            serviceFee: Math.round(price * 0.05 * 100) / 100
+          }
+        }
+      }
+
       const productId = await db.collection('products').add({
         data: {
           openid,
           name: isMystery ? '神秘特产' : data.name,
+          description: isMystery ? '' : (data.description || ''),
           province: data.province,
           city: data.city || '',
           district: data.district || '',
@@ -243,6 +305,7 @@ async function checkImage(fileId) {
           wantCategory: data.wantCategory || '',
           isMystery: isMystery,
           gender: data.gender || '',  // 发布者性别
+          daigou: daigouData,         // 代购信息（null 表示不支持代购）
           status: status,
           auditReason: auditReason,  // 审核不通过原因
           viewCount: 0,
@@ -252,11 +315,12 @@ async function checkImage(fileId) {
         }
       })
 
-      // 更新用户发布数，同时扣除积分（用 _id 精准更新）
+      // 更新用户发布数，同时扣除积分
+      // 使用 set 确保字段类型正确（$inc 在字段为字符串时会报错）
       await db.collection('users').doc(user._id).update({
         data: { 
-          publishCount: _.inc(1),
-          points: _.inc(-PUBLISH_COST)
+          publishCount: currentPublishCount + 1,
+          points: currentPoints - PUBLISH_COST
         }
       })
 
@@ -351,10 +415,29 @@ async function checkImage(fileId) {
       // 非神秘特产可以编辑更多字段
       if (!isMystery) {
         updateData.name = data.name
+        updateData.description = data.description || ''
         updateData.category = data.category
         updateData.valueRange = data.valueRange
         updateData.descTags = data.descTags || []
         updateData.images = data.images || []
+
+        // 更新代购信息
+        if (data.daigou && data.daigou.enabled) {
+          const price = parseFloat(data.daigou.price) || 0
+          if (price > 0) {
+            updateData.daigou = {
+              enabled: true,
+              price: price,
+              originalPrice: parseFloat(data.daigou.originalPrice) || 0,
+              stock: parseInt(data.daigou.stock) || 0,
+              soldCount: product.data.daigou?.soldCount || 0,
+              serviceFee: Math.round(price * 0.05 * 100) / 100
+            }
+          }
+        } else {
+          // 关闭代购
+          updateData.daigou = null
+        }
       }
 
       // 根据审核结果设置状态
@@ -417,16 +500,25 @@ async function checkImage(fileId) {
       }
 
       // 补充用户信息（products 存 openid，users 用 _openid）
-      const openids = [...new Set(res.data.map(p => p.openid || p._openid))]
-      const usersRes = await db.collection('users')
-        .where({ _openid: _.in(openids) })
-        .field({ _openid: true, nickName: true, avatarUrl: true, creditScore: true })
-        .get()
+      // 微信云开发 _.in() 单次最多 100 个，分批查询防数据缺失
+      const openids = [...new Set(res.data.map(p => p.openid || p._openid).filter(Boolean))]
       const userMap = {}
-      for (const u of usersRes.data) {
-        u.avatarUrl = await resolveCloudUrl(u.avatarUrl)
-        u.openid = u._openid
-        userMap[u._openid] = u
+      const USER_BATCH = 100
+      for (let i = 0; i < openids.length; i += USER_BATCH) {
+        try {
+          const batchIds = openids.slice(i, i + USER_BATCH)
+          const usersRes = await db.collection('users')
+            .where({ _openid: _.in(batchIds) })
+            .field({ _openid: true, nickName: true, avatarUrl: true, creditScore: true })
+            .get()
+          for (const u of usersRes.data) {
+            u.avatarUrl = await resolveCloudUrl(u.avatarUrl)
+            u.openid = u._openid
+            userMap[u._openid] = u
+          }
+        } catch (e) {
+          console.warn('[productMgr/list] 批量查用户信息失败:', e.message)
+        }
       }
 
       let list = res.data.map(p => {
@@ -671,17 +763,24 @@ async function checkImage(fileId) {
       resultData = resultData.slice(0, pageSize)
 
       // 补充用户信息（recommend）
-      const openids = [...new Set(resultData.map(p => p.openid || p._openid))]
+      // 微信云开发 _.in() 单次最多 100 个，分批查询
+      const openids = [...new Set(resultData.map(p => p.openid || p._openid).filter(Boolean))]
       let userMap = {}
-      if (openids.length > 0) {
-        const usersRes = await db.collection('users')
-          .where({ _openid: _.in(openids) })
-          .field({ _openid: true, nickName: true, avatarUrl: true, creditScore: true })
-          .get()
-        for (const u of usersRes.data) {
-          u.avatarUrl = await resolveCloudUrl(u.avatarUrl)
-          u.openid = u._openid
-          userMap[u._openid] = u
+      const REC_BATCH = 100
+      for (let i = 0; i < openids.length; i += REC_BATCH) {
+        try {
+          const batchIds = openids.slice(i, i + REC_BATCH)
+          const usersRes = await db.collection('users')
+            .where({ _openid: _.in(batchIds) })
+            .field({ _openid: true, nickName: true, avatarUrl: true, creditScore: true })
+            .get()
+          for (const u of usersRes.data) {
+            u.avatarUrl = await resolveCloudUrl(u.avatarUrl)
+            u.openid = u._openid
+            userMap[u._openid] = u
+          }
+        } catch (e) {
+          console.warn('[productMgr/recommend] 批量查用户信息失败:', e.message)
         }
       }
 
@@ -818,7 +917,7 @@ async function checkImage(fileId) {
     try {
       const { productId } = event
       const product = await db.collection('products').doc(productId).get()
-      if (product.data.openid !== openid) {
+      if (product.data.openid !== openid && product.data._openid !== openid) {
         return { success: false, message: '无权操作' }
       }
       await db.collection('products').doc(productId).update({
@@ -826,6 +925,47 @@ async function checkImage(fileId) {
       })
       return { success: true }
     } catch (e) {
+      return { success: false, message: e.message }
+    }
+  }
+
+  // ========== 管理员删除特产（真正删除）==========
+  if (action === 'adminRemove') {
+    try {
+      const { productId } = event
+      if (!productId) {
+        return { success: false, message: '缺少特产ID' }
+      }
+
+      console.log('[productMgr] 管理员删除特产:', productId)
+
+      // 验证管理员权限
+      const adminConfig = await db.collection('system_config').where({
+        configKey: 'superAdmins'
+      }).get()
+      
+      const superAdmins = (adminConfig.data[0] && adminConfig.data[0].configValue) || []
+      if (!superAdmins.includes(openid)) {
+        return { success: false, message: '需要管理员权限' }
+      }
+
+      // 获取特产信息
+      const product = await db.collection('products').doc(productId).get()
+      if (!product.data) {
+        return { success: false, message: '特产不存在' }
+      }
+
+      // 删除特产的收藏记录
+      await db.collection('favorites').where({ productId }).remove()
+
+      // 删除特产
+      await db.collection('products').doc(productId).remove()
+
+      console.log('[productMgr] 特产已删除:', productId)
+
+      return { success: true, message: '删除成功' }
+    } catch (e) {
+      console.error('[productMgr] 删除特产失败:', e)
       return { success: false, message: e.message }
     }
   }

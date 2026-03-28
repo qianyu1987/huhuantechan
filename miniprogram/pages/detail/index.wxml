@@ -60,6 +60,45 @@
       </view>
     </view>
 
+    <!-- 代购信息卡 -->
+    <view class="glass-card daigou-card" wx:if="{{product.daigou && product.daigou.enabled}}">
+      <view class="daigou-card-header">
+        <view class="daigou-card-badge">🛒 支持代购</view>
+        <view class="daigou-stock-tag" wx:if="{{product.daigou.stock > 0}}">库存 {{product.daigou.stock}} 件</view>
+        <view class="daigou-stock-tag sold-out" wx:else>已售罄</view>
+      </view>
+      <view class="daigou-price-row">
+        <view class="daigou-price-wrap">
+          <text class="daigou-price-symbol">¥</text>
+          <text class="daigou-price-num">{{product.daigou.price}}</text>
+        </view>
+        <view class="daigou-original-price" wx:if="{{product.daigou.originalPrice > product.daigou.price}}">
+          原价 ¥{{product.daigou.originalPrice}}
+        </view>
+      </view>
+      <view class="daigou-sold-row" wx:if="{{product.daigou.soldCount && product.daigou.soldCount > 0}}">
+        已有 {{product.daigou.soldCount}} 人购买
+      </view>
+      <!-- 卖家代购等级信息（异步加载） -->
+      <view wx:if="{{sellerDaigouInfo && sellerDaigouInfo.levelInfo}}" class="daigou-seller-info-row">
+        <view class="dsi-level">
+          <text class="dsi-icon">{{sellerDaigouInfo.levelInfo.icon}}</text>
+          <text class="dsi-name" style="color:{{sellerDaigouInfo.levelInfo.color}}">{{sellerDaigouInfo.levelInfo.name}}</text>
+          <view wx:if="{{sellerDaigouInfo.isVerified}}" class="dsi-verified-badge">✓ 已认证</view>
+        </view>
+        <view wx:if="{{sellerDaigouInfo.avgRating > 0}}" class="dsi-rating">
+          <text class="dsi-star">⭐</text>
+          <text class="dsi-rating-num">{{sellerDaigouInfo.avgRating}}</text>
+          <text class="dsi-completed">· {{sellerDaigouInfo.completedOrders}}单</text>
+        </view>
+      </view>
+      <view class="daigou-tips-row">
+        <text class="daigou-tip-item">✅ 卖家亲选特产</text>
+        <text class="daigou-tip-item">📦 48h内发货</text>
+        <text class="daigou-tip-item">🔒 平台担保</text>
+      </view>
+    </view>
+
     <!-- 发布者卡片 -->
     <view class="glass-card publisher-card" bindtap="goToUserProfile" data-openid="{{publisher.openid || publisher._openid}}">
       <image class="pub-avatar" src="{{publisher.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"/>
@@ -124,7 +163,27 @@
           <text class="fav-icon">{{isFav ? '🩷' : '🤍'}}</text>
           <text class="fav-label" style="color:{{isFav ? '#FF453A' : ''}}">收藏</text>
         </view>
-        <button wx:if="{{featureFlags.feature_swap !== false}}" class="bar-btn bar-btn-swap" bindtap="initiateSwap">🔄 我想要</button>
+        <!-- 代购按钮（有代购且有库存） -->
+        <button
+          wx:if="{{product.daigou && product.daigou.enabled && product.daigou.stock > 0}}"
+          class="bar-btn bar-btn-buy"
+          bindtap="initiateBuy"
+        >🛒 ¥{{product.daigou.price}} 立即购买</button>
+        <!-- 代购已售罄但仍可互换 -->
+        <block wx:elif="{{product.daigou && product.daigou.enabled && product.daigou.stock <= 0}}">
+          <button class="bar-btn bar-btn-disabled" disabled style="flex:0 0 auto;width:auto;padding:0 24rpx;">已售罄</button>
+          <button
+            wx:if="{{featureFlags.feature_swap !== false}}"
+            class="bar-btn bar-btn-swap"
+            bindtap="initiateSwap"
+          >🔄 我想要</button>
+        </block>
+        <!-- 无代购：互换按钮 -->
+        <button
+          wx:elif="{{featureFlags.feature_swap !== false}}"
+          class="bar-btn bar-btn-swap"
+          bindtap="initiateSwap"
+        >🔄 我想要</button>
       </view>
     </view>
   </block>

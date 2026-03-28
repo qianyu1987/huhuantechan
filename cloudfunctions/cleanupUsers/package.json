@@ -1,0 +1,9 @@
+{
+  "name": "cleanupUsers",
+  "version": "1.0.0",
+  "description": "清理非管理员用户",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

@@ -7,6 +7,7 @@ Page({
     images: [],
     form: {
       name: '',
+      description: '',     // 特产描述（必填，至少10字）
       province: '',
       city: '',
       district: '',
@@ -18,7 +19,12 @@ Page({
       wantDistrict: '',
       wantCategory: '',
       isMystery: false,
-      gender: ''  // 性别: 'male' | 'female'
+      gender: '',       // 性别: 'male' | 'female'
+      // ── 代购字段 ──
+      daigouEnabled: false,
+      daigouPrice: '',
+      daigouOriginalPrice: '',
+      daigouStock: 1
     },
     region: [],
     wantRegion: [],
@@ -29,7 +35,11 @@ Page({
     submitting: false,
     isEdit: false,
     editId: '',
-    featureDisabled: false
+    featureDisabled: false,
+    // ── 表单完整度 ──
+    errors: {},           // { fieldKey: '错误提示文字' }
+    completeness: 0,      // 0~100
+    completenessText: '0 / 6'  // 已完成/总计
   },
 
   goHome() {
@@ -85,6 +95,7 @@ Page({
         images,
         form: {
           name: p.name || '',
+          description: p.description || '',
           province: p.province || '',
           city: p.city || '',
           district: p.district || '',
@@ -95,12 +106,18 @@ Page({
           wantCity: p.wantCity || '',
           wantDistrict: p.wantDistrict || '',
           wantCategory: p.wantCategory || '',
-          isMystery: p.isMystery || false
+          isMystery: p.isMystery || false,
+          // 代购回填
+          daigouEnabled: !!(p.daigou && p.daigou.enabled),
+          daigouPrice: p.daigou && p.daigou.enabled ? String(p.daigou.price || '') : '',
+          daigouOriginalPrice: p.daigou && p.daigou.originalPrice ? String(p.daigou.originalPrice) : '',
+          daigouStock: p.daigou && p.daigou.enabled ? (p.daigou.stock || 1) : 1
         },
         region,
         wantRegion,
         descTagsSelected
       })
+      this._updateCompleteness()
       hideLoading()
     } catch (e) {
       hideLoading()
@@ -132,6 +149,11 @@ Page({
       }
       const newImages = [...this.data.images, ...compressed]
       this.setData({ images: newImages })
+      // 上传图片后更新完整度
+      const errors = { ...this.data.errors }
+      delete errors['images']
+      this.setData({ errors })
+      this._updateCompleteness()
     } catch (e) {}
   },
 
@@ -140,6 +162,7 @@ Page({
     const images = [...this.data.images]
     images.splice(idx, 1)
     this.setData({ images })
+    this._updateCompleteness()
   },
 
   previewImage(e) {
@@ -150,6 +173,11 @@ Page({
   onInput(e) {
     const field = e.currentTarget.dataset.field
     this.setData({ [`form.${field}`]: e.detail.value })
+    // 清除该字段错误，并更新完整度
+    const errors = { ...this.data.errors }
+    delete errors[field]
+    this.setData({ errors })
+    this._updateCompleteness()
   },
 
   // 地区选择（特产产地）
@@ -163,6 +191,10 @@ Page({
       'form.city': val[1] || '',
       'form.district': val[2] || ''
     })
+    const errors = { ...this.data.errors }
+    delete errors['province']
+    this.setData({ errors })
+    this._updateCompleteness()
   },
 
   // 地区选择（想换地区）
@@ -176,23 +208,37 @@ Page({
       'form.wantCity': val[1] || '',
       'form.wantDistrict': val[2] || ''
     })
+    this._updateCompleteness()
   },
 
   selectCategory(e) {
     this.setData({ 'form.category': e.currentTarget.dataset.id })
+    const errors = { ...this.data.errors }
+    delete errors['category']
+    this.setData({ errors })
+    this._updateCompleteness()
   },
 
   selectValueRange(e) {
     this.setData({ 'form.valueRange': e.currentTarget.dataset.id })
+    const errors = { ...this.data.errors }
+    delete errors['valueRange']
+    this.setData({ errors })
+    this._updateCompleteness()
   },
 
   // 选择性别
   selectGender(e) {
     this.setData({ 'form.gender': e.currentTarget.dataset.gender })
+    const errors = { ...this.data.errors }
+    delete errors['gender']
+    this.setData({ errors })
+    this._updateCompleteness()
   },
 
   selectWantCategory(e) {
     this.setData({ 'form.wantCategory': e.currentTarget.dataset.id })
+    this._updateCompleteness()
   },
 
   // 描述标签多选
@@ -212,6 +258,7 @@ Page({
       'form.descTags': tags,
       descTagsSelected: selected
     })
+    this._updateCompleteness()
   },
 
   // 切换神秘特产
@@ -221,26 +268,124 @@ Page({
       'form.isMystery': isMystery,
       'form.name': isMystery ? '' : this.data.form.name,
       'form.descTags': isMystery ? [] : this.data.form.descTags,
-      descTagsSelected: isMystery ? {} : this.data.descTagsSelected
+      descTagsSelected: isMystery ? {} : this.data.descTagsSelected,
+      errors: {}
+    })
+    this._updateCompleteness()
+  },
+
+  // ── 计算表单完整度 ──
+  _updateCompleteness() {
+    const { form, images } = this.data
+    let total = 0
+    let done = 0
+
+    if (form.isMystery) {
+      // 神秘特产：产地 + 性别
+      total = 2
+      if (form.province) done++
+      if (form.gender) done++
+    } else {
+      // 普通特产：图片 + 名称 + 描述 + 产地 + 品类 + 估值 + 性别
+      total = 7
+      if (images.length > 0) done++
+      if (form.name && form.name.trim().length >= 2) done++
+      if (form.description && form.description.trim().length >= 10) done++
+      if (form.province) done++
+      if (form.category) done++
+      if (form.valueRange) done++
+      if (form.gender) done++
+    }
+
+    const completeness = total > 0 ? Math.round((done / total) * 100) : 0
+    this.setData({
+      completeness,
+      completenessText: `${done} / ${total}`
     })
   },
 
-  // 表单校验
+  // 切换代购开关（需实名认证）
+  async toggleDaigou(e) {
+    const newVal = e.detail.value
+    if (newVal) {
+      // 开启代购前检查实名认证状态
+      try {
+        const res = await callCloud('daigouMgr', { action: 'getVerifyStatus' })
+        const status = res && res.verify && res.verify.status
+        if (status !== 'approved') {
+          // 未认证，先将开关恢复关闭，再跳转认证页
+          this.setData({ 'form.daigouEnabled': false })
+          wx.navigateTo({ url: '/pages/daigou-verify/index' })
+          return
+        }
+      } catch (err) {
+        console.error('getVerifyStatus error', err)
+        // 网络异常时不阻止开启（用户可在提交时二次校验）
+      }
+    }
+    this.setData({ 'form.daigouEnabled': !!newVal })
+  },
+
+  // 代购价格/原价输入
+  onDaigouInput(e) {
+    const field = e.currentTarget.dataset.field
+    this.setData({ [`form.${field}`]: e.detail.value })
+  },
+
+  // 库存±1
+  changeStock(e) {
+    const delta = parseInt(e.currentTarget.dataset.delta) || 0
+    const cur = this.data.form.daigouStock || 1
+    const next = Math.max(1, Math.min(999, cur + delta))
+    this.setData({ 'form.daigouStock': next })
+  },
+
+  // 表单校验 —— 收集所有错误，标记并滚动到第一个错误
   validate() {
     const { images, form } = this.data
+    const errors = {}
+    let firstErrorId = ''
 
     if (form.isMystery) {
-      if (!form.province) { toast('请选择特产产地'); return false }
-      if (!form.gender) { toast('请选择你的性别'); return false }
-      return true
+      if (!form.province) { errors['province'] = '请选择特产产地'; if (!firstErrorId) firstErrorId = 'section-province' }
+      if (!form.gender)   { errors['gender']   = '请选择你的性别';  if (!firstErrorId) firstErrorId = 'section-gender' }
+    } else {
+      if (images.length === 0)               { errors['images']      = '请至少上传一张特产图片';    if (!firstErrorId) firstErrorId = 'section-images' }
+      if (!form.name || !form.name.trim())   { errors['name']        = '请填写特产名称';            if (!firstErrorId) firstErrorId = 'section-name' }
+      if (!form.description || form.description.trim().length < 10) {
+                                               errors['description']  = '请填写特产描述（至少10字）'; if (!firstErrorId) firstErrorId = 'section-description' }
+      if (!form.province)                    { errors['province']    = '请选择特产产地';            if (!firstErrorId) firstErrorId = 'section-province' }
+      if (!form.category)                    { errors['category']    = '请选择品类';               if (!firstErrorId) firstErrorId = 'section-category' }
+      if (!form.valueRange)                  { errors['valueRange']  = '请选择估值区间';            if (!firstErrorId) firstErrorId = 'section-valueRange' }
+      if (!form.gender)                      { errors['gender']      = '请选择你的性别';            if (!firstErrorId) firstErrorId = 'section-gender' }
+
+      // 代购字段校验
+      if (form.daigouEnabled) {
+        const price = parseFloat(form.daigouPrice)
+        if (!price || price <= 0)            { errors['daigouPrice'] = '请填写有效的代购价格';      if (!firstErrorId) firstErrorId = 'section-daigou' }
+        else if (price > 9999)               { errors['daigouPrice'] = '代购价格不能超过9999元';    if (!firstErrorId) firstErrorId = 'section-daigou' }
+        const originalPrice = parseFloat(form.daigouOriginalPrice)
+        if (form.daigouOriginalPrice && originalPrice && originalPrice <= price) {
+                                               errors['daigouOriginalPrice'] = '划线原价应高于代购价格'; if (!firstErrorId) firstErrorId = 'section-daigou'
+        }
+      }
     }
 
-    if (images.length === 0) { toast('请至少上传一张图片'); return false }
-    if (!form.name.trim()) { toast('请填写特产名称'); return false }
-    if (!form.province) { toast('请选择特产产地'); return false }
-    if (!form.category) { toast('请选择品类'); return false }
-    if (!form.valueRange) { toast('请选择估值区间'); return false }
-    if (!form.gender) { toast('请选择你的性别'); return false }
+    this.setData({ errors })
+
+    if (firstErrorId) {
+      // 滚动到第一个错误区块
+      wx.pageScrollTo({
+        selector: `#${firstErrorId}`,
+        duration: 300,
+        offsetTop: -20
+      })
+      // 同时 toast 提示
+      const firstMsg = Object.values(errors)[0]
+      toast(firstMsg)
+      return false
+    }
+
     return true
   },
 
@@ -312,7 +457,14 @@ Page({
         action: isEdit ? 'update' : 'create',
         data: {
           ...this.data.form,
-          images: uploadedIds
+          images: uploadedIds,
+          // 整理代购数据
+          daigou: this.data.form.daigouEnabled ? {
+            enabled: true,
+            price: parseFloat(this.data.form.daigouPrice) || 0,
+            originalPrice: parseFloat(this.data.form.daigouOriginalPrice) || 0,
+            stock: parseInt(this.data.form.daigouStock) || 1
+          } : null
         }
       }
       if (isEdit) {
@@ -355,14 +507,18 @@ Page({
             this.setData({
               images: [],
               form: {
-                name: '', province: '', city: '', district: '',
+                name: '', description: '', province: '', city: '', district: '',
                 category: '', valueRange: '', descTags: [],
                 wantProvince: '', wantCity: '', wantDistrict: '',
-                wantCategory: '', isMystery: false
+                wantCategory: '', isMystery: false, gender: '',
+                daigouEnabled: false, daigouPrice: '', daigouOriginalPrice: '', daigouStock: 1
               },
               region: [],
               wantRegion: [],
-              descTagsSelected: {}
+              descTagsSelected: {},
+              errors: {},
+              completeness: 0,
+              completenessText: '0 / 7'
             })
             if (productId) {
               if (isMystery) {

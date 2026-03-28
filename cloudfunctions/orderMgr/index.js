@@ -425,6 +425,44 @@ exports.main = async (event, context) => {
     }
   }
 
+  // ========== 删除订单（管理员） ==========
+  if (action === 'deleteOrder') {
+    try {
+      const { orderId } = event
+      if (!orderId) {
+        return { success: false, message: '缺少订单ID' }
+      }
+
+      console.log('[orderMgr] 删除订单:', orderId)
+
+      // 获取订单信息
+      const order = await db.collection('orders').doc(orderId).get()
+      if (!order.data) {
+        return { success: false, message: '订单不存在' }
+      }
+
+      const o = order.data
+
+      // 如果订单进行中，需要释放特产
+      if (['pending', 'confirmed', 'shipped_a', 'shipped_b', 'shipped'].includes(o.status)) {
+        await Promise.all([
+          db.collection('products').doc(o.initiatorProductId).update({ data: { status: 'active' } }),
+          db.collection('products').doc(o.receiverProductId).update({ data: { status: 'active' } })
+        ])
+      }
+
+      // 删除订单
+      await db.collection('orders').doc(orderId).remove()
+
+      console.log('[orderMgr] 订单已删除:', orderId)
+
+      return { success: true, message: '订单已删除' }
+    } catch (e) {
+      console.error('[orderMgr] 删除订单失败:', e)
+      return { success: false, message: e.message }
+    }
+  }
+
   // ========== 填写快递信息/发货 ==========
   if (action === 'ship') {
     try {

@@ -1,0 +1,30 @@
+<!-- pages/admin-webview/index.wxml -->
+<view class="container">
+
+  <!-- 加载中 -->
+  <view class="loading-wrap" wx:if="{{loading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">正在加载管理后台...</text>
+    <text class="loading-sub">拉取云端数据中</text>
+  </view>
+
+  <!-- 错误提示 -->
+  <view class="error-wrap" wx:elif="{{errMsg}}">
+    <text class="error-icon">⚠️</text>
+    <text class="error-msg">{{errMsg}}</text>
+    <view class="retry-btn" bindtap="onLoad">重试</view>
+    <view class="help-text">
+      <text>请确认已在云开发控制台上传 admin-panel.html</text>
+    </view>
+  </view>
+
+  <!-- web-view -->
+  <web-view
+    wx:elif="{{webviewUrl}}"
+    src="{{webviewUrl}}"
+    bindmessage="onMessage"
+    binderror="onWebviewError"
+    bindload="onWebviewLoad"
+  ></web-view>
+
+</view>

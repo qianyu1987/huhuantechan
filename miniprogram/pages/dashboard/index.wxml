@@ -1,0 +1,241 @@
+<!-- pages/dashboard/index.wxml - 运营数据看板 -->
+<view class="page">
+
+  <!-- ══ 顶部操作栏 ══ -->
+  <view class="topbar">
+    <view class="topbar-left">
+      <text class="topbar-title">📊 运营看板</text>
+      <view class="live-badge">
+        <view class="live-dot"></view>
+        <text class="live-text">实时</text>
+      </view>
+    </view>
+    <view class="topbar-right">
+      <text class="update-time" wx:if="{{updateTime}}">{{updateTime}}</text>
+      <view class="refresh-btn" bindtap="onRefresh" hover-class="btn-hover">
+        <text class="refresh-icon {{refreshing ? 'spin' : ''}}">↻</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- ══ 时间范围选择 ══ -->
+  <view class="range-bar">
+    <view
+      wx:for="{{rangeOptions}}"
+      wx:key="value"
+      class="range-btn {{rangeIndex === index ? 'active' : ''}}"
+      data-idx="{{index}}"
+      bindtap="onRangeChange"
+    >{{item.label}}</view>
+  </view>
+
+  <!-- ══ 加载骨架 ══ -->
+  <view class="skeleton-wrap" wx:if="{{loading}}">
+    <view class="skeleton-kpi-row">
+      <view class="skeleton-card" wx:for="{{[1,2,3,4]}}" wx:key="*this">
+        <view class="sk sk-label"></view>
+        <view class="sk sk-value"></view>
+        <view class="sk sk-sub"></view>
+      </view>
+    </view>
+    <view class="skeleton-block"></view>
+    <view class="skeleton-half-row">
+      <view class="skeleton-block half"></view>
+      <view class="skeleton-block half"></view>
+    </view>
+  </view>
+
+  <!-- ══ 错误提示 ══ -->
+  <view class="error-tip" wx:if="{{!loading && errorMsg}}">
+    <text class="error-icon">⚠️</text>
+    <text class="error-text">{{errorMsg}}</text>
+    <view class="retry-btn" bindtap="onRefresh">重试</view>
+  </view>
+
+  <!-- ══ 主体内容 ══ -->
+  <block wx:if="{{!loading && !errorMsg}}">
+
+    <!-- ── KPI 卡片 ── -->
+    <view class="kpi-row">
+
+      <view class="kpi-card blue">
+        <view class="kpi-header">
+          <text class="kpi-label">注册用户</text>
+          <text class="kpi-icon">👥</text>
+        </view>
+        <text class="kpi-value blue-text">{{kpi.totalUsers}}</text>
+        <view class="kpi-footer">
+          <view class="kpi-change up">▲ 男{{kpi.maleCount}} 女{{kpi.femaleCount}}</view>
+        </view>
+      </view>
+
+      <view class="kpi-card green">
+        <view class="kpi-header">
+          <text class="kpi-label">上架特产</text>
+          <text class="kpi-icon">🏮</text>
+        </view>
+        <text class="kpi-value green-text">{{kpi.totalProducts}}</text>
+        <view class="kpi-footer">
+          <view class="kpi-change orange">待审 {{kpi.pendingReviews}}</view>
+        </view>
+      </view>
+
+      <view class="kpi-card purple">
+        <view class="kpi-header">
+          <text class="kpi-label">进行中互换</text>
+          <text class="kpi-icon">🤝</text>
+        </view>
+        <text class="kpi-value purple-text">{{kpi.activeSwaps}}</text>
+        <view class="kpi-footer">
+          <view class="kpi-change flat">— 进行中</view>
+        </view>
+      </view>
+
+      <view class="kpi-card orange">
+        <view class="kpi-header">
+          <text class="kpi-label">惊喜特产</text>
+          <text class="kpi-icon">🎁</text>
+        </view>
+        <text class="kpi-value orange-text">{{kpi.mysteryCount}}</text>
+        <view class="kpi-footer">
+          <view class="kpi-change up">▲ 神秘盲盒</view>
+        </view>
+      </view>
+
+    </view>
+
+    <!-- ── 省份排行 ── -->
+    <view class="section-card">
+      <view class="card-header">
+        <text class="card-title">📍 省份特产排行 TOP10</text>
+        <text class="card-badge">上架数量</text>
+      </view>
+      <view class="rank-list" wx:if="{{provinces.length > 0}}">
+        <view
+          class="rank-item"
+          wx:for="{{provinces}}"
+          wx:key="name"
+        >
+          <view class="rank-num {{item.rankClass}}">{{item.rank}}</view>
+          <text class="rank-emoji">{{item.emoji}}</text>
+          <text class="rank-name">{{item.name}}</text>
+          <view class="rank-bar-wrap">
+            <view class="rank-bar" style="width:{{item.pct}}%"></view>
+          </view>
+          <text class="rank-count">{{item.count}}</text>
+        </view>
+      </view>
+      <view class="empty-tip" wx:else>
+        <text>暂无数据</text>
+      </view>
+    </view>
+
+    <!-- ── 品类分布 ── -->
+    <view class="section-card">
+      <view class="card-header">
+        <text class="card-title">🍿 特产品类分布</text>
+        <text class="card-badge">按数量</text>
+      </view>
+      <view class="cat-grid" wx:if="{{categories.length > 0}}">
+        <view
+          class="cat-item"
+          wx:for="{{categories}}"
+          wx:key="name"
+        >
+          <text class="cat-emoji">{{item.emoji}}</text>
+          <view class="cat-info">
+            <text class="cat-name">{{item.name}}</text>
+            <view class="cat-bar-wrap">
+              <view class="cat-bar" style="width:{{item.pct}}%"></view>
+            </view>
+          </view>
+          <view class="cat-stats">
+            <text class="cat-count">{{item.count}}</text>
+            <text class="cat-pct">{{item.pct}}%</text>
+          </view>
+        </view>
+      </view>
+      <view class="empty-tip" wx:else>
+        <text>暂无数据</text>
+      </view>
+    </view>
+
+    <!-- ── 信用等级分布 ── -->
+    <view class="section-card">
+      <view class="card-header">
+        <text class="card-title">🏆 用户信用等级</text>
+        <text class="card-badge">四档体系</text>
+      </view>
+      <view class="credit-list" wx:if="{{credits.length > 0}}">
+        <view
+          class="credit-item"
+          wx:for="{{credits}}"
+          wx:key="name"
+          style="border-left: 3px solid {{item.color}}"
+        >
+          <view class="credit-left">
+            <view class="credit-badge" style="background:{{item.bg}};color:{{item.color}}">
+              <text>{{item.icon}} {{item.name}}</text>
+            </view>
+          </view>
+          <view class="credit-mid">
+            <view class="credit-bar-wrap">
+              <view class="credit-bar" style="width:{{item.barWidth}}%;background:{{item.color}}"></view>
+            </view>
+          </view>
+          <view class="credit-right">
+            <text class="credit-count" style="color:{{item.color}}">{{item.count}}</text>
+            <text class="credit-pct">{{item.pct}}%</text>
+          </view>
+        </view>
+      </view>
+      <view class="empty-tip" wx:else>
+        <text>暂无数据</text>
+      </view>
+    </view>
+
+    <!-- ── 订单漏斗 ── -->
+    <view class="section-card">
+      <view class="card-header">
+        <text class="card-title">📉 订单转化漏斗</text>
+        <text class="card-badge">互换全流程</text>
+      </view>
+      <view class="funnel-list" wx:if="{{funnel.length > 0}}">
+        <view
+          class="funnel-item"
+          wx:for="{{funnel}}"
+          wx:key="name"
+        >
+          <view class="funnel-label-row">
+            <text class="funnel-step">{{index + 1}}. {{item.name}}</text>
+            <text class="funnel-value">{{item.value}} 次</text>
+          </view>
+          <view class="funnel-bar-bg">
+            <view class="funnel-bar-fill" style="width:{{item.pct}}%"></view>
+          </view>
+          <text class="funnel-pct">{{item.pct}}%</text>
+        </view>
+      </view>
+      <view class="empty-tip" wx:else>
+        <text>暂无数据</text>
+      </view>
+    </view>
+
+    <!-- ── 小指标行 ── -->
+    <view class="card-header section-top-margin">
+      <text class="card-title">📌 关键小指标</text>
+    </view>
+    <view class="sm-row">
+      <view class="sm-item" wx:for="{{smItems}}" wx:key="label">
+        <text class="sm-icon">{{item.icon}}</text>
+        <text class="sm-val" style="color:{{item.color}}">{{item.val}}</text>
+        <text class="sm-label">{{item.label}}</text>
+      </view>
+    </view>
+
+    <!-- ── 底部间距 ── -->
+    <view style="height: 40rpx"></view>
+
+  </block>
+
+</view>

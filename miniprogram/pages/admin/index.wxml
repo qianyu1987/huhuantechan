@@ -1,10 +1,10 @@
-<!-- pages/admin/index.wxml - 管理后台 -->
+<!-- pages/admin/index.wxml - 管理后台 - iOS 27 液态玻璃风格 -->
 <view class="admin-page">
 
-  <!-- 顶部占位，避免贴近刘海 -->
+  <!-- 顶部占位 -->
   <view class="admin-header-safe"></view>
 
-  <!-- 顶部Tab - 横向滚动 -->
+  <!-- 顶部 Tab -->
   <scroll-view scroll-x class="admin-tabs" enhanced show-scrollbar="{{false}}" enable-flex>
     <view class="tab-item {{currentTab === index ? 'active' : ''}}"
           wx:for="{{tabs}}" wx:key="index"
@@ -15,31 +15,51 @@
 
   <!-- ===== 概览 ===== -->
   <block wx:if="{{currentTab === 0}}">
+    <!-- 管理员徽章 -->
+    <view class="hero-admin glass-card" wx:if="{{isSuperAdmin}}">
+      <text class="hero-emoji">👑</text>
+      <view class="hero-text">
+        <text class="hero-title">超级管理员</text>
+        <text class="hero-sub">管理面板 · 运营数据</text>
+      </view>
+    </view>
+
+    <!-- 核心统计 -->
     <view class="stats-grid">
-      <view class="stat-card sc-green">
+      <view class="stat-card glass-card sc-green">
+        <text class="stat-emoji">👥</text>
         <view class="stat-num">{{stats.totalUsers}}</view>
         <view class="stat-label">用户总数</view>
       </view>
-      <view class="stat-card sc-blue">
+      <view class="stat-card glass-card sc-blue">
+        <text class="stat-emoji">🎁</text>
         <view class="stat-num">{{stats.totalProducts}}</view>
         <view class="stat-label">特产总数</view>
       </view>
-      <view class="stat-card sc-purple">
+      <view class="stat-card glass-card sc-purple">
+        <text class="stat-emoji">🎰</text>
         <view class="stat-num">{{stats.mysteryCount || 0}}</view>
         <view class="stat-label">神秘特产</view>
       </view>
-      <view class="stat-card sc-orange">
+      <view class="stat-card glass-card sc-orange">
+        <text class="stat-emoji">🔄</text>
         <view class="stat-num">{{stats.activeSwaps}}</view>
         <view class="stat-label">进行中</view>
       </view>
-      <view class="stat-card sc-red">
+      <view class="stat-card glass-card sc-red">
+        <text class="stat-emoji">📝</text>
         <view class="stat-num">{{stats.pendingReviews}}</view>
         <view class="stat-label">待审核</view>
+      </view>
+      <view class="stat-card glass-card sc-teal">
+        <text class="stat-emoji">💰</text>
+        <view class="stat-num">{{daigouStats.total || 0}}</view>
+        <view class="stat-label">代购订单</view>
       </view>
     </view>
 
     <!-- 性别统计 -->
-    <view class="gender-stats">
+    <view class="gender-stats glass-card">
       <view class="gender-card male">
         <text class="gender-icon">👨</text>
         <view class="gender-info">
@@ -47,6 +67,7 @@
           <text class="gender-label">男性用户</text>
         </view>
       </view>
+      <view class="gender-divider"></view>
       <view class="gender-card female">
         <text class="gender-icon">👩</text>
         <view class="gender-info">
@@ -56,56 +77,82 @@
       </view>
     </view>
 
-    <!-- 权限提示 -->
-    <view class="card" wx:if="{{!isSuperAdmin}}">
-      <view class="card-hd">权限提示</view>
-      <view class="perm-tip">
-        <text class="perm-text">你当前不是超级管理员，无法使用全部功能</text>
-        <view class="btn btn-purple" bindtap="initSuperAdmin">设为超级管理员</view>
-      </view>
-    </view>
-
     <!-- 管理员快捷操作 -->
-    <view class="card" wx:if="{{isSuperAdmin}}">
-      <view class="card-hd">
-        <text class="badge-admin">超级管理员</text>
+    <view class="card glass-card" wx:if="{{isSuperAdmin}}">
+      <view class="section-hd">
+        <text class="section-emoji">⚡</text>
+        <text class="section-title">快捷管理</text>
       </view>
       <view class="action-grid">
         <view class="action-item ai-green" bindtap="switchTab" data-index="1">
           <text class="action-icon">👥</text><text>用户</text>
         </view>
         <view class="action-item ai-blue" bindtap="switchTab" data-index="2">
-          <text class="action-icon">📦</text><text>特产</text>
+          <text class="action-icon">🎁</text><text>特产</text>
         </view>
         <view class="action-item ai-orange" bindtap="switchTab" data-index="3">
-          <text class="action-icon">🔄</text><text>记录</text>
+          <text class="action-icon">🔄</text><text>订单</text>
         </view>
         <view class="action-item ai-red" bindtap="switchTab" data-index="4">
           <text class="action-icon">📝</text><text>审核</text>
         </view>
-        <view class="action-item ai-yellow" bindtap="switchTab" data-index="5">
+        <view class="action-item ai-teal" bindtap="switchTab" data-index="5">
+          <text class="action-icon">🪪</text><text>实名</text>
+        </view>
+        <view class="action-item ai-yellow" bindtap="switchTab" data-index="6">
           <text class="action-icon">💰</text><text>积分</text>
         </view>
-        <view class="action-item ai-teal" bindtap="switchTab" data-index="6">
+        <view class="action-item ai-pink" bindtap="switchTab" data-index="7">
           <text class="action-icon">⭐</text><text>信用</text>
         </view>
-        <view class="action-item ai-purple" bindtap="switchTab" data-index="7">
-          <text class="action-icon">🎁</text><text>神秘</text>
+        <view class="action-item ai-purple" bindtap="switchTab" data-index="8">
+          <text class="action-icon">🎰</text><text>神秘</text>
         </view>
-        <view class="action-item ai-red" bindtap="switchTab" data-index="8">
-          <text class="action-icon">🔧</text><text>开关</text>
+        <view class="action-item ai-blue" bindtap="switchTab" data-index="9">
+          <text class="action-icon">🛒</text><text>代购</text>
+        </view>
+        <view class="action-item ai-gray" bindtap="switchTab" data-index="10">
+          <text class="action-icon">⚙️</text><text>开关</text>
         </view>
       </view>
-      
-      <!-- 数据维护工具 -->
-      <view class="admin-tools">
-        <view class="tools-title">数据维护</view>
-        <view class="tools-grid">
-          <view class="tool-btn" bindtap="cleanupDuplicateUsers">
-            <text class="tool-icon">🧹</text>
-            <text>清理重复用户</text>
+
+      <!-- 实名审核快捷入口 -->
+      <view class="quick-entry {{daigouVerifyStats.pending > 0 ? 'has-pending' : ''}}" bindtap="switchTab" data-index="{{verifyTabIndex}}">
+        <view class="quick-entry-left">
+          <text class="quick-entry-icon">🪪</text>
+          <view>
+            <view class="quick-entry-title">实名审核</view>
+            <view class="quick-entry-sub">
+              <text wx:if="{{daigouVerifyStats.pending > 0}}" class="quick-badge">{{daigouVerifyStats.pending}} 待处理</text>
+              <text wx:else class="quick-clear">暂无待审核</text>
+            </view>
           </view>
         </view>
+        <text class="quick-arrow">›</text>
+      </view>
+
+      <!-- 数据看板入口 -->
+      <view class="quick-entry dashboard" bindtap="goDashboard">
+        <view class="quick-entry-left">
+          <text class="quick-entry-icon">📊</text>
+          <view>
+            <view class="quick-entry-title">运营数据看板</view>
+            <view class="quick-entry-sub">省份排行 · 品类分布 · 订单漏斗</view>
+          </view>
+        </view>
+        <text class="quick-arrow">›</text>
+      </view>
+    </view>
+
+    <!-- 权限提示 -->
+    <view class="card glass-card" wx:if="{{!isSuperAdmin}}">
+      <view class="section-hd">
+        <text class="section-emoji">🔐</text>
+        <text class="section-title">权限提示</text>
+      </view>
+      <view class="perm-tip">
+        <text class="perm-text">你当前不是超级管理员，无法使用全部功能</text>
+        <view class="btn btn-purple" bindtap="initSuperAdmin">设为超级管理员</view>
       </view>
     </view>
   </block>
@@ -113,667 +160,441 @@
   <!-- ===== 用户管理 ===== -->
   <block wx:if="{{currentTab === 1}}">
     <view class="search-bar">
-      <input class="search-input" placeholder="搜索用户名" placeholderClass="ph" bindinput="onUserSearch" />
+      <text class="search-icon">🔍</text>
+      <input class="search-input" placeholder="搜索用户名" bindinput="onUserSearch" />
     </view>
-    <view wx:if="{{users.length === 0 && !userLoading}}" class="empty-tip">暂无用户</view>
+    <view wx:if="{{users.length === 0 && !userLoading}}" class="empty-tip">
+      <text class="empty-icon">👥</text>
+      <text>暂无用户</text>
+    </view>
     <view class="list-wrap">
-      <view class="list-item" wx:for="{{users}}" wx:key="_id" bindtap="goToUserDetail" data-openid="{{item._openid}}">
+      <view class="list-item glass-card" wx:for="{{users}}" wx:key="_id" bindtap="goToUserDetail" data-openid="{{item._openid}}">
         <image class="li-avatar" src="{{item.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"/>
         <view class="li-body">
           <view class="li-title">{{item.nickName || '未设置昵称'}}</view>
           <view class="li-sub">
-            <text>{{item.province || '未设置'}}</text>
-            <text class="tag tag-credit {{item.creditLevel.class}}">信用 {{item.creditScore || 100}}</text>
+            <text>📍 {{item.province || '未设置'}}</text>
+            <text class="tag tag-credit {{item.creditLevel.class}}">⭐ {{item.creditScore || 100}}分</text>
           </view>
         </view>
-        <view class="btn-sm btn-blue" catchtap="openUserEdit" data-user="{{item}}" wx:if="{{isSuperAdmin}}">编辑</view>
+        <view class="btn-group">
+          <view class="btn-sm btn-blue" catchtap="openUserEdit" data-user="{{item}}" wx:if="{{isSuperAdmin}}">✏️</view>
+          <view class="btn-sm btn-danger" catchtap="deleteUser" data-user="{{item}}" wx:if="{{isSuperAdmin}}">🗑️</view>
+        </view>
         <text class="li-arrow">›</text>
       </view>
     </view>
-    <view wx:if="{{userLoading}}" class="load-tip">加载中...</view>
-    <view wx:if="{{userNoMore && users.length > 0}}" class="load-tip">没有更多了</view>
+    <view wx:if="{{userLoading}}" class="load-tip">⏳ 加载中...</view>
   </block>
 
   <!-- ===== 特产管理 ===== -->
   <block wx:if="{{currentTab === 2}}">
     <view class="filter-bar">
-      <view class="filter-chip {{productFilter === 'all' ? 'active' : ''}}" bindtap="changeProductFilter" data-filter="all">全部</view>
-      <view class="filter-chip {{productFilter === 'active' ? 'active' : ''}}" bindtap="changeProductFilter" data-filter="active">展示中</view>
-      <view class="filter-chip {{productFilter === 'mystery' ? 'active' : ''}}" bindtap="changeProductFilter" data-filter="mystery">神秘</view>
+      <view class="filter-chip {{productFilter === 'all' ? 'active' : ''}}" bindtap="changeProductFilter" data-filter="all">📋 全部</view>
+      <view class="filter-chip {{productFilter === 'active' ? 'active' : ''}}" bindtap="changeProductFilter" data-filter="active">✅ 展示中</view>
+      <view class="filter-chip {{productFilter === 'mystery' ? 'active' : ''}}" bindtap="changeProductFilter" data-filter="mystery">🎰 神秘</view>
     </view>
-    <view wx:if="{{products.length === 0 && !productLoading}}" class="empty-tip">暂无特产</view>
+    <view wx:if="{{products.length === 0 && !productLoading}}" class="empty-tip">
+      <text class="empty-icon">🎁</text>
+      <text>暂无特产</text>
+    </view>
     <view class="list-wrap">
-      <view class="list-item" wx:for="{{products}}" wx:key="_id" bindtap="goToProductDetail" data-id="{{item._id}}">
+      <view class="list-item glass-card" wx:for="{{products}}" wx:key="_id" bindtap="goToProductDetail" data-id="{{item._id}}">
         <image class="li-cover" src="{{item.coverUrl}}" mode="aspectFill"/>
         <view class="li-body">
           <view class="li-title">{{item.name}}</view>
           <view class="li-sub">
-            <text>{{item.province}}</text>
+            <text>📍 {{item.province}}</text>
             <text class="tag tag-status-{{item.status}}">{{item.statusText}}</text>
-            <text wx:if="{{item.isMystery}}" class="tag tag-mystery">神秘</text>
           </view>
         </view>
         <view class="btn-group">
-          <view class="btn-sm btn-blue" catchtap="openProductEdit" data-product="{{item}}" wx:if="{{isSuperAdmin}}">编辑</view>
-          <view class="btn-sm btn-danger" catchtap="banProduct" data-id="{{item._id}}">下架</view>
+          <view class="btn-sm btn-blue" catchtap="openProductEdit" data-product="{{item}}" wx:if="{{isSuperAdmin}}">✏️</view>
+          <view class="btn-sm btn-danger" catchtap="deleteProduct" data-id="{{item._id}}" wx:if="{{isSuperAdmin}}">🗑️</view>
         </view>
       </view>
     </view>
-    <view wx:if="{{productLoading}}" class="load-tip">加载中...</view>
-    <view wx:if="{{productNoMore && products.length > 0}}" class="load-tip">没有更多了</view>
+    <view wx:if="{{productLoading}}" class="load-tip">⏳ 加载中...</view>
   </block>
 
   <!-- ===== 订单管理 ===== -->
   <block wx:if="{{currentTab === 3}}">
-    <!-- 订单状态筛选 -->
     <view class="filter-bar">
-      <view class="filter-chip {{orderFilter === 'all' ? 'active' : ''}}" bindtap="changeOrderFilter" data-filter="all">全部</view>
-      <view class="filter-chip {{orderFilter === 'pending' ? 'active' : ''}}" bindtap="changeOrderFilter" data-filter="pending">待确认</view>
-      <view class="filter-chip {{orderFilter === 'confirmed' ? 'active' : ''}}" bindtap="changeOrderFilter" data-filter="confirmed">待发货</view>
-      <view class="filter-chip {{orderFilter === 'shipped' ? 'active' : ''}}" bindtap="changeOrderFilter" data-filter="shipped">待收货</view>
-      <view class="filter-chip {{orderFilter === 'completed' ? 'active' : ''}}" bindtap="changeOrderFilter" data-filter="completed">已完成</view>
+      <view class="filter-chip {{orderFilter === 'all' ? 'active' : ''}}" bindtap="changeOrderFilter" data-filter="all">📋 全部</view>
+      <view class="filter-chip {{orderFilter === 'pending' ? 'active' : ''}}" bindtap="changeOrderFilter" data-filter="pending">⏳ 待确认</view>
+      <view class="filter-chip {{orderFilter === 'confirmed' ? 'active' : ''}}" bindtap="changeOrderFilter" data-filter="confirmed">📦 待发货</view>
+      <view class="filter-chip {{orderFilter === 'shipped' ? 'active' : ''}}" bindtap="changeOrderFilter" data-filter="shipped">🚚 待收货</view>
+      <view class="filter-chip {{orderFilter === 'completed' ? 'active' : ''}}" bindtap="changeOrderFilter" data-filter="completed">✅ 已完成</view>
     </view>
 
-    <!-- 订单统计概览 -->
-    <view class="order-stats-bar">
-      <view class="order-stat-item">
-        <text class="order-stat-num">{{orderStats.pending || 0}}</text>
-        <text class="order-stat-label">待处理</text>
+    <!-- 订单统计 -->
+    <view class="stats-bar glass-card">
+      <view class="stats-bar-item">
+        <text class="stats-bar-num">{{orderStats.pending || 0}}</text>
+        <text class="stats-bar-label">待处理</text>
       </view>
-      <view class="order-stat-item">
-        <text class="order-stat-num">{{orderStats.shipping || 0}}</text>
-        <text class="order-stat-label">进行中</text>
+      <view class="stats-bar-divider"></view>
+      <view class="stats-bar-item">
+        <text class="stats-bar-num">{{orderStats.shipping || 0}}</text>
+        <text class="stats-bar-label">进行中</text>
       </view>
-      <view class="order-stat-item">
-        <text class="order-stat-num">{{orderStats.completed || 0}}</text>
-        <text class="order-stat-label">已完成</text>
+      <view class="stats-bar-divider"></view>
+      <view class="stats-bar-item">
+        <text class="stats-bar-num">{{orderStats.completed || 0}}</text>
+        <text class="stats-bar-label">已完成</text>
       </view>
     </view>
 
-    <view wx:if="{{orders.length === 0 && !orderLoading}}" class="empty-tip">暂无订单记录</view>
+    <view wx:if="{{orders.length === 0 && !orderLoading}}" class="empty-tip">
+      <text class="empty-icon">📋</text>
+      <text>暂无订单记录</text>
+    </view>
     <view class="order-list">
-      <view class="order-card" wx:for="{{orders}}" wx:key="_id" bindtap="goToOrderDetail" data-id="{{item._id}}">
-        <!-- 订单头部 -->
+      <view class="order-card glass-card" wx:for="{{orders}}" wx:key="_id" bindtap="goToOrderDetail" data-id="{{item._id}}">
         <view class="order-card-header">
-          <view class="order-id-wrap">
-            <text class="order-id-label">订单</text>
-            <text class="order-id-value">{{item._id}}</text>
-          </view>
+          <text class="order-id-label">🔖</text>
+          <text class="order-id-value">{{item._id}}</text>
           <view class="order-status-badge status-{{item.status}}">{{item.statusText}}</view>
         </view>
-
-        <!-- 订单主体 -->
         <view class="order-card-body">
-          <view class="order-product-info">
-            <image class="order-product-img" src="{{item.productCover || '/images/default-product.png'}}" mode="aspectFill"/>
-            <view class="order-product-detail">
-              <text class="order-product-name">{{item.productName || '特产'}}</text>
-              <text class="order-product-from">{{item.productProvince || ''}}</text>
-            </view>
+          <image class="order-product-img" src="{{item.productCover || '/images/default-product.png'}}" mode="aspectFill"/>
+          <view class="order-product-detail">
+            <text class="order-product-name">{{item.productName || '特产'}}</text>
+            <text class="order-product-from">📍 {{item.productProvince || ''}}</text>
           </view>
         </view>
-
-        <!-- 订单底部 -->
         <view class="order-card-footer">
           <view class="order-user-info">
             <image class="order-user-avatar" src="{{item.requesterAvatar || '/images/default-avatar.png'}}" mode="aspectFill"/>
             <text class="order-user-name">{{item.requesterNick || '用户'}}</text>
           </view>
-          <text class="order-time">{{item.createTimeStr || ''}}</text>
+          <view class="order-actions">
+            <text class="order-time">🕐 {{item.createTimeStr || ''}}</text>
+            <view class="btn-sm btn-danger" catchtap="deleteOrder" data-id="{{item._id}}" wx:if="{{isSuperAdmin}}">🗑️</view>
+          </view>
         </view>
       </view>
     </view>
-    <view wx:if="{{orderLoading}}" class="load-tip">加载中...</view>
-    <view wx:if="{{orderNoMore && orders.length > 0}}" class="load-tip">没有更多了</view>
+    <view wx:if="{{orderLoading}}" class="load-tip">⏳ 加载中...</view>
   </block>
 
-  <!-- ===== 自动审核管理 ===== -->
+  <!-- ===== 审核管理 ===== -->
   <block wx:if="{{currentTab === 4}}">
-    <!-- 审核统计概览 -->
-    <view class="order-stats-bar">
-      <view class="order-stat-item">
-        <text class="order-stat-num">{{pendingStats.autoBlocked || 0}}</text>
-        <text class="order-stat-label">自动拦截</text>
+    <view class="stats-bar glass-card">
+      <view class="stats-bar-item">
+        <text class="stats-bar-num">{{pendingStats.autoBlocked || 0}}</text>
+        <text class="stats-bar-label">🔒 自动拦截</text>
       </view>
-      <view class="order-stat-item">
-        <text class="order-stat-num">{{pendingStats.manualReview || 0}}</text>
-        <text class="order-stat-label">待人工</text>
+      <view class="stats-bar-divider"></view>
+      <view class="stats-bar-item">
+        <text class="stats-bar-num">{{pendingStats.manualReview || 0}}</text>
+        <text class="stats-bar-label">⏳ 待人工</text>
       </view>
     </view>
 
-    <!-- 审核筛选 -->
     <view class="filter-bar">
-      <view class="filter-chip {{auditFilter === 'all' ? 'active' : ''}}" bindtap="changeAuditFilter" data-filter="all">全部</view>
-      <view class="filter-chip {{auditFilter === 'auto' ? 'active' : ''}}" bindtap="changeAuditFilter" data-filter="auto">
-        <text class="filter-icon">🔒</text> 自动拦截
-      </view>
-      <view class="filter-chip {{auditFilter === 'manual' ? 'active' : ''}}" bindtap="changeAuditFilter" data-filter="manual">
-        <text class="filter-icon">⏳</text> 待人工
-      </view>
+      <view class="filter-chip {{auditFilter === 'all' ? 'active' : ''}}" bindtap="changeAuditFilter" data-filter="all">📋 全部</view>
+      <view class="filter-chip {{auditFilter === 'auto' ? 'active' : ''}}" bindtap="changeAuditFilter" data-filter="auto">🔒 自动拦截</view>
+      <view class="filter-chip {{auditFilter === 'manual' ? 'active' : ''}}" bindtap="changeAuditFilter" data-filter="manual">⏳ 待人工</view>
     </view>
 
-    <view wx:if="{{pendingProducts.length === 0 && !pendingLoading}}" class="empty-tip">
-      <text class="empty-icon">🎉</text>
-      <text>暂无待审核产品</text>
-    </view>
+    <view wx:if="{{pendingProducts.length === 0 && !pendingLoading}}" class="empty-tip">🎉 暂无待审核产品</view>
 
-    <!-- 审核卡片列表 - 订单风格 -->
     <view class="order-list">
-      <view class="order-card {{item.auditReason ? 'audit-blocked' : 'audit-pending'}}" wx:for="{{pendingProducts}}" wx:key="_id">
-        <!-- 卡片头部 -->
+      <view class="order-card glass-card" wx:for="{{pendingProducts}}" wx:key="_id">
         <view class="order-card-header">
-          <view class="order-id-wrap">
-            <text class="order-id-label">特产</text>
-            <text class="order-id-value">{{item._id}}</text>
-          </view>
+          <text class="order-id-label">🎁</text>
+          <text class="order-id-value">{{item._id}}</text>
           <view class="order-status-badge {{item.auditReason ? 'status-pending' : 'status-confirmed'}}">
             {{item.auditReason ? '🔒 已拦截' : '⏳ 待审核'}}
           </view>
         </view>
-
-        <!-- 卡片主体 -->
         <view class="order-card-body">
-          <view class="order-product-info">
-            <image class="order-product-img" src="{{item.coverUrl}}" mode="aspectFill"/>
-            <view class="order-product-detail">
-              <text class="order-product-name">{{item.name}}</text>
-              <view class="order-product-meta">
-                <text class="order-product-from">{{item.province || '未知地区'}} · {{item.categoryName || '未分类'}}</text>
-              </view>
-            </view>
+          <image class="order-product-img" src="{{item.coverUrl}}" mode="aspectFill"/>
+          <view class="order-product-detail">
+            <text class="order-product-name">{{item.name}}</text>
+            <text class="order-product-from">📍 {{item.province || '未知'}} · {{item.categoryName}}</text>
           </view>
         </view>
-
-        <!-- 拦截原因 -->
         <view class="audit-reason" wx:if="{{item.auditReason}}">
-          <text class="audit-reason-label">拦截原因：</text>
+          <text class="audit-reason-label">🚫 拦截原因：</text>
           <text class="audit-reason-text">{{item.auditReason}}</text>
         </view>
-
-        <!-- 卡片底部 -->
         <view class="order-card-footer">
           <view class="order-user-info">
             <image class="order-user-avatar" src="{{item.publisher.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"/>
             <text class="order-user-name">{{item.publisher.nickName || '未知用户'}}</text>
           </view>
-          <view class="audit-actions-mini">
-            <view class="audit-btn-mini btn-approve" catchtap="approvePendingProduct" data-id="{{item._id}}">通过</view>
-            <view class="audit-btn-mini btn-reject" catchtap="rejectPendingProduct" data-id="{{item._id}}">拒绝</view>
-            <view class="audit-btn-mini btn-view" catchtap="goToPendingProductDetail" data-id="{{item._id}}">查看</view>
+          <view class="audit-actions">
+            <view class="btn-sm btn-green" catchtap="approvePendingProduct" data-id="{{item._id}}">✅ 通过</view>
+            <view class="btn-sm btn-danger" catchtap="rejectPendingProduct" data-id="{{item._id}}">❌ 拒绝</view>
           </view>
         </view>
       </view>
     </view>
-
-    <view wx:if="{{pendingLoading}}" class="load-tip">加载中...</view>
-    <view wx:if="{{pendingNoMore && pendingProducts.length > 0}}" class="load-tip">没有更多了</view>
+    <view wx:if="{{pendingLoading}}" class="load-tip">⏳ 加载中...</view>
   </block>
 
   <!-- ===== 积分管理 ===== -->
-  <block wx:if="{{currentTab === 5}}">
-    <view wx:if="{{!isSuperAdmin}}" class="empty-tip">需要超级管理员权限</view>
+  <block wx:if="{{currentTab === 6}}">
+    <view wx:if="{{!isSuperAdmin}}" class="empty-tip">🔐 需要超级管理员权限</view>
     <block wx:else>
-      <!-- 积分统计概览 -->
-      <view class="order-stats-bar">
-        <view class="order-stat-item">
-          <text class="order-stat-num">{{pointsStats.totalUsers || 0}}</text>
-          <text class="order-stat-label">用户总数</text>
+      <view class="stats-bar glass-card">
+        <view class="stats-bar-item">
+          <text class="stats-bar-num">{{pointsStats.totalUsers || 0}}</text>
+          <text class="stats-bar-label">👥 用户</text>
         </view>
-        <view class="order-stat-item">
-          <text class="order-stat-num">{{pointsStats.totalPoints || 0}}</text>
-          <text class="order-stat-label">积分总量</text>
+        <view class="stats-bar-divider"></view>
+        <view class="stats-bar-item">
+          <text class="stats-bar-num">{{pointsStats.totalPoints || 0}}</text>
+          <text class="stats-bar-label">💰 积分总量</text>
         </view>
-        <view class="order-stat-item">
-          <text class="order-stat-num">{{pointsStats.avgPoints || 0}}</text>
-          <text class="order-stat-label">人均积分</text>
+        <view class="stats-bar-divider"></view>
+        <view class="stats-bar-item">
+          <text class="stats-bar-num">{{pointsStats.avgPoints || 0}}</text>
+          <text class="stats-bar-label">📊 人均</text>
         </view>
       </view>
 
-      <!-- 搜索和筛选 -->
       <view class="search-bar">
-        <input class="search-input" placeholder="搜索用户昵称" placeholderClass="ph" bindinput="onPointsSearch" value="{{pointsKeyword}}" />
+        <text class="search-icon">🔍</text>
+        <input class="search-input" placeholder="搜索用户" bindinput="onPointsSearch" />
       </view>
-
-      <!-- 积分排行筛选 -->
       <view class="filter-bar">
-        <view class="filter-chip {{pointsFilter === 'all' ? 'active' : ''}}" bindtap="changePointsFilter" data-filter="all">全部</view>
-        <view class="filter-chip {{pointsFilter === 'high' ? 'active' : ''}}" bindtap="changePointsFilter" data-filter="high">
-          <text class="filter-icon">🏆</text> 高积分
-        </view>
-        <view class="filter-chip {{pointsFilter === 'low' ? 'active' : ''}}" bindtap="changePointsFilter" data-filter="low">
-          <text class="filter-icon">📉</text> 低积分
-        </view>
+        <view class="filter-chip {{pointsFilter === 'all' ? 'active' : ''}}" bindtap="changePointsFilter" data-filter="all">📋 全部</view>
+        <view class="filter-chip {{pointsFilter === 'high' ? 'active' : ''}}" bindtap="changePointsFilter" data-filter="high">🏆 高积分</view>
+        <view class="filter-chip {{pointsFilter === 'low' ? 'active' : ''}}" bindtap="changePointsFilter" data-filter="low">📉 低积分</view>
       </view>
 
-      <view wx:if="{{pointsUsers.length === 0 && !pointsLoading}}" class="empty-tip">暂无用户</view>
+      <view wx:if="{{pointsUsers.length === 0 && !pointsLoading}}" class="empty-tip">👥 暂无用户</view>
 
-      <!-- 积分用户列表 - 订单风格 -->
       <view class="order-list">
-        <view class="order-card" wx:for="{{pointsUsers}}" wx:key="_id">
-          <!-- 卡片头部 -->
+        <view class="order-card glass-card" wx:for="{{pointsUsers}}" wx:key="_id">
           <view class="order-card-header">
-            <view class="order-id-wrap">
-              <view class="rank-badge-mini rank-{{item.rank}}" wx:if="{{item.rank <= 3}}">{{item.rank}}</view>
-              <text class="order-id-value" wx:else>NO.{{item.rank}}</text>
-            </view>
-            <view class="order-status-badge status-confirmed">积分 {{item.points || 0}}</view>
+            <view class="rank-badge rank-{{item.rank}}" wx:if="{{item.rank <= 3}}">{{item.rank}}</view>
+            <text class="order-id-value" wx:else>NO.{{item.rank}}</text>
+            <view class="order-status-badge status-confirmed">💰 {{item.points || 0}}积分</view>
           </view>
-
-          <!-- 卡片主体 -->
           <view class="order-card-body">
-            <view class="order-product-info">
-              <image class="order-product-img" src="{{item.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"/>
-              <view class="order-product-detail">
-                <text class="order-product-name">{{item.nickName || '未知'}}</text>
-                <view class="order-product-meta">
-                  <view class="points-mini-badge">
-                    <text class="points-mini-label">当前</text>
-                    <text class="points-mini-value">{{item.points || 0}}</text>
-                  </view>
-                  <view class="points-mini-badge">
-                    <text class="points-mini-label">累计</text>
-                    <text class="points-mini-value">{{item.totalPoints || 0}}</text>
-                  </view>
-                </view>
-              </view>
+            <image class="order-product-img" src="{{item.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"/>
+            <view class="order-product-detail">
+              <text class="order-product-name">{{item.nickName || '未知'}}</text>
+              <text class="order-product-from">📊 当前: {{item.points || 0}} | 累计: {{item.totalPoints || 0}}</text>
             </view>
           </view>
-
-          <!-- 卡片底部 -->
           <view class="order-card-footer">
-            <text class="order-time">排名 {{item.rank}}</text>
-            <view class="audit-actions-mini">
-              <view class="audit-btn-mini btn-approve" catchtap="openPointsModal" data-user="{{item}}" data-action="add">+</view>
-              <view class="audit-btn-mini btn-reject" catchtap="openPointsModal" data-user="{{item}}" data-action="deduct">−</view>
+            <text class="order-time">🏆 排名 {{item.rank}}</text>
+            <view class="audit-actions">
+              <view class="btn-sm btn-green" catchtap="openPointsModal" data-user="{{item}}" data-action="add">➕</view>
+              <view class="btn-sm btn-danger" catchtap="openPointsModal" data-user="{{item}}" data-action="deduct">➖</view>
             </view>
           </view>
         </view>
       </view>
-
-      <view wx:if="{{pointsLoading}}" class="load-tip">加载中...</view>
-      <view wx:if="{{pointsNoMore && pointsUsers.length > 0}}" class="load-tip">没有更多了</view>
+      <view wx:if="{{pointsLoading}}" class="load-tip">⏳ 加载中...</view>
     </block>
   </block>
 
-  <!-- ===== 信用分管理 ===== -->
-  <block wx:if="{{currentTab === 6}}">
-    <view wx:if="{{!isSuperAdmin}}" class="empty-tip">需要超级管理员权限</view>
+  <!-- ===== 信用管理 ===== -->
+  <block wx:if="{{currentTab === 7}}">
+    <view wx:if="{{!isSuperAdmin}}" class="empty-tip">🔐 需要超级管理员权限</view>
     <block wx:else>
-      <!-- 信用等级分布概览 -->
-      <view class="order-stats-bar">
-        <view class="order-stat-item">
-          <text class="order-stat-num" style="color: var(--color-secondary)">{{creditDist.excellent}}%</text>
-          <text class="order-stat-label">优秀</text>
+      <view class="stats-bar glass-card credit-bar">
+        <view class="stats-bar-item">
+          <text class="stats-bar-num" style="color: #22C55E">{{creditDist.excellent}}%</text>
+          <text class="stats-bar-label">🌟 优秀</text>
         </view>
-        <view class="order-stat-item">
-          <text class="order-stat-num" style="color: var(--color-warning)">{{creditDist.good}}%</text>
-          <text class="order-stat-label">良好</text>
+        <view class="stats-bar-divider"></view>
+        <view class="stats-bar-item">
+          <text class="stats-bar-num" style="color: #F59E0B">{{creditDist.good}}%</text>
+          <text class="stats-bar-label">👍 良好</text>
         </view>
-        <view class="order-stat-item">
-          <text class="order-stat-num" style="color: var(--color-primary)">{{creditDist.normal}}%</text>
-          <text class="order-stat-label">一般</text>
+        <view class="stats-bar-divider"></view>
+        <view class="stats-bar-item">
+          <text class="stats-bar-num" style="color: #3B82F6">{{creditDist.normal}}%</text>
+          <text class="stats-bar-label">⚡ 一般</text>
         </view>
-        <view class="order-stat-item">
-          <text class="order-stat-num" style="color: var(--color-danger)">{{creditDist.poor}}%</text>
-          <text class="order-stat-label">较差</text>
+        <view class="stats-bar-divider"></view>
+        <view class="stats-bar-item">
+          <text class="stats-bar-num" style="color: #EF4444">{{creditDist.poor}}%</text>
+          <text class="stats-bar-label">⚠️ 较差</text>
         </view>
       </view>
 
-      <!-- 搜索和筛选 -->
-      <view class="search-bar">
-        <input class="search-input" placeholder="搜索用户昵称" placeholderClass="ph" bindinput="onCreditSearch" value="{{creditKeyword}}" />
-      </view>
-
-      <!-- 信用等级筛选 -->
       <view class="filter-bar">
-        <view class="filter-chip {{creditFilter === 'all' ? 'active' : ''}}" bindtap="changeCreditFilter" data-filter="all">全部</view>
-        <view class="filter-chip {{creditFilter === 'excellent' ? 'active' : ''}}" bindtap="changeCreditFilter" data-filter="excellent">
-          <text class="filter-icon">🌟</text> 优秀
-        </view>
-        <view class="filter-chip {{creditFilter === 'good' ? 'active' : ''}}" bindtap="changeCreditFilter" data-filter="good">
-          <text class="filter-icon">👍</text> 良好
-        </view>
-        <view class="filter-chip {{creditFilter === 'poor' ? 'active' : ''}}" bindtap="changeCreditFilter" data-filter="poor">
-          <text class="filter-icon">⚠️</text> 较差
-        </view>
+        <view class="filter-chip {{creditFilter === 'all' ? 'active' : ''}}" bindtap="changeCreditFilter" data-filter="all">📋 全部</view>
+        <view class="filter-chip {{creditFilter === 'excellent' ? 'active' : ''}}" bindtap="changeCreditFilter" data-filter="excellent">🌟 优秀</view>
+        <view class="filter-chip {{creditFilter === 'good' ? 'active' : ''}}" bindtap="changeCreditFilter" data-filter="good">👍 良好</view>
+        <view class="filter-chip {{creditFilter === 'poor' ? 'active' : ''}}" bindtap="changeCreditFilter" data-filter="poor">⚠️ 较差</view>
       </view>
 
-      <view wx:if="{{creditUsers.length === 0 && !creditLoading}}" class="empty-tip">暂无用户</view>
+      <view wx:if="{{creditUsers.length === 0 && !creditLoading}}" class="empty-tip">👥 暂无用户</view>
 
-      <!-- 信用用户列表 - 订单风格 -->
       <view class="order-list">
-        <view class="order-card" wx:for="{{creditUsers}}" wx:key="_id">
-          <!-- 卡片头部 -->
+        <view class="order-card glass-card" wx:for="{{creditUsers}}" wx:key="_id">
           <view class="order-card-header">
-            <view class="order-id-wrap">
-              <text class="order-id-label">信用分</text>
-              <text class="order-id-value">{{item.creditScore || 100}}分</text>
-            </view>
+            <text class="order-id-label">⭐</text>
+            <text class="order-id-value">{{item.creditScore || 100}}分</text>
             <view class="order-status-badge status-{{item.creditLevel.class}}">{{item.creditLevel.text}}</view>
           </view>
-
-          <!-- 卡片主体 -->
           <view class="order-card-body">
-            <view class="order-product-info">
-              <image class="order-product-img" src="{{item.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"/>
-              <view class="order-product-detail">
-                <text class="order-product-name">{{item.nickName || '未知'}}</text>
-                <view class="order-product-meta">
-                  <view class="credit-score-bar-mini">
-                    <view class="credit-score-fill-mini fill-{{item.creditLevel.class}}" style="width: {{item.creditScore}}%"></view>
-                    <text class="credit-score-text-mini">{{item.creditScore}}分</text>
-                  </view>
-                </view>
+            <image class="order-product-img" src="{{item.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"/>
+            <view class="order-product-detail">
+              <text class="order-product-name">{{item.nickName || '未知'}}</text>
+              <view class="credit-bar-mini">
+                <view class="credit-fill fill-{{item.creditLevel.class}}" style="width: {{item.creditScore}}%"></view>
+                <text>{{item.creditScore}}分</text>
               </view>
             </view>
           </view>
-
-          <!-- 卡片底部 -->
           <view class="order-card-footer">
             <text class="order-time">{{item.creditLevel.text}}</text>
-            <view class="audit-actions-mini">
-              <view class="audit-btn-mini btn-view" catchtap="openCreditModal" data-user="{{item}}">编辑</view>
-            </view>
+            <view class="btn-sm btn-blue" catchtap="openCreditModal" data-user="{{item}}">✏️ 编辑</view>
           </view>
         </view>
       </view>
-
-      <view wx:if="{{creditLoading}}" class="load-tip">加载中...</view>
-      <view wx:if="{{creditNoMore && creditUsers.length > 0}}" class="load-tip">没有更多了</view>
+      <view wx:if="{{creditLoading}}" class="load-tip">⏳ 加载中...</view>
     </block>
   </block>
 
-  <!-- ===== 神秘特产管理 ===== -->
-  <block wx:if="{{currentTab === 7}}">
-    <view wx:if="{{!isSuperAdmin}}" class="empty-tip">需要超级管理员权限</view>
-    <block wx:else>
-      <!-- 神秘特产统计 -->
-      <view class="mystery-stats">
-        <view class="mystery-stat-card">
-          <text class="mystery-stat-num">{{mysteryStats.total || 0}}</text>
-          <text class="mystery-stat-label">总数</text>
-        </view>
-        <view class="mystery-stat-card">
-          <text class="mystery-stat-num">{{mysteryStats.active || 0}}</text>
-          <text class="mystery-stat-label">展示中</text>
-        </view>
-        <view class="mystery-stat-card">
-          <text class="mystery-stat-num">{{mysteryStats.inSwap || 0}}</text>
-          <text class="mystery-stat-label">分享中</text>
-        </view>
-      </view>
-
-      <!-- 状态筛选 -->
-      <view class="filter-bar">
-        <view class="filter-chip {{mysteryFilter === 'all' ? 'active' : ''}}" bindtap="changeMysteryFilter" data-filter="all">全部</view>
-        <view class="filter-chip {{mysteryFilter === 'active' ? 'active' : ''}}" bindtap="changeMysteryFilter" data-filter="active">展示中</view>
-        <view class="filter-chip {{mysteryFilter === 'in_swap' ? 'active' : ''}}" bindtap="changeMysteryFilter" data-filter="in_swap">分享中</view>
-        <view class="filter-chip {{mysteryFilter === 'removed' ? 'active' : ''}}" bindtap="changeMysteryFilter" data-filter="removed">已下架</view>
-      </view>
-
-      <view wx:if="{{mysteryProducts.length === 0 && !mysteryLoading}}" class="empty-tip">暂无神秘特产</view>
-
-      <!-- 神秘特产网格布局 -->
-      <view class="mystery-grid">
-        <view class="mystery-card" wx:for="{{mysteryProducts}}" wx:key="_id">
-          <!-- 特产图片 -->
-          <view class="mystery-card-cover">
-            <image class="mystery-cover-img" src="{{item.coverUrl}}" mode="aspectFill"/>
-            <view class="mystery-status-tag status-{{item.status}}">{{item.statusText}}</view>
-          </view>
-
-          <!-- 特产信息 -->
-          <view class="mystery-card-body">
-            <text class="mystery-name">{{item.name}}</text>
-            <view class="mystery-meta">
-              <text class="mystery-location">{{item.province}} {{item.city || ''}}</text>
-            </view>
-            <text class="mystery-desc" wx:if="{{item.description}}">{{item.description}}</text>
-          </view>
-
-          <!-- 操作按钮 -->
-          <view class="mystery-card-actions">
-            <view class="mystery-action-btn edit" catchtap="openMysteryEdit" data-product="{{item}}">
-              <text class="action-icon">✏️</text> 编辑
-            </view>
-            <view class="mystery-action-btn delete" catchtap="deleteMystery" data-id="{{item._id}}">
-              <text class="action-icon">🗑</text> 删除
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <view wx:if="{{mysteryLoading}}" class="load-tip">加载中...</view>
-      <view wx:if="{{mysteryNoMore && mysteryProducts.length > 0}}" class="load-tip">没有更多了</view>
-    </block>
-  </block>
-
-  <!-- ===== 功能开关管理 ===== -->
+  <!-- ===== 神秘特产 ===== -->
   <block wx:if="{{currentTab === 8}}">
-    <view wx:if="{{!isSuperAdmin}}" class="empty-tip">需要超级管理员权限</view>
+    <view wx:if="{{!isSuperAdmin}}" class="empty-tip">🔐 需要超级管理员权限</view>
     <block wx:else>
-      <!-- 审核模式快捷操作 -->
-      <view class="flag-mode-card">
-        <view class="flag-mode-title">审核模式</view>
-        <view class="flag-mode-desc">一键关闭敏感功能以通过审核，审核通过后一键恢复</view>
-        <view class="flag-mode-status {{featureFlags.review_mode ? 'mode-on' : 'mode-off'}}">
-          当前：{{featureFlags.review_mode ? '审核模式中' : '正常运行中'}}
+      <view class="stats-bar glass-card">
+        <view class="stats-bar-item">
+          <text class="stats-bar-num">{{mysteryStats.total || 0}}</text>
+          <text class="stats-bar-label">📦 总数</text>
         </view>
-        <view class="flag-mode-btns">
-          <view class="flag-mode-btn btn-review {{featureFlags.review_mode ? 'disabled' : ''}}" bindtap="enableReviewMode">
-            🔒 一键审核模式
-          </view>
-          <view class="flag-mode-btn btn-restore {{!featureFlags.review_mode ? 'disabled' : ''}}" bindtap="restoreNormal">
-            🔓 恢复正常
-          </view>
+        <view class="stats-bar-divider"></view>
+        <view class="stats-bar-item">
+          <text class="stats-bar-num">{{mysteryStats.active || 0}}</text>
+          <text class="stats-bar-label">✅ 展示中</text>
+        </view>
+        <view class="stats-bar-divider"></view>
+        <view class="stats-bar-item">
+          <text class="stats-bar-num">{{mysteryStats.inSwap || 0}}</text>
+          <text class="stats-bar-label">🔄 分享中</text>
         </view>
       </view>
 
-      <!-- 各功能开关 -->
-      <view class="flag-section-title">功能开关</view>
-      <view wx:if="{{flagsLoading}}" class="load-tip">加载中...</view>
-      <view class="flag-list" wx:else>
-        <view class="flag-item" wx:for="{{flagList}}" wx:key="key">
-          <view class="flag-info">
-            <view class="flag-label">{{item.label}}</view>
-            <view class="flag-desc">{{item.desc}}</view>
+      <view class="filter-bar">
+        <view class="filter-chip {{mysteryFilter === 'all' ? 'active' : ''}}" bindtap="changeMysteryFilter" data-filter="all">📋 全部</view>
+        <view class="filter-chip {{mysteryFilter === 'active' ? 'active' : ''}}" bindtap="changeMysteryFilter" data-filter="active">✅ 展示中</view>
+        <view class="filter-chip {{mysteryFilter === 'in_swap' ? 'active' : ''}}" bindtap="changeMysteryFilter" data-filter="in_swap">🔄 分享中</view>
+        <view class="filter-chip {{mysteryFilter === 'removed' ? 'active' : ''}}" bindtap="changeMysteryFilter" data-filter="removed">❌ 已下架</view>
+      </view>
+
+      <view wx:if="{{mysteryProducts.length === 0 && !mysteryLoading}}" class="empty-tip">🎰 暂无神秘特产</view>
+
+      <view class="mystery-grid">
+        <view class="mystery-card glass-card" wx:for="{{mysteryProducts}}" wx:key="_id">
+          <view class="mystery-cover">
+            <image class="mystery-img" src="{{item.coverUrl}}" mode="aspectFill"/>
+            <view class="mystery-status status-{{item.status}}">{{item.statusText}}</view>
           </view>
-          <switch class="flag-switch" checked="{{featureFlags[item.key] !== false}}" bindchange="toggleFlag" data-key="{{item.key}}" color="#30D158" />
+          <view class="mystery-body">
+            <text class="mystery-name">{{item.name}}</text>
+            <text class="mystery-location">📍 {{item.province}} {{item.city || ''}}</text>
+          </view>
+          <view class="mystery-actions">
+            <view class="mystery-btn edit" catchtap="openMysteryEdit" data-product="{{item}}">✏️</view>
+            <view class="mystery-btn delete" catchtap="deleteMystery" data-id="{{item._id}}">🗑️</view>
+          </view>
         </view>
       </view>
+      <view wx:if="{{mysteryLoading}}" class="load-tip">⏳ 加载中...</view>
     </block>
   </block>
 
-  <view class="safe-bottom"></view>
-
-  <!-- ===== 积分弹窗 ===== -->
-  <view class="modal-mask" wx:if="{{pointsModalVisible}}" bindtap="closePointsModal"></view>
-  <view class="modal" wx:if="{{pointsModalVisible}}">
-    <view class="modal-hd">{{pointsAction === 'add' ? '增加积分' : '扣除积分'}}</view>
-    <view class="modal-user">{{selectedUser.nickName || '未知'}}</view>
-    <view class="modal-field">
-      <input class="modal-input" type="number" placeholder="积分数量" bindinput="onPointsInput" value="{{pointsValue}}" />
-    </view>
-    <view class="modal-field">
-      <input class="modal-input" placeholder="原因（选填）" bindinput="onPointsReasonInput" value="{{pointsReason}}" />
-    </view>
-    <view class="modal-btns">
-      <view class="mbtn mbtn-cancel" bindtap="closePointsModal">取消</view>
-      <view class="mbtn {{pointsAction === 'add' ? 'mbtn-green' : 'mbtn-orange'}}" bindtap="confirmPoints">确认</view>
-    </view>
-  </view>
-
-  <!-- ===== 信用分弹窗 ===== -->
-  <view class="modal-mask" wx:if="{{creditModalVisible}}" bindtap="closeCreditModal"></view>
-  <view class="modal" wx:if="{{creditModalVisible}}">
-    <view class="modal-hd">调整信用分</view>
-    <view class="modal-user">{{selectedUser.nickName || '未知'}}</view>
-    <view class="modal-field">
-      <input class="modal-input" type="number" placeholder="信用分 (0-100)" bindinput="onCreditInput" value="{{creditValue}}" maxlength="3" />
-    </view>
-    <view class="modal-field">
-      <input class="modal-input" placeholder="原因（选填）" bindinput="onCreditReasonInput" value="{{creditReason}}" />
-    </view>
-    <view class="modal-btns">
-      <view class="mbtn mbtn-cancel" bindtap="closeCreditModal">取消</view>
-      <view class="mbtn mbtn-blue" bindtap="confirmCredit">确认</view>
-    </view>
-  </view>
-
-  <!-- ===== 神秘特产编辑弹窗 ===== -->
-  <view class="modal-mask" wx:if="{{mysteryModalVisible}}" bindtap="closeMysteryModal"></view>
-  <view class="modal modal-lg" wx:if="{{mysteryModalVisible}}">
-    <view class="modal-hd">编辑神秘特产</view>
-    <view class="modal-field">
-      <text class="field-label">名称</text>
-      <input class="modal-input" placeholder="特产名称" bindinput="updateMysteryField" data-field="name" value="{{editingMystery.name}}" />
-    </view>
-    <view class="modal-field">
-      <text class="field-label">描述</text>
-      <textarea class="modal-textarea" placeholder="特产描述" bindinput="updateMysteryField" data-field="description" value="{{editingMystery.description}}" />
-    </view>
-    <view class="modal-field">
-      <text class="field-label">省份</text>
-      <input class="modal-input" placeholder="省份" bindinput="updateMysteryField" data-field="province" value="{{editingMystery.province}}" />
-    </view>
-    <view class="modal-field">
-      <text class="field-label">城市</text>
-      <input class="modal-input" placeholder="城市" bindinput="updateMysteryField" data-field="city" value="{{editingMystery.city}}" />
-    </view>
-    <view class="modal-btns">
-      <view class="mbtn mbtn-cancel" bindtap="closeMysteryModal">取消</view>
-      <view class="mbtn mbtn-purple" bindtap="saveMystery">保存</view>
-    </view>
-  </view>
-
-  <!-- ===== 用户编辑弹窗 - iOS 26风格 ===== -->
-  <view class="modal-mask" wx:if="{{userEditModalVisible}}" bindtap="closeUserEditModal"></view>
-  <view class="modal-ios" wx:if="{{userEditModalVisible}}">
-    <view class="modal-ios-header">
-      <text class="modal-ios-title">编辑用户资料</text>
-      <view class="modal-ios-close" bindtap="closeUserEditModal">✕</view>
-    </view>
-    
-    <view class="modal-ios-body">
-      <!-- 头像 -->
-      <view class="ios-field">
-        <view class="ios-field-label">头像</view>
-        <image class="ios-avatar" src="{{editingUser.avatarUrl || defaultAvatar}}" mode="aspectFill"/>
+  <!-- ===== 实名审核 ===== -->
+  <block wx:if="{{currentTab === 5 && isSuperAdmin}}">
+    <view class="stats-bar glass-card">
+      <view class="stats-bar-item">
+        <text class="stats-bar-num pending">{{daigouVerifyStats.pending || 0}}</text>
+        <text class="stats-bar-label">⏳ 待审核</text>
       </view>
-
-      <!-- 昵称 -->
-      <view class="ios-field">
-        <view class="ios-field-label">昵称</view>
-        <input class="ios-input" placeholder="请输入昵称" bindinput="updateUserField" data-field="nickName" value="{{editingUser.nickName}}" />
+      <view class="stats-bar-divider"></view>
+      <view class="stats-bar-item">
+        <text class="stats-bar-num approved">{{daigouVerifyStats.approved || 0}}</text>
+        <text class="stats-bar-label">✅ 已通过</text>
       </view>
+      <view class="stats-bar-divider"></view>
+      <view class="stats-bar-item">
+        <text class="stats-bar-num rejected">{{daigouVerifyStats.rejected || 0}}</text>
+        <text class="stats-bar-label">❌ 已拒绝</text>
+      </view>
+    </view>
 
-      <!-- 性别 -->
-      <view class="ios-field">
-        <view class="ios-field-label">性别</view>
-        <view class="ios-gender-select">
-          <view 
-            class="ios-gender-option {{editingUser.gender === 'male' ? 'selected' : ''}}"
-            bindtap="updateUserField" data-field="gender" data-value="male"
-          >👨 男</view>
-          <view 
-            class="ios-gender-option {{editingUser.gender === 'female' ? 'selected' : ''}}"
-            bindtap="updateUserField" data-field="gender" data-value="female"
-          >👩 女</view>
-          <view 
-            class="ios-gender-option {{!editingUser.gender ? 'selected' : ''}}"
-            bindtap="updateUserField" data-field="gender" data-value=""
-          >🆕 保密</view>
+    <view class="filter-bar">
+      <view class="filter-chip {{daigouVerifyFilter === 'pending' ? 'active' : ''}}" bindtap="changeDaigouVerifyFilter" data-filter="pending">⏳ 待审核</view>
+      <view class="filter-chip {{daigouVerifyFilter === 'approved' ? 'active' : ''}}" bindtap="changeDaigouVerifyFilter" data-filter="approved">✅ 已通过</view>
+      <view class="filter-chip {{daigouVerifyFilter === 'rejected' ? 'active' : ''}}" bindtap="changeDaigouVerifyFilter" data-filter="rejected">❌ 已拒绝</view>
+      <view class="filter-chip {{daigouVerifyFilter === 'all' ? 'active' : ''}}" bindtap="changeDaigouVerifyFilter" data-filter="all">📋 全部</view>
+    </view>
+
+    <view wx:if="{{daigouVerifyList.length === 0 && !daigouVerifyLoading}}" class="empty-tip">🪪 暂无审核记录</view>
+    <view class="list-wrap">
+      <view class="verify-item glass-card" wx:for="{{daigouVerifyList}}" wx:key="_id">
+        <view class="verify-hd">
+          <text class="verify-nick">{{item.nickName || '未知用户'}}</text>
+          <view class="verify-status-badge status-{{item.status}}">{{item.status === 'pending' ? '⏳' : item.status === 'approved' ? '✅' : '❌'}} {{item.status === 'pending' ? '待审核' : item.status === 'approved' ? '已通过' : '已拒绝'}}</view>
+        </view>
+        <view class="verify-body">
+          <view class="verify-field">👤 真实姓名: {{item.realName || '-'}}</view>
+          <view class="verify-field">📱 手机号: {{item.phone || '-'}}</view>
+          <view class="verify-field">🕐 提交时间: {{item.createTimeStr || '-'}}</view>
+        </view>
+        <view class="btn-group" wx:if="{{item.status === 'pending'}}">
+          <view class="btn-sm btn-green" catchtap="approveDaigouVerify" data-id="{{item._id}}" data-openid="{{item.userOpenid}}">✅ 通过</view>
+          <view class="btn-sm btn-danger" catchtap="rejectDaigouVerify" data-id="{{item._id}}" data-openid="{{item.userOpenid}}">❌ 拒绝</view>
+        </view>
+      </view>
+    </view>
+    <view wx:if="{{daigouVerifyLoading}}" class="load-tip">⏳ 加载中...</view>
+  </block>
+
+  <!-- ===== 代购管理 ===== -->
+  <block wx:if="{{currentTab === 9}}">
+    <view wx:if="{{!isSuperAdmin}}" class="empty-tip">🔐 需要超级管理员权限</view>
+    <block wx:else>
+      <view class="stats-grid">
+        <view class="stat-card glass-card sc-blue">
+          <text class="stat-emoji">📦</text>
+          <view class="stat-num">{{daigouStats.total || 0}}</view>
+          <view class="stat-label">总订单</view>
+        </view>
+        <view class="stat-card glass-card sc-orange">
+          <text class="stat-emoji">📦</text>
+          <view class="stat-num">{{daigouStats.pendingShipment || 0}}</view>
+          <view class="stat-label">待发货</view>
+        </view>
+        <view class="stat-card glass-card sc-purple">
+          <text class="stat-emoji">🚚</text>
+          <view class="stat-num">{{daigouStats.shipped || 0}}</view>
+          <view class="stat-label">已发货</view>
+        </view>
+        <view class="stat-card glass-card sc-green">
+          <text class="stat-emoji">✅</text>
+          <view class="stat-num">{{daigouStats.completed || 0}}</view>
+          <view class="stat-label">已完成</view>
+        </view>
+        <view class="stat-card glass-card sc-red">
+          <text class="stat-emoji">↩️</text>
+          <view class="stat-num">{{daigouStats.refunding || 0}}</view>
+          <view class="stat-label">退款中</view>
         </view>
       </view>
 
-      <!-- 生日 -->
-      <view class="ios-field">
-        <view class="ios-field-label">🎂 生日</view>
-        <picker mode="date" value="{{editingUser.birthday || '2000-01-01'}}" start="1950-01-01" end="2025-12-31" bindchange="updateUserField" data-field="birthday">
-          <view class="ios-picker {{editingUser.birthday ? '' : 'placeholder'}}">
-            {{editingUser.birthday || '点击设置生日'}}
-          </view>
-        </picker>
+      <view class="search-bar">
+        <text class="search-icon">🔍</text>
+        <input class="search-input" placeholder="搜索订单/用户" bindinput="onDaigouOrderSearch" />
+      </view>
+      <view class="filter-bar">
+        <view class="filter-chip {{daigouOrderFilter === 'all' ? 'active' : ''}}" bindtap="changeDaigouOrderFilter" data-filter="all">📋 全部</view>
+        <view class="filter-chip {{daigouOrderFilter === 'pending_shipment' ? 'active' : ''}}" bindtap="changeDaigouOrderFilter" data-filter="pending_shipment">📦 待发货</view>
+        <view class="filter-chip {{daigouOrderFilter === 'shipped' ? 'active' : ''}}" bindtap="changeDaigouOrderFilter" data-filter="shipped">🚚 已发货</view>
+        <view class="filter-chip {{daigouOrderFilter === 'completed' ? 'active' : ''}}" bindtap="changeDaigouOrderFilter" data-filter="completed">✅ 已完成</view>
       </view>
 
-      <!-- 属相 -->
-      <view class="ios-field" wx:if="{{editingUser.zodiacAnimal}}">
-        <view class="ios-field-label">🧨 属相</view>
-        <view class="ios-value">{{editingUser.zodiacAnimal}}</view>
-      </view>
-
-      <!-- 星座 -->
-      <view class="ios-field" wx:if="{{editingUser.zodiac}}">
-        <view class="ios-field-label">✨ 星座</view>
-        <view class="ios-value">{{editingUser.zodiac}}</view>
-      </view>
-
-      <!-- 省份 -->
-      <view class="ios-field">
-        <view class="ios-field-label">📍 省份</view>
-        <picker mode="selector" range="{{provinceList}}" range-key="name" value="{{provinceIndex}}" bindchange="onUserProvinceChange">
-          <view class="ios-picker">
-            {{provinceIndex >= 0 ? provinceList[provinceIndex].name : '选择省份'}}
-          </view>
-        </picker>
-      </view>
-
-      <!-- 积分 -->
-      <view class="ios-field">
-        <view class="ios-field-label">💰 积分</view>
-        <input class="ios-input" type="number" placeholder="积分" bindinput="updateUserField" data-field="points" value="{{editingUser.points}}" />
-      </view>
-
-      <!-- 信用分 -->
-      <view class="ios-field">
-        <view class="ios-field-label">⭐ 信用分</view>
-        <input class="ios-input" type="number" placeholder="信用分(0-100)" maxlength="3" bindinput="updateUserField" data-field="creditScore" value="{{editingUser.creditScore}}" />
-      </view>
-    </view>
-
-    <view class="modal-ios-footer">
-      <view class="ios-btn ios-btn-cancel" bindtap="closeUserEditModal">取消</view>
-      <view class="ios-btn ios-btn-primary" bindtap="saveUserEdit">保存</view>
-    </view>
-  </view>
-
-  <!-- ===== 特产编辑弹窗 ===== -->
-  <view class="modal-mask" wx:if="{{productEditModalVisible}}" bindtap="closeProductEditModal"></view>
-  <view class="modal modal-lg" wx:if="{{productEditModalVisible}}">
-    <view class="modal-hd">编辑特产</view>
-    <view class="modal-field">
-      <text class="field-label">名称</text>
-      <input class="modal-input" placeholder="特产名称" bindinput="updateProductField" data-field="name" value="{{editingProduct.name}}" />
-    </view>
-    <view class="modal-field">
-      <text class="field-label">省份</text>
-      <input class="modal-input" placeholder="省份编码 (如 BJ)" bindinput="updateProductField" data-field="province" value="{{editingProduct.province}}" />
-    </view>
-    <view class="modal-field">
-      <text class="field-label">城市</text>
-      <input class="modal-input" placeholder="城市" bindinput="updateProductField" data-field="city" value="{{editingProduct.city}}" />
-    </view>
-    <view class="modal-field">
-      <text class="field-label">分类</text>
-      <picker mode="selector" range="{{categoryList}}" range-key="name" value="{{categoryIndex}}" bindchange="onProductCategoryChange">
-        <view class="modal-input picker-display">{{categoryIndex >= 0 ? categoryList[categoryIndex].name : '选择分类'}}</view>
-      </picker>
-    </view>
-    <view class="modal-field">
-      <text class="field-label">估值区间</text>
-      <picker mode="selector" range="{{valueRangeList}}" range-key="label" value="{{valueRangeIndex}}" bindchange="onProductValueRangeChange">
-        <view class="modal-input picker-display">{{valueRangeIndex >= 0 ? valueRangeList[valueRangeIndex].label : '选择估值'}}</view>
-      </picker>
-    </view>
-    <view class="modal-field">
-      <text class="field-label">状态</text>
-      <picker mode="selector" range="{{statusLabels}}" value="{{statusIndex}}" bindchange="onProductStatusChange">
-        <view class="modal-input picker-display">{{statusLabels[statusIndex]}}</view>
-      </picker>
-    </view>
-    <view class="modal-btns">
-      <view class="mbtn mbtn-cancel" bindtap="closeProductEditModal">取消</view>
-      <view class="mbtn mbtn-blue" bindtap="saveProductEdit">保存</view>
-    </view>
-  </view>
-</view>
+      <view wx:if="{{daigouOrders.length === 0 && !daigouOrderLoading}}" class="empty-tip">🛒 暂无代购订单</view>

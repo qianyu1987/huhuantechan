@@ -133,6 +133,12 @@ function formatValue(min, max) {
  * @returns {Promise<string>} - 返回 cloud://fileID
  */
 async function uploadImage(tempFilePath, folder = 'products') {
+  // 空路径检查
+  if (!tempFilePath || tempFilePath.trim() === '') {
+    console.error('图片路径为空')
+    throw new Error('图片路径无效')
+  }
+  
   // 如果已经是 cloud:// 链接，直接返回
   if (tempFilePath.startsWith('cloud://')) {
     return tempFilePath
@@ -148,18 +154,41 @@ async function uploadImage(tempFilePath, folder = 'products') {
     tempFilePath.startsWith('wxfile://') ||
     tempFilePath.startsWith('http://tmp/') ||
     tempFilePath.startsWith('https://tmp/') ||
+    tempFilePath.startsWith('http://dlwjbtmp/') ||
+    tempFilePath.startsWith('https://dlwjbtmp/') ||
     tempFilePath.startsWith('file://') ||
-    tempFilePath.startsWith('http://127.0.0.1')
+    tempFilePath.startsWith('http://127.0.0.1') ||
+    tempFilePath.startsWith('http://localhost') ||
+    tempFilePath.includes('/tmp/') ||
+    tempFilePath.includes('\\tmp\\')
   
   if (!isValidTempPath) {
     console.error('无效的图片路径:', tempFilePath)
     throw new Error('无效的图片路径')
   }
   
-  const ext = tempFilePath.split('.').pop() || 'jpg'
+  // 提取文件扩展名
+  let ext = 'jpg'
+  try {
+    const parts = tempFilePath.split('.')
+    if (parts.length > 1) {
+      ext = parts.pop().toLowerCase()
+      // 去掉查询参数
+      ext = ext.split('?')[0]
+      // 验证扩展名
+      if (!['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'].includes(ext)) {
+        ext = 'jpg'
+      }
+    }
+  } catch (e) {
+    console.warn('提取扩展名失败，使用默认 jpg')
+  }
+  
   const ts = Date.now()
   const rand = Math.random().toString(36).slice(2, 8)
   const cloudPath = `${folder}/${ts}_${rand}.${ext}`
+  
+  console.log('开始上传图片:', { tempFilePath, cloudPath })
   
   try {
     const res = await wx.cloud.uploadFile({
@@ -168,6 +197,7 @@ async function uploadImage(tempFilePath, folder = 'products') {
     })
     
     if (!res.fileID) {
+      console.error('上传失败，未返回 fileID:', res)
       throw new Error('上传失败：未返回 fileID')
     }
     
@@ -175,7 +205,7 @@ async function uploadImage(tempFilePath, folder = 'products') {
     return res.fileID
   } catch (e) {
     console.error('图片上传失败:', tempFilePath, e)
-    throw new Error(`图片上传失败: ${e.message}`)
+    throw new Error(`图片上传失败: ${e.message || e.errMsg || '未知错误'}`)
   }
 }
 

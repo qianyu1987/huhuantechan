@@ -1,24 +1,39 @@
 // 云函数: adminMgr - 管理员功能
 const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
-
 const db = cloud.database()
 const _ = db.command
 const $ = db.command.aggregate
 
-// 验证超级管理员权限
-async function verifySuperAdmin(wxContext) {
-  const admins = await db.collection('system_config').where({
-    configKey: 'superAdmins'
-  }).get()
-  
-  if (admins.data.length > 0 && admins.data[0].configValue) {
-    const superAdmins = admins.data[0].configValue
-    if (superAdmins.includes(wxContext.OPENID)) {
-      return true
+// 简单的内存缓存
+const _cacheStore = new Map()
+const simpleCache = {
+  get: (key) => {
+    const item = _cacheStore.get(key)
+    if (!item) return null
+    if (Date.now() > item.expireAt) {
+      _cacheStore.delete(key)
+      return null
     }
+    return item.value
+  },
+  set: (key, value, ttlMs = 5 * 60 * 1000) => {
+    _cacheStore.set(key, { value, expireAt: Date.now() + ttlMs })
   }
-  return false
+}
+
+// 验证超级管理员权限（带缓存，减少 DB 查询）
+async function verifySuperAdmin(wxContext) {
+  const cacheKey = `superAdmins`
+  let superAdmins = simpleCache.get(cacheKey)
+  if (!superAdmins) {
+    const admins = await db.collection('system_config').where({
+      configKey: 'superAdmins'
+    }).get()
+    superAdmins = (admins.data.length > 0 && admins.data[0].configValue) ? admins.data[0].configValue : []
+    simpleCache.set(cacheKey, superAdmins, 10 * 60 * 1000) // 缓存10分钟
+  }
+  return superAdmins.includes(wxContext.OPENID)
 }
 
 exports.main = async (event, context) => {
@@ -64,7 +79,113 @@ exports.main = async (event, context) => {
         }
       }
 
-      // 获取用户列表（支持搜索）
+      // 看板详细统计数据（省份排行、品类、信用等级、订单漏斗）
+      case 'getDashboardData': {
+        const PROVINCE_EMOJI = {
+          '广东': '🍊', '四川': '🌶️', '新疆': '🍇', '云南': '🌸', '山东': '🥜',
+          '湖南': '🌶️', '浙江': '🍵', '福建': '🫖', '贵州': '🌿', '海南': '🥥',
+          '江苏': '🦐', '北京': '🦆', '上海': '🫒', '重庆': '🔥', '湖北': '🍜',
+          '陕西': '🫙', '甘肃': '🌵', '青海': '🏔️', '西藏': '🏔️', '内蒙古': '🥛',
+          '黑龙江': '🌾', '吉林': '🌾', '辽宁': '🦀', '河北': '🌾', '山西': '🍜',
+          '河南': '🌾', '安徽': '🦆', '江西': '🍵', '广西': '🍹', '宁夏': '🐑',
+          '新疆': '🍇', '海南': '🥥'
+        }
+        const CAT_EMOJI = {
+          '零食小吃': '🍿', '干货腊味': '🥩', '茶叶酒水': '🍵', '坚果炒货': '🥜',
+          '地方糕点': '🧁', '水果生鲜': '🍓', '酱料调味': '🫙', '其他': '📦'
+        }
+
+        try {
+          // 并行查询多个统计，降低延迟
+          const [
+            allProducts,
+            completedOrders,
+            allOrders,
+            allReviews
+          ] = await Promise.all([
+            // 产品列表（只取需要的字段：province, category, status）
+            db.collection('products')
+              .field({ province: true, category: true, status: true, value: true })
+              .limit(500)
+              .get(),
+            // 已完成订单数
+            db.collection('orders').where({ status: 'completed' }).count(),
+            // 全部订单（用于漏斗）
+            db.collection('orders')
+              .field({ status: true })
+              .limit(500)
+              .get(),
+            // 评价数
+            db.collection('reviews').count()
+          ])
+
+          // ── 省份排行（上架特产数量 TOP 10）──
+          const provinceMap = {}
+          allProducts.data.forEach(p => {
+            if (p.province && p.status !== 'removed' && p.status !== 'banned') {
+              provinceMap[p.province] = (provinceMap[p.province] || 0) + 1
+            }
+          })
+          const provinces = Object.entries(provinceMap)
+            .map(([name, count]) => ({
+              name,
+              count,
+              emoji: PROVINCE_EMOJI[name] || '📍'
+            }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 10)
+
+          // ── 品类分布 ──
+          const catMap = {}
+          allProducts.data.forEach(p => {
+            if (p.category && p.status === 'active') {
+              catMap[p.category] = (catMap[p.category] || 0) + 1
+            }
+          })
+          const categories = Object.entries(catMap)
+            .map(([name, count]) => ({
+              name,
+              count,
+              emoji: CAT_EMOJI[name] || '📦'
+            }))
+            .sort((a, b) => b.count - a.count)
+
+          // ── 订单漏斗（互换全流程） ──
+          const orderStatusCount = {}
+          allOrders.data.forEach(o => {
+            orderStatusCount[o.status] = (orderStatusCount[o.status] || 0) + 1
+          })
+          const totalOrders = allOrders.data.length
+          const funnel = [
+            { name: '发起互换',  value: totalOrders },
+            { name: '对方确认',  value: (orderStatusCount['confirmed'] || 0) + (orderStatusCount['shipped'] || 0) + (orderStatusCount['completed'] || 0) },
+            { name: '双方发货',  value: (orderStatusCount['shipped'] || 0) + (orderStatusCount['completed'] || 0) },
+            { name: '完成互换',  value: orderStatusCount['completed'] || 0 },
+          ].filter(f => f.value > 0)
+
+          return {
+            provinces,
+            categories,
+            funnel,
+            totalReviews: allReviews.total,
+            completedSwaps: completedOrders.total,
+            // 预留信用等级（需要用户集合聚合，这里给空数组）
+            credits: []
+          }
+        } catch (err) {
+          console.error('[getDashboardData] error:', err)
+          return {
+            provinces: [],
+            categories: [],
+            funnel: [],
+            totalReviews: 0,
+            completedSwaps: 0,
+            credits: []
+          }
+        }
+      }
+
+
       case 'getUsers': {
         const { page = 1, pageSize = 20, keyword = '', filter = '' } = event
         
@@ -117,10 +238,16 @@ exports.main = async (event, context) => {
         const list = res.data.map((user) => {
           return {
             ...user,
+            // 确保 nickname 相关字段正确传递
+            nickName: user.nickName || '',
+            openid: user.openid || user._openid || '',
+            _openid: user._openid || user.openid || '',
             points: user.points || 0,
             totalPoints: user.points || 0  // 简化处理，不单独维护累计积分
           }
         })
+
+        console.log('[adminMgr] getUsers 返回样例:', list[0] ? { _id: list[0]._id, nickName: list[0].nickName, openid: list[0].openid } : '无用户')
 
         // 积分统计（从 users 表统计）
         let stats = { totalUsers: 0, totalPoints: 0, avgPoints: 0 }
@@ -364,6 +491,73 @@ exports.main = async (event, context) => {
         })
 
         return { success: true, message: '用户信息已更新' }
+      }
+
+      // 删除用户（仅超级管理员）
+      case 'deleteUser': {
+        if (!isSuperAdmin) {
+          return { success: false, error: '权限不足，需要超级管理员权限' }
+        }
+
+        const { userId } = event
+        if (!userId) {
+          return { success: false, error: '缺少用户ID' }
+        }
+
+        console.log('[adminMgr] 删除用户:', userId)
+
+        // 查询用户，确认存在
+        let userRes = await db.collection('users').where({ _openid: userId }).get()
+        let user = userRes.data && userRes.data[0]
+        
+        // 如果用 _openid 找不到，尝试用 _id
+        if (!user) {
+          try {
+            userRes = await db.collection('users').doc(userId).get()
+            user = userRes.data
+          } catch (e) {
+            user = null
+          }
+        }
+
+        if (!user) {
+          return { success: false, error: '用户不存在' }
+        }
+
+        // 不能删除自己
+        if (user._openid === wxContext.OPENID) {
+          return { success: false, error: '不能删除自己' }
+        }
+
+        // 删除用户的特产
+        const userProducts = await db.collection('products').where({ _openid: user._openid }).get()
+        for (const product of userProducts.data) {
+          await db.collection('products').doc(product._id).remove()
+        }
+
+        // 删除用户的订单
+        const userOrders = await db.collection('orders').where(
+          _.or([
+            { initiatorOpenid: user._openid },
+            { receiverOpenid: user._openid }
+          ])
+        ).get()
+        for (const order of userOrders.data) {
+          await db.collection('orders').doc(order._id).remove()
+        }
+
+        // 删除用户的收藏
+        const userFavorites = await db.collection('favorites').where({ _openid: user._openid }).get()
+        for (const fav of userFavorites.data) {
+          await db.collection('favorites').doc(fav._id).remove()
+        }
+
+        // 删除用户记录
+        await db.collection('users').doc(user._id).remove()
+
+        console.log('[adminMgr] 删除用户成功:', userId, '删除了', userProducts.data.length, '个特产')
+
+        return { success: true, message: '用户已删除' }
       }
 
       // 编辑特产信息（仅超级管理员）
@@ -907,6 +1101,415 @@ exports.main = async (event, context) => {
           return { success: true, message: '已拒绝' }
         } catch (e) {
           return { success: false, error: e.message }
+        }
+      }
+
+      // =================== 代购管理 ===================
+
+      // 获取代购统计
+      case 'getDaigouStats': {
+        if (!isSuperAdmin) return { success: false, error: '无权限' }
+        try {
+          const total = await db.collection('daigouOrders').count()
+          const pendingShipment = await db.collection('daigouOrders').where({ status: 'pending_shipment' }).count()
+          const shipped = await db.collection('daigouOrders').where({ status: 'shipped' }).count()
+          const completed = await db.collection('daigouOrders').where({ status: 'completed' }).count()
+          const refunding = await db.collection('daigouOrders').where({ status: 'refunding' }).count()
+          const cancelled = await db.collection('daigouOrders').where({ status: 'cancelled' }).count()
+          // 计算总成交额（已完成订单）
+          const completedOrders = await db.collection('daigouOrders').where({ status: 'completed' }).field({ totalPrice: true }).get()
+          const totalAmount = (completedOrders.data || []).reduce((sum, o) => sum + (o.totalPrice || 0), 0)
+          return {
+            success: true,
+            stats: {
+              total: total.total,
+              pendingShipment: pendingShipment.total,
+              shipped: shipped.total,
+              completed: completed.total,
+              refunding: refunding.total,
+              cancelled: cancelled.total,
+              totalAmount
+            }
+          }
+        } catch (e) {
+          return { success: false, error: e.message }
+        }
+      }
+
+      // 获取代购订单列表
+      case 'getDaigouOrders': {
+        if (!isSuperAdmin) return { success: false, error: '无权限' }
+        try {
+          const { page = 1, pageSize = 20, filter = 'all', keyword = '' } = event
+          let query = db.collection('daigouOrders')
+          if (filter !== 'all') {
+            query = query.where({ status: filter })
+          }
+          const skip = (page - 1) * pageSize
+
+          // 同步查总量（用于分页）
+          let total = 0
+          try {
+            let countQuery = db.collection('daigouOrders')
+            if (filter !== 'all') countQuery = countQuery.where({ status: filter })
+            const countRes = await countQuery.count()
+            total = countRes.total || 0
+          } catch (e) { /* 集合可能不存在 */ }
+
+          const res = await query.orderBy('createTime', 'desc').skip(skip).limit(pageSize).get()
+
+          // 收集所有需要查询的 openid（买家 + 代购者）
+          const openids = new Set()
+          for (const o of (res.data || [])) {
+            if (o.buyerOpenid) openids.add(o.buyerOpenid)
+            if (o.sellerOpenid) openids.add(o.sellerOpenid)
+            if (o.publisherOpenid) openids.add(o.publisherOpenid)
+          }
+
+          // 批量查用户信息（昵称、头像、手机号）
+          const userMap = {}
+          if (openids.size > 0) {
+            try {
+              const usersRes = await db.collection('users')
+                .where({ _openid: _.in([...openids]) })
+                .field({ _openid: true, nickName: true, avatarUrl: true, phoneNumber: true, phone: true })
+                .get()
+              for (const u of (usersRes.data || [])) {
+                userMap[u._openid] = {
+                  nickName: u.nickName || '',
+                  avatarUrl: u.avatarUrl || '',
+                  phone: u.phoneNumber || u.phone || ''
+                }
+              }
+            } catch (e) { console.error('[getDaigouOrders] 查用户信息失败:', e.message) }
+          }
+
+          // 格式化数据，注入用户信息
+          const list = (res.data || []).map(o => {
+            const buyerInfo = userMap[o.buyerOpenid] || {}
+            const sellerOpenid = o.sellerOpenid || o.publisherOpenid || ''
+            const sellerInfo = userMap[sellerOpenid] || {}
+            return {
+              ...o,
+              createTimeStr: o.createTime ? new Date(o.createTime).toLocaleString('zh-CN') : '',
+              // 买家信息
+              buyerNickName: buyerInfo.nickName || o.buyerNickName || '',
+              buyerAvatarUrl: buyerInfo.avatarUrl || o.buyerAvatarUrl || '',
+              buyerPhone: buyerInfo.phone || '',
+              // 代购者（卖家）信息
+              sellerNickName: sellerInfo.nickName || o.sellerNickName || '',
+              sellerAvatarUrl: sellerInfo.avatarUrl || o.sellerAvatarUrl || '',
+              sellerPhone: sellerInfo.phone || '',
+              // 单价字段归一化（daigou.price 或 unitPrice）
+              unitPrice: o.unitPrice || (o.daigou && o.daigou.price) || o.price || o.totalPrice || 0
+            }
+          })
+          return { success: true, list, total, page, pageSize }
+        } catch (e) {
+          return { success: false, error: e.message }
+        }
+      }
+
+      // 强制取消代购订单
+      case 'forceCancelDaigouOrder': {
+        if (!isSuperAdmin) return { success: false, error: '无权限' }
+        try {
+          const { orderId, reason = '管理员强制取消' } = event
+          if (!orderId) return { success: false, error: '缺少订单ID' }
+          const orderRes = await db.collection('daigouOrders').doc(orderId).get()
+          const order = orderRes.data
+          if (!order) return { success: false, error: '订单不存在' }
+          if (order.status === 'cancelled' || order.status === 'completed') {
+            return { success: false, error: '订单状态不允许取消' }
+          }
+          await db.collection('daigouOrders').doc(orderId).update({
+            data: {
+              status: 'cancelled',
+              cancelReason: reason,
+              cancelTime: db.serverDate(),
+              cancelBy: 'admin'
+            }
+          })
+          // 恢复库存
+          if (order.productId && order.quantity) {
+            await db.collection('products').doc(order.productId).update({
+              data: { 'daigou.stock': _.inc(order.quantity || 1) }
+            })
+          }
+          return { success: true }
+        } catch (e) {
+          return { success: false, error: e.message }
+        }
+      }
+
+      // 处理退款
+      case 'handleDaigouRefund': {
+        if (!isSuperAdmin) return { success: false, error: '无权限' }
+        try {
+          const { orderId, approve = true, remark = '' } = event
+          if (!orderId) return { success: false, error: '缺少订单ID' }
+          await db.collection('daigouOrders').doc(orderId).update({
+            data: {
+              status: approve ? 'refunded' : 'completed',
+              refundStatus: approve ? 'approved' : 'rejected',
+              refundRemark: remark,
+              refundHandleTime: db.serverDate(),
+              refundHandleBy: 'admin'
+            }
+          })
+          return { success: true }
+        } catch (e) {
+          return { success: false, error: e.message }
+        }
+      }
+
+      // 删除代购订单（仅已取消/已完成）
+      case 'deleteDaigouOrder': {
+        if (!isSuperAdmin) return { success: false, error: '无权限' }
+        try {
+          const { orderId } = event
+          if (!orderId) return { success: false, error: '缺少订单ID' }
+          const orderRes = await db.collection('daigouOrders').doc(orderId).get()
+          const order = orderRes.data
+          if (!order) return { success: false, error: '订单不存在' }
+          if (order.status !== 'cancelled' && order.status !== 'completed' && order.status !== 'refunded') {
+            return { success: false, error: '只能删除已取消/已完成/已退款的订单' }
+          }
+          await db.collection('daigouOrders').doc(orderId).remove()
+          return { success: true }
+        } catch (e) {
+          return { success: false, error: e.message }
+        }
+      }
+
+      // 获取实名审核列表
+      case 'getDaigouVerifyList': {
+        if (!isSuperAdmin) return { success: false, error: '无权限' }
+        try {
+          const { page = 1, pageSize = 20, filter = 'pending' } = event
+          const skip = (page - 1) * pageSize
+
+          // ── 直接查 users 集合（管理员云函数有全量读权限，避免 daigouVerify 集合简易权限限制）──
+          // 注：daigouVerify 独立集合由用户端写入，_openid 为用户 openid，
+          //     简易权限"仅创建者可读写"会导致管理员云函数只能读到自己那条，
+          //     改为以 users 集合为主数据源（更完整，且权限正常）。
+          let list = []
+          let stats = { pending: 0, approved: 0, rejected: 0 }
+
+          // 1. 统计（全量，不分页）
+          const allUsersWithVerify = await db.collection('users')
+            .where({ daigouVerify: _.exists(true) })
+            .field({ _openid: true, 'daigouVerify.status': true })
+            .limit(500)
+            .get()
+
+          let p = 0, a = 0, r = 0
+          for (const u of (allUsersWithVerify.data || [])) {
+            if (!u.daigouVerify || !u.daigouVerify.status) continue
+            if (u.daigouVerify.status === 'pending') p++
+            else if (u.daigouVerify.status === 'approved') a++
+            else if (u.daigouVerify.status === 'rejected') r++
+          }
+          stats = { pending: p, approved: a, rejected: r }
+
+          // 2. 分页查询（按 filter 过滤）
+          // 微信云数据库不支持对嵌套对象字段做 where+orderBy 分页，
+          // 先拉全量（上限500）再在内存中过滤分页（实名审核用户量小，可接受）
+          const allRes = await db.collection('users')
+            .where({ daigouVerify: _.exists(true) })
+            .field({
+              _openid: true, openid: true, nickName: true, avatarUrl: true,
+              phoneNumber: true, phone: true, daigouVerify: true, updateTime: true
+            })
+            .limit(500)
+            .get()
+
+          let filtered = (allRes.data || [])
+            .filter(u => u.daigouVerify && u.daigouVerify.status)
+            .filter(u => filter === 'all' || u.daigouVerify.status === filter)
+
+          // 按提交时间降序排列
+          filtered.sort((a, b) => {
+            const ta = a.daigouVerify.submitTime
+            const tb = b.daigouVerify.submitTime
+            const getTs = t => {
+              if (!t) return 0
+              if (typeof t === 'object' && t.$date) return t.$date
+              return typeof t === 'number' ? t : new Date(t).getTime()
+            }
+            return getTs(tb) - getTs(ta)
+          })
+
+          // 内存分页
+          const paged = filtered.slice(skip, skip + pageSize)
+
+          list = paged.map(u => {
+            const v = u.daigouVerify
+            const submitTime = v.submitTime
+            let timeStr = ''
+            if (submitTime) {
+              const t = typeof submitTime === 'object' && submitTime.$date ? submitTime.$date : submitTime
+              try { timeStr = new Date(t).toLocaleString('zh-CN') } catch (e) {}
+            }
+            return {
+              _id: u._id,
+              userOpenid: u._openid || u.openid,
+              nickName: u.nickName || '',
+              avatarUrl: u.avatarUrl || '',
+              phone: u.phoneNumber || u.phone || '',
+              status: v.status || 'pending',
+              realName: v.realName || '',
+              idCardNoMasked: v.idCardNoMasked || '',
+              idCardFront: v.idCardFront || '',
+              idCardBack: v.idCardBack || '',
+              holdIdCardPhoto: v.holdIdCardPhoto || '',
+              reviewNote: v.reviewNote || '',
+              submitTime: v.submitTime,
+              createTimeStr: timeStr,
+              _source: 'users'
+            }
+          })
+
+          return { success: true, list, stats }
+        } catch (e) {
+          console.error('[getDaigouVerifyList]', e)
+          return { success: false, error: e.message }
+        }
+      }
+
+      // 通过实名审核
+      case 'approveDaigouVerify': {
+        if (!isSuperAdmin) return { success: false, error: '无权限' }
+        try {
+          // 兼容 userOpenid（前端传）和 userId（旧版本传）
+          const { verifyId, userOpenid, userId } = event
+          const targetOpenid = userOpenid || userId
+          if (!verifyId) return { success: false, error: '缺少审核ID' }
+
+          // 先尝试更新 daigouVerify 独立集合
+          try {
+            await db.collection('daigouVerify').doc(verifyId).update({
+              data: { status: 'approved', handleTime: db.serverDate(), handleBy: 'admin' }
+            })
+          } catch (e) {
+            // 集合中无此记录（数据来源于 users 集合），忽略
+            console.warn('[approveDaigouVerify] daigouVerify集合更新失败（可能数据在users集合）:', e.message)
+          }
+
+          // 同步更新 users 集合中的认证状态
+          if (targetOpenid) {
+            await db.collection('users').where({ _openid: targetOpenid }).update({
+              data: {
+                isDaigouVerified: true,
+                daigouVerifyTime: db.serverDate(),
+                'daigouVerify.status': 'approved',
+                'daigouVerify.reviewTime': db.serverDate(),
+                'daigouVerify.reviewBy': 'admin'
+              }
+            })
+          } else {
+            // 如果没有 openid，尝试通过 user._id 查找
+            try {
+              const userRes = await db.collection('users').doc(verifyId).get()
+              if (userRes.data) {
+                await db.collection('users').doc(verifyId).update({
+                  data: {
+                    isDaigouVerified: true,
+                    daigouVerifyTime: db.serverDate(),
+                    'daigouVerify.status': 'approved',
+                    'daigouVerify.reviewTime': db.serverDate(),
+                    'daigouVerify.reviewBy': 'admin'
+                  }
+                })
+              }
+            } catch (e2) {
+              console.warn('[approveDaigouVerify] 通过_id更新users失败:', e2.message)
+            }
+          }
+          return { success: true }
+        } catch (e) {
+          return { success: false, error: e.message }
+        }
+      }
+
+      // 拒绝实名审核
+      case 'rejectDaigouVerify': {
+        if (!isSuperAdmin) return { success: false, error: '无权限' }
+        try {
+          // 兼容 userOpenid（前端传）和 userId（旧版本传）
+          const { verifyId, userOpenid, userId, reason = '不符合要求' } = event
+          const targetOpenid = userOpenid || userId
+          if (!verifyId) return { success: false, error: '缺少审核ID' }
+
+          // 先尝试更新 daigouVerify 独立集合
+          try {
+            await db.collection('daigouVerify').doc(verifyId).update({
+              data: { status: 'rejected', rejectReason: reason, handleTime: db.serverDate(), handleBy: 'admin' }
+            })
+          } catch (e) {
+            // 集合中无此记录（数据来源于 users 集合），忽略
+            console.warn('[rejectDaigouVerify] daigouVerify集合更新失败（可能数据在users集合）:', e.message)
+          }
+
+          // 同步更新 users 集合中的认证状态
+          if (targetOpenid) {
+            await db.collection('users').where({ _openid: targetOpenid }).update({
+              data: {
+                isDaigouVerified: false,
+                'daigouVerify.status': 'rejected',
+                'daigouVerify.reviewNote': reason,
+                'daigouVerify.reviewTime': db.serverDate(),
+                'daigouVerify.reviewBy': 'admin'
+              }
+            })
+          } else {
+            // 如果没有 openid，尝试通过 user._id 查找
+            try {
+              const userRes = await db.collection('users').doc(verifyId).get()
+              if (userRes.data) {
+                await db.collection('users').doc(verifyId).update({
+                  data: {
+                    isDaigouVerified: false,
+                    'daigouVerify.status': 'rejected',
+                    'daigouVerify.reviewNote': reason,
+                    'daigouVerify.reviewTime': db.serverDate(),
+                    'daigouVerify.reviewBy': 'admin'
+                  }
+                })
+              }
+            } catch (e2) {
+              console.warn('[rejectDaigouVerify] 通过_id更新users失败:', e2.message)
+            }
+          }
+          return { success: true }
+        } catch (e) {
+          return { success: false, error: e.message }
+        }
+      }
+
+      // 初始化集合检测（管理员专用）
+      case 'initCollections': {
+        if (!isSuperAdmin) return { success: false, error: '无权限' }
+        const collections = ['users', 'products', 'swapOrders', 'daigouOrders', 'reviews', 'system_config', 'share_configs']
+        const result = {}
+        for (const col of collections) {
+          try {
+            await db.collection(col).count()
+            result[col] = 'ok'
+          } catch (e) {
+            if (e.errCode === -502005 || (e.message && e.message.includes('not exist'))) {
+              result[col] = 'NOT_EXIST'
+            } else {
+              result[col] = `error:${e.message}`
+            }
+          }
+        }
+        const missing = Object.keys(result).filter(k => result[k] === 'NOT_EXIST')
+        return {
+          success: true,
+          collections: result,
+          missing,
+          tip: missing.length > 0 ? `请在微信云开发控制台手动创建以下集合：${missing.join(', ')}` : '所有集合正常'
         }
       }
 

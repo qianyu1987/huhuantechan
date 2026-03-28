@@ -193,8 +193,8 @@ exports.main = async (event, context) => {
         const addRes = await db.collection('users').add({
           data: {
             // 多端统一标识
+            _openid: openid,  // 手动存储 openid
             unionid: unionid || '', // 存储 UNIONID 用于跨平台识别
-            // 不需要手动存储 openid，云数据库会自动添加 _openid
             nickName: '',
             avatarUrl: '',
             province: '',
@@ -582,6 +582,8 @@ exports.main = async (event, context) => {
 
       if (!user) return { success: false, message: '用户不存在' }
 
+      console.log('[publicProfile] 用户数据:', { nickName: user.nickName, openid: user.openid, _openid: user._openid })
+
       // 使用正确的 openid 查询产品（优先用 _openid）
       const actualOpenid = user._openid || user.openid
 
@@ -655,12 +657,25 @@ exports.main = async (event, context) => {
       // 确保 addresses 集合存在
       await ensureAddressesCollection()
       
-      const addressRes = await db.collection('addresses').where({ _openid: openid }).get()
+      console.log('[getAddressList] 查询地址, openid:', openid)
+      
+      // 尝试多种方式查询地址
+      let addressRes = await db.collection('addresses').where({ _openid: openid }).get()
+      
+      // 如果没找到，尝试用 openid 字段查询
+      if (!addressRes.data || addressRes.data.length === 0) {
+        console.log('[getAddressList] _openid 未找到，尝试 openid 字段')
+        addressRes = await db.collection('addresses').where({ openid: openid }).get()
+      }
+      
+      console.log('[getAddressList] 找到地址数量:', addressRes.data ? addressRes.data.length : 0)
+      
       return {
         success: true,
         addresses: addressRes.data || []
       }
     } catch (e) {
+      console.error('[getAddressList] 错误:', e)
       return { success: false, error: e.message }
     }
   }
@@ -709,7 +724,8 @@ exports.main = async (event, context) => {
         // 新增地址
         await db.collection('addresses').add({
           data: {
-            openid,
+            _openid: openid,  // 云存储自动添加，但显式保存确保兼容
+            openid: openid,   // 备用字段
             contactName: address.contactName,
             contactPhone: address.contactPhone,
             province: address.province || '',
@@ -724,6 +740,7 @@ exports.main = async (event, context) => {
       }
       return { success: true }
     } catch (e) {
+      console.error('[saveAddress] 错误:', e)
       return { success: false, error: e.message }
     }
   }
@@ -750,13 +767,20 @@ exports.main = async (event, context) => {
         return { success: false, message: '地址ID不能为空' }
       }
       
-      // 取消其他默认地址
+      // 取消其他默认地址（尝试两种方式）
       await db.collection('addresses').where({
         _openid: openid,
         isDefault: true
       }).update({
         data: { isDefault: false }
-      })
+      }).catch(() => {})
+      
+      await db.collection('addresses').where({
+        openid: openid,
+        isDefault: true
+      }).update({
+        data: { isDefault: false }
+      }).catch(() => {})
       
       // 设置当前为默认
       await db.collection('addresses').doc(addressId).update({
@@ -782,12 +806,18 @@ exports.main = async (event, context) => {
         }
       } else {
         // 获取默认地址，如果没有默认则返回第一个
-        const defaultRes = await db.collection('addresses').where({ _openid: openid, isDefault: true }).get()
+        let defaultRes = await db.collection('addresses').where({ _openid: openid, isDefault: true }).get()
+        if ((!defaultRes.data || defaultRes.data.length === 0)) {
+          defaultRes = await db.collection('addresses').where({ openid: openid, isDefault: true }).get()
+        }
         if (defaultRes.data && defaultRes.data.length > 0) {
           return { success: true, address: defaultRes.data[0] }
         }
         // 没有默认地址，返回第一个
-        const listRes = await db.collection('addresses').where({ _openid: openid }).get()
+        let listRes = await db.collection('addresses').where({ _openid: openid }).get()
+        if (!listRes.data || listRes.data.length === 0) {
+          listRes = await db.collection('addresses').where({ openid: openid }).get()
+        }
         return {
           success: true,
           address: listRes.data && listRes.data[0] ? listRes.data[0] : null

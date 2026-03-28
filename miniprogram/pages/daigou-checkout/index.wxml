@@ -1,0 +1,202 @@
+<!-- pages/daigou-checkout/index.wxml - 下单页 iOS 26 毛玻璃 + 积分抵扣 -->
+<view class="page-root">
+
+  <!-- 背景光晕 -->
+  <view class="bg-blob blob-a"></view>
+  <view class="bg-blob blob-b"></view>
+
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="loading-wrap">
+    <view class="spinner-ring"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <block wx:else>
+
+    <!-- ══ 收货地址 ══ -->
+    <view class="section-card glass addr-card" bindtap="chooseAddress" hover-class="card-hover" hover-stay-time="150">
+      <view wx:if="{{address}}" class="addr-content">
+        <view class="addr-icon-wrap">
+          <text class="addr-icon">📍</text>
+        </view>
+        <view class="addr-text">
+          <view class="addr-top">
+            <text class="addr-name">{{address.name || address.contactName || address.receiverName || ''}}</text>
+            <text class="addr-phone">{{address.phone || address.contactPhone || address.receiverPhone || ''}}</text>
+            <view wx:if="{{address.isDefault}}" class="default-chip">默认</view>
+          </view>
+          <view class="addr-detail">{{address.province}} {{address.city}} {{address.district}} {{address.detail || address.detailAddress || address.address || ''}}</view>
+        </view>
+        <text class="addr-arrow">›</text>
+      </view>
+      <view wx:else class="addr-empty">
+        <text class="addr-empty-icon">📍</text>
+        <text class="addr-empty-text">点击添加收货地址</text>
+        <text class="addr-arrow grey">›</text>
+      </view>
+    </view>
+
+    <!-- ══ 商品信息 ══ -->
+    <view class="section-card glass product-card" wx:if="{{product}}">
+      <view class="section-hd">
+        <text class="section-icon">🛍</text>
+        <text class="section-label">商品</text>
+      </view>
+      <view class="product-row">
+        <view class="product-img-wrap">
+          <image
+            class="product-img"
+            src="{{productCover || '/images/default-product.png'}}"
+            mode="aspectFill"
+            binderror="onImgError"
+            lazy-load="{{true}}"
+          />
+          <!-- 代购标签 -->
+          <view class="daigou-badge">代购</view>
+        </view>
+        <view class="product-meta">
+          <text class="product-name">{{product.name || '神秘特产'}}</text>
+          <text class="product-origin">📍 {{productOrigin}}</text>
+          <view class="product-price-row">
+            <text class="product-price">¥{{product.daigou.price}}</text>
+            <text class="product-original" wx:if="{{product.daigou.originalPrice > product.daigou.price}}">¥{{product.daigou.originalPrice}}</text>
+          </view>
+          <!-- 库存 -->
+          <text class="product-stock">库存 {{product.daigou.stock}} 件</text>
+        </view>
+        <view class="product-qty">× 1</view>
+      </view>
+    </view>
+
+    <!-- ══ 备注 ══ -->
+    <view class="section-card glass remark-card">
+      <view class="section-hd">
+        <text class="section-icon">✏️</text>
+        <text class="section-label">备注</text>
+      </view>
+      <input
+        class="remark-input"
+        placeholder="选填：告诉卖家你的特殊需求"
+        placeholder-class="input-ph"
+        value="{{remark}}"
+        bindinput="onRemarkInput"
+        maxlength="100"
+      />
+    </view>
+
+    <!-- ══ 积分抵扣 ══ -->
+    <view class="section-card glass points-card" wx:if="{{pointsDeductible > 0}}">
+      <view class="points-row" bindtap="togglePoints">
+        <view class="points-left">
+          <text class="points-coin-icon">🪙</text>
+          <view class="points-info">
+            <text class="points-title">积分抵扣</text>
+            <text class="points-sub">可用 {{userPoints}} 积分，本单最多抵 {{pointsDeductible}} 分</text>
+          </view>
+        </view>
+        <view class="points-right">
+          <text class="points-amount" wx:if="{{usePoints}}">-¥{{pointsDeductAmount}}</text>
+          <view class="toggle-switch {{usePoints ? 'toggle-on' : ''}}">
+            <view class="toggle-thumb"></view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 无积分时的提示 -->
+    <view wx:elif="{{userPoints > 0 || userPoints === 0}}" class="no-points-tip">
+      <text class="npt-icon">🪙</text>
+      <text class="npt-text">{{userPoints > 0 ? '当前积分不满足本单抵扣条件' : '暂无积分，完成交易可获得积分奖励'}}</text>
+    </view>
+
+    <!-- ══ 费用明细 ══ -->
+    <view class="section-card glass fee-card" wx:if="{{product}}">
+      <view class="fee-row">
+        <text class="fee-label">商品金额</text>
+        <text class="fee-val">¥{{product.daigou.price}}</text>
+      </view>
+      <view class="fee-row">
+        <text class="fee-label">运费</text>
+        <text class="fee-val free-tag">免运费</text>
+      </view>
+      <view wx:if="{{usePoints && pointsDeductAmount > 0}}" class="fee-row">
+        <text class="fee-label">积分抵扣</text>
+        <text class="fee-val deduct-val">-¥{{pointsDeductAmount}}</text>
+      </view>
+      <view class="fee-divider"></view>
+      <view class="fee-row total-row">
+        <text class="fee-total-label">实付金额</text>
+        <view class="total-price-wrap">
+          <text class="total-symbol">¥</text>
+          <text class="total-num">{{actualPrice}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 完成后积分奖励说明 -->
+    <view class="reward-hint-card glass">
+      <text class="rh-icon">🎁</text>
+      <text class="rh-text">确认收货后将奖励 <text class="rh-num">{{estimatedReward}}</text> 积分</text>
+    </view>
+
+    <!-- ══ 安全免责提示（重要） ══ -->
+    <view class="safety-alert-card">
+      <view class="safety-alert-hd">
+        <text class="safety-alert-icon">⚠️</text>
+        <text class="safety-alert-title">交易安全提示</text>
+      </view>
+      <view class="safety-alert-divider"></view>
+      <view class="safety-alert-body">
+        <view class="safety-item">
+          <text class="safety-dot">•</text>
+          <text class="safety-text">本平台<text class="safety-em">不收取任何费用</text>，也不经手买卖双方资金</text>
+        </view>
+        <view class="safety-item">
+          <text class="safety-dot">•</text>
+          <text class="safety-text">付款请通过<text class="safety-em">微信直接转账</text>给卖家，勿通过其他渠道</text>
+        </view>
+        <view class="safety-item">
+          <text class="safety-dot">•</text>
+          <text class="safety-text">收货前请仔细验货，货物损坏或纠纷<text class="safety-em">由买卖双方自行协商解决</text></text>
+        </view>
+        <view class="safety-item">
+          <text class="safety-dot">•</text>
+          <text class="safety-text">平台对交易过程中的<text class="safety-em">货物损失或资金纠纷不承担责任</text></text>
+        </view>
+      </view>
+      <view class="safety-alert-footer">
+        <text class="safety-footer-text">下单即代表您已阅读并同意以上风险提示</text>
+      </view>
+    </view>
+
+    <!-- ══ 付款说明 ══ -->
+    <view class="checkout-tips">
+      <text class="tips-icon">💡</text>
+      <text>下单后请通过微信直接向卖家转账，卖家收款后48小时内发货</text>
+    </view>
+
+    <!-- 底部安全占位 -->
+    <view style="height:200rpx"></view>
+
+    <!-- ══ 底部提交栏 ══ -->
+    <view class="bottom-bar glass">
+      <view class="bottom-price-wrap">
+        <text class="bottom-label">实付</text>
+        <view class="bottom-price">
+          <text class="bottom-sym">¥</text>
+          <text class="bottom-num">{{actualPrice}}</text>
+        </view>
+        <text wx:if="{{usePoints}}" class="bottom-points-tag">已用{{pointsDeductible}}积分</text>
+      </view>
+      <button
+        class="submit-btn"
+        bindtap="submitOrder"
+        loading="{{submitting}}"
+        disabled="{{submitting || !address}}"
+        hover-class="submit-hover"
+      >{{submitting ? '提交中...' : '提交订单'}}</button>
+    </view>
+
+  </block>
+
+</view>

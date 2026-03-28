@@ -1,0 +1,9 @@
+{
+  "name": "fixUserOpenids",
+  "version": "1.0.0",
+  "description": "修复用户表缺少 _openid 字段的问题",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

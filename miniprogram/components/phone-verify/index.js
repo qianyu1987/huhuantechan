@@ -24,8 +24,11 @@ Component({
 
   lifetimes: {
     attached() {
-      this.checkLoginStatus()
       this.initData()
+    },
+    show() {
+      // 每次显示时重新检查登录状态
+      this.checkLoginStatus()
     }
   },
 
@@ -41,10 +44,18 @@ Component({
     checkLoginStatus() {
       const app = getApp()
       const openid = app.globalData.openid
-      console.log('[phone-verify] 登录状态检查, openid:', openid)
+      const userInfo = app.globalData.userInfo
+      // 判断登录：有 openid 且 userInfo 有内容（昵称或头像）
+      const hasLogin = !!(openid && (userInfo && (userInfo.nickName || userInfo.avatarUrl)))
+      console.log('[phone-verify] 登录状态检查:', { 
+        openid, 
+        nickName: userInfo?.nickName, 
+        avatarUrl: userInfo?.avatarUrl,
+        hasLogin 
+      })
       
       this.setData({
-        isLoggedIn: !!openid
+        isLoggedIn: hasLogin
       })
     },
 
@@ -94,8 +105,13 @@ Component({
       
       // 再次检查登录状态（防止用户未登录就点击）
       const app = getApp()
-      if (!app.globalData.openid) {
-        toast('请先完成微信登录')
+      const openid = app.globalData.openid
+      const userInfo = app.globalData.userInfo
+      const hasLogin = !!(openid && (userInfo && (userInfo.nickName || userInfo.avatarUrl)))
+      
+      if (!hasLogin) {
+        console.log('[phone-verify] 未登录, openid:', openid, 'userInfo:', userInfo)
+        toast('请先点击头像和昵称完成登录')
         this.setData({ isLoggedIn: false })
         return
       }

@@ -41,7 +41,7 @@
         </block>
         <!-- 编辑资料入口 -->
         <view class="edit-btn" bindtap="editProfile">
-          <view class="icon-edit-w"></view>
+          <text class="edit-icon">✏️</text>
         </view>
       </view>
 
@@ -78,8 +78,9 @@
   <scroll-view scroll-y class="mine-scroll">
 
     <!-- 省份集章 - 折叠设计 -->
-    <view class="section card mx-md mt-md">
+    <view class="section card glass-card mx-md mt-md">
       <view class="section-hd" bindtap="toggleBadgeExpand">
+        <text class="section-emoji">🏅</text>
         <text class="section-title">省份集章</text>
         <view class="badge-header-right">
           <text class="section-sub-text">{{badgeCount}}/34</text>
@@ -101,8 +102,9 @@
     </view>
 
     <!-- 手机号验证 -->
-    <view class="section card mx-md mt-md">
+    <view class="section card glass-card mx-md mt-md">
       <view class="section-hd">
+        <text class="section-emoji">🔐</text>
         <text class="section-title">账号安全</text>
       </view>
       <phone-verify 
@@ -114,8 +116,9 @@
     </view>
 
     <!-- 我的特产 -->
-    <view wx:if="{{featureFlags.tab_publish !== false}}" class="section card mx-md mt-md">
+    <view wx:if="{{featureFlags.tab_publish !== false}}" class="section card glass-card mx-md mt-md">
       <view class="section-hd" bindtap="goToMyProducts">
+        <text class="section-emoji">🎁</text>
         <text class="section-title">我的特产</text>
         <view class="more-btn">
           <text class="text-light text-sm">查看全部</text>
@@ -147,71 +150,84 @@
     </view>
 
     <!-- 快捷功能 - 宫格布局 -->
-    <view class="section card mx-md mt-md">
+    <view class="section card glass-card mx-md mt-md">
       <view class="section-hd">
+        <text class="section-emoji">⚡</text>
         <text class="section-title">快捷服务</text>
       </view>
       <view class="quick-grid">
         <view wx:if="{{featureFlags.feature_swap !== false}}" class="quick-grid-item" bindtap="goToAddress">
           <view class="quick-grid-icon qg-teal">
-            <view class="qi qi-pin"></view>
+            <text class="icon-emoji">📍</text>
           </view>
           <text class="quick-grid-label">收货地址</text>
         </view>
         <view class="quick-grid-item" bindtap="goToFavorites">
           <view class="quick-grid-icon qg-pink">
-            <view class="qi qi-heart"></view>
+            <text class="icon-emoji">❤️</text>
           </view>
           <text class="quick-grid-label">我的收藏</text>
         </view>
         <view wx:if="{{featureFlags.feature_mystery !== false}}" class="quick-grid-item" bindtap="goToMystery">
           <view class="quick-grid-icon qg-purple">
-            <view class="qi qi-mystery"></view>
+            <text class="icon-emoji">🎁</text>
           </view>
           <text class="quick-grid-label">神秘特产</text>
         </view>
         <view class="quick-grid-item" bindtap="goToInvite">
           <view class="quick-grid-icon qg-orange">
-            <view class="qi qi-people"></view>
+            <text class="icon-emoji">👥</text>
           </view>
           <text class="quick-grid-label">邀请好友</text>
         </view>
         <view wx:if="{{featureFlags.feature_swap !== false}}" class="quick-grid-item" bindtap="goToOrders">
           <view class="quick-grid-icon qg-blue">
-            <view class="qi qi-swap"></view>
+            <text class="icon-emoji">🔄</text>
           </view>
           <text class="quick-grid-label">我的记录</text>
         </view>
         <view wx:if="{{featureFlags.feature_swap !== false}}" class="quick-grid-item" bindtap="goToReview">
           <view class="quick-grid-icon qg-green">
-            <view class="qi qi-comment"></view>
+            <text class="icon-emoji">⭐</text>
           </view>
           <text class="quick-grid-label">我的评价</text>
+        </view>
+        <!-- 代购订单入口 -->
+        <view class="quick-grid-item" bindtap="goToDaigouOrders">
+          <view class="quick-grid-icon qg-blue">
+            <text class="icon-emoji">🛒</text>
+          </view>
+          <text class="quick-grid-label">代购订单</text>
         </view>
       </view>
     </view>
 
     <!-- 功能菜单 -->
-    <view class="section card mx-md mt-md">
+    <view class="section card glass-card mx-md mt-md">
       <view class="section-hd">
+        <text class="section-emoji">📋</text>
         <text class="section-title">更多服务</text>
       </view>
       <view class="menu-pills">
         <view class="menu-pill" bindtap="goToCredit">
-          <view class="pill-icon pill-ic-credit"></view>
+          <text class="pill-emoji">💎</text>
           <text class="pill-label">信用中心</text>
         </view>
         <view class="menu-pill" bindtap="showService">
-          <view class="pill-icon pill-ic-ai"></view>
+          <text class="pill-emoji">🤖</text>
           <text class="pill-label">智能客服</text>
         </view>
         <view class="menu-pill" bindtap="goToSettings">
-          <view class="pill-icon pill-ic-gear"></view>
+          <text class="pill-emoji">⚙️</text>
           <text class="pill-label">系统设置</text>
         </view>
         <view class="menu-pill" bindtap="goToAbout">
-          <view class="pill-icon pill-ic-about"></view>
+          <text class="pill-emoji">ℹ️</text>
           <text class="pill-label">关于我们</text>
+        </view>
+        <view class="menu-pill" bindtap="goDaigouVerify">
+          <text class="pill-emoji">✅</text>
+          <text class="pill-label">代购认证</text>
         </view>
       </view>
     </view>

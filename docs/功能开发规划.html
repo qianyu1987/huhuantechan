@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>功能开发规划 · 特产互换小程序</title>
+  <style>
+    :root {
+      --primary: #667eea;
+      --primary-light: #818CF8;
+      --primary-ultra: #EEF2FF;
+      --accent: #764ba2;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --danger: #EF4444;
+      --bg: #F7F8FC;
+      --card: #FFFFFF;
+      --text: #1A1D2E;
+      --text-sub: #6B7280;
+      --border: #E8EAF0;
+      --radius: 16px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.07);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 15px;
+    }
+    .hero {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 60px 40px 80px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.06'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+    .hero-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.35);
+      color: #fff;
+      font-size: 12px;
+      padding: 5px 14px;
+      border-radius: 20px;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+    }
+    .hero h1 { font-size: 38px; font-weight: 800; color: #fff; letter-spacing: -0.5px; margin-bottom: 12px; }
+    .hero h1 span { opacity: 0.85; font-size: 22px; display: block; font-weight: 500; margin-top: 6px; }
+    .hero p { color: rgba(255,255,255,0.85); font-size: 16px; max-width: 600px; margin: 0 auto 28px; }
+    .hero-meta { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; }
+    .hero-meta span { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #fff; padding: 6px 16px; border-radius: 20px; font-size: 13px; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px 80px; }
+    .summary-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: -40px; margin-bottom: 40px; }
+    .summary-card { background: var(--card); border-radius: var(--radius); padding: 28px 20px; text-align: center; box-shadow: var(--shadow); border: 1px solid var(--border); }
+    .summary-card .number { font-size: 36px; font-weight: 800; background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .summary-card .label { color: var(--text-sub); font-size: 13px; margin-top: 4px; }
+    .section { margin-top: 48px; }
+    .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .section-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+    .section-header h2 { font-size: 22px; font-weight: 700; color: var(--text); }
+    .section-header p { font-size: 13px; color: var(--text-sub); margin-top: 2px; }
+    .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); overflow: hidden; margin-bottom: 20px; }
+    .card-body { padding: 24px 28px; }
+    .card-title { font-size: 15px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+    .priority-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .badge-p0 { background: #FEE2E2; color: #DC2626; }
+    .badge-p1 { background: #FEF3C7; color: #D97706; }
+    .badge-p2 { background: #DBEAFE; color: #2563EB; }
+    .badge-p3 { background: #EDE9FE; color: #7C3AED; }
+    .feature-desc { color: var(--text-sub); font-size: 13px; margin-bottom: 12px; line-height: 1.6; }
+    .task-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .task-table th { background: var(--primary-ultra); color: var(--primary); font-size: 11px; font-weight: 700; padding: 10px 14px; text-align: left; }
+    .task-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .task-table tr:last-child td { border-bottom: none; }
+    .task-table tr:hover td { background: #FAFBFF; }
+    .time-badge { background: var(--primary-ultra); color: var(--primary); padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; display: inline-block; }
+    .method-tag { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; font-family: monospace; }
+    .tag-cf { background: #EEF2FF; color: #4F46E5; }
+    .schema-block { background: #0F1724; border-radius: 12px; padding: 18px 22px; overflow-x: auto; margin: 12px 0; }
+    .schema-block pre { color: #E2E8F0; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; }
+    .kw { color: #93C5FD; }
+    .str { color: #86EFAC; }
+    .cm { color: #6B7280; font-style: italic; }
+    .typ { color: #FDE68A; }
+    .credit-plus { color: #16A34A; font-weight: 600; }
+    .credit-minus { color: #DC2626; font-weight: 600; }
+    .notice { border-radius: 10px; padding: 14px 18px; font-size: 13px; display: flex; gap: 10px; align-items: flex-start; margin: 12px 0; }
+    .notice.info { background: #EFF6FF; border-left: 3px solid #3B82F6; color: #1E40AF; }
+    .notice.warning { background: #FFFBEB; border-left: 3px solid #F59E0B; color: #92400E; }
+    .notice.danger { background: #FEF2F2; border-left: 3px solid #EF4444; color: #991B1B; }
+    .notice.success { background: #F0FDF4; border-left: 3px solid #22C55E; color: #14532D; }
+    .page-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .page-item { display: flex; gap: 14px; align-items: flex-start; padding: 16px; border-radius: 12px; border: 1.5px solid var(--border); transition: all 0.2s; }
+    .page-item:hover { border-color: var(--primary); background: var(--primary-ultra); }
+    .page-item.new-page { border-color: #BBF7D0; background: #F0FDF4; }
+    .page-item.mod-page { border-color: #FED7AA; background: #FFF7ED; }
+    .page-icon { font-size: 24px; flex-shrink: 0; }
+    .page-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+    .page-path { font-family: monospace; font-size: 11px; color: var(--text-sub); margin-bottom: 4px; }
+    .page-desc { font-size: 12px; color: var(--text-sub); line-height: 1.5; }
+    .badge-new { background: #16A34A; color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 4px; font-weight: 700; margin-left: 6px; }
+    .badge-mod { background: #D97706; color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 4px; font-weight: 700; margin-left: 6px; }
+    .timeline { position: relative; padding-left: 30px; }
+    .timeline::before { content: ''; position: absolute; left: 10px; top: 8px; bottom: 8px; width: 2px; background: linear-gradient(to bottom, var(--primary), var(--accent)); border-radius: 2px; }
+    .tl-item { position: relative; padding: 4px 0 20px 20px; }
+    .tl-item::before { content: ''; position: absolute; left: -26px; top: 8px; width: 12px; height: 12px; border-radius: 50%; background: var(--primary); border: 2px solid #fff; box-shadow: 0 0 0 2px var(--primary); }
+    .tl-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .tl-days { font-size: 12px; color: var(--primary); font-weight: 600; margin-bottom: 6px; }
+    .tl-desc { font-size: 13px; color: var(--text-sub); line-height: 1.6; }
+    .toc-bar { position: fixed; top: 50%; right: 18px; transform: translateY(-50%); display: flex; flex-direction: column; gap: 6px; z-index: 100; }
+    .toc-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); cursor: pointer; transition: all 0.2s; position: relative; }
+    .toc-dot:hover, .toc-dot.active { background: var(--primary); width: 10px; height: 10px; }
+    .toc-dot::after { content: attr(data-label); position: absolute; right: 16px; top: 50%; transform: translateY(-50%); white-space: nowrap; font-size: 11px; background: var(--text); color: #fff; padding: 3px 8px; border-radius: 4px; opacity: 0; pointer-events: none; transition: opacity 0.15s; }
+    .toc-dot:hover::after { opacity: 1; }
+    .footer { text-align: center; padding: 32px; color: var(--text-sub); font-size: 13px; border-top: 1px solid var(--border); margin-top: 60px; }
+    .footer strong { color: var(--primary); }
+    @media (max-width: 768px) {
+      .hero { padding: 40px 20px 60px; }
+      .hero h1 { font-size: 28px; }
+      .summary-cards { grid-template-columns: repeat(2, 1fr); margin-top: -30px; }
+      .page-grid { grid-template-columns: 1fr; }
+      .toc-bar { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOC Sidebar -->
+<div class="toc-bar" id="toc">
+  <div class="toc-dot active" data-label="概览" onclick="scrollTo('sec-overview')"></div>
+  <div class="toc-dot" data-label="P0功能" onclick="scrollTo('sec-p0')"></div>
+  <div class="toc-dot" data-label="P1功能" onclick="scrollTo('sec-p1')"></div>
+  <div class="toc-dot" data-label="P2功能" onclick="scrollTo('sec-p2')"></div>
+  <div class="toc-dot" data-label="P3功能" onclick="scrollTo('sec-p3')"></div>
+  <div class="toc-dot" data-label="云函数API" onclick="scrollTo('sec-api')"></div>
+  <div class="toc-dot" data-label="前端页面" onclick="scrollTo('sec-pages')"></div>
+  <div class="toc-dot" data-label="开发计划" onclick="scrollTo('sec-plan')"></div>
+</div>
+
+<!-- Hero -->
+<div class="hero" id="sec-overview">
+  <div class="hero-badge">特产互换小程序 · 功能开发规划</div>
+  <h1>📋 功能开发规划<span>P0-P3 优先级排序 · 完整技术方案</span></h1>
+  <p>订单超时、信用分完善、邀请裂变、纠纷仲裁、心愿单、会员订阅等 10 个功能模块的详细设计与开发计划。</p>
+  <div class="hero-meta">
+    <span>📅 规划日期：2026-03-28</span>
+    <span>⏱ 总工期：~56h</span>
+    <span>🔧 微信小程序 + CloudBase</span>
+    <span>📊 4 个优先级层级</span>
+  </div>
+</div>
+
+<div class="container">
+  <div class="summary-cards">
+    <div class="summary-card"><div class="number">10</div><div class="label">功能模块</div></div>
+    <div class="summary-card"><div class="number">56h</div><div class="label">总开发工时</div></div>
+    <div class="summary-card"><div class="number">3周</div><div class="label">预计完成</div></div>
+    <div class="summary-card"><div class="number">7</div><div class="label">云函数改造</div></div>
+  </div>
+
+  <!-- ==================== P0 ==================== -->
+  <div class="section" id="sec-p0">
+    <div class="section-header">
+      <div class="section-icon" style="background:#FEF2F2">🔥</div>
+      <div><h2>P0 · 紧急功能</h2><p>核心基础功能，本周完成（15h）</p></div>
+    </div>
+
+    <!-- 订单超时机制 -->
+    <div class="card">
+      <div class="card-body">
+        <div class="card-title"><span class="priority-badge badge-p0">P0</span><span>⏰ 订单超时机制</span><span style="margin-left:auto;color:var(--text-sub);font-size:12px">⏱ 4h</span></div>
+        <p class="feature-desc">确认后 72 小时未发货自动取消订单，释放双方特产库存，发送系统通知。</p>
+        <h4 style="font-size:14px;margin:16px 0 12px;color:var(--text-sub)">🗄️ 数据库设计</h4>
+        <div class="schema-block"><pre><span class="cm">// orders 表新增字段</span>
+{
+  <span class="kw">confirmTime</span>: <span class="typ">Date</span>,        <span class="cm">// 确认时间</span>
+  <span class="kw">shipDeadline</span>: <span class="typ">Date</span>,       <span class="cm">// 发货截止时间（confirmTime + 72h）</span>
+  <span class="kw">autoCancelReason</span>: <span class="typ">String</span>  <span class="cm">// 自动取消原因</span>
+}</pre></div>
+        <h4 style="font-size:14px;margin:16px 0 12px;color:var(--text-sub)">☁️ 云函数 API</h4>
+        <table class="task-table">
+          <thead><tr><th>云函数</th><th>action</th><th>功能描述</th><th>工作量</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method-tag tag-cf">orderMgr</span></td><td>checkTimeout</td><td>定时任务，每小时检测超时订单</td><td><span class="time-badge">2h</span></td></tr>
+            <tr><td><span class="method-tag tag-cf">productMgr</span></td><td>releaseStock</td><td>释放特产库存，状态恢复为 active</td><td><span class="time-badge">1h</span></td></tr>
+          </tbody>
+        </table>
+        <h4 style="font-size:14px;margin:16px 0 12px;color:var(--text-sub)">📝 任务拆分</h4>
+        <table class="task-table">
+          <thead><tr><th>任务</th><th>工作量</th><th>状态</th></tr></thead>
+          <tbody>
+            <tr><td>云函数 checkTimeout 逻辑</td><td><span class="time-badge">2h</span></td><td>待开发</td></tr>
+            <tr><td>定时触发器配置（每小时执行）</td><td><span class="time-badge">0.5h</span></td><td>待开发</td></tr>
+            <tr><td>订单取消逻辑修改（释放库存）</td><td><span class="time-badge">1h</span></td><td>待开发</td></tr>
+            <tr><td>前端订单详情显示倒计时</td><td><span class="time-badge">0.5h</span></td><td>待开发</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 信用分机制 -->
+    <div class="card">
+      <div class="card-body">
+        <div class="card-title"><span class="priority-badge badge-p0">P0</span><span>⭐ 信用分机制完善</span><span style="margin-left:auto;color:var(--text-sub);font-size:12px">⏱ 8h</span></div>
+        <p class="feature-desc">新增超时扣分、连续守信加分等规则，建立完善的信用体系。</p>
+        <h4 style="font-size:14px;margin:16px 0 12px;color:var(--text-sub)">📊 分值规则</h4>
+        <table class="task-table">
+          <thead><tr><th>事件</th><th>分值</th><th>触发条件</th></tr></thead>
+          <tbody>
+            <tr><td>超时未发货</td><td class="credit-minus">-8</td><td>72小时未发货</td></tr>
+            <tr><td>超时未确认收货</td><td class="credit-minus">-5</td><td>发货后7天未确认</td></tr>
+            <tr><td>首次互换奖励</td><td class="credit-plus">+3</td><td>完成首次互换</td></tr>
+            <tr><td>连续守信</td><td class="credit-plus">+1</td><td>连续3次互换无违约</td></tr>
+            <tr><td>被投诉成立</td><td class="credit-minus">-10</td><td>管理员处理投诉</td></tr>
+          </tbody>
+        </table>
+        <h4 style="font-size:14px;margin:16px 0 12px;color:var(--text-sub)">🗄️ 数据库设计</h4>
+        <div class="schema-block"><pre><span class="cm">// credit_log 表（新建）</span>
+{
+  <span class="kw">_openid</span>: <span class="typ">String</span>,
+  <span class="kw">delta</span>: <span class="typ">Number</span>,            <span class="cm">// 变动值</span>
+  <span class="kw">reason</span>: <span class="typ">String</span>,           <span class="cm">// 原因</span>
+  <span class="kw">type</span>: <span class="typ">String</span>,             <span class="cm">// 事件类型</span>
+  <span class="kw">orderId</span>: <span class="typ">String</span>,          <span class="cm">// 关联订单</span>
+  <span class="kw">createTime</span>: <span class="typ">Date</span>
+}</pre></div>
+      </div>
+    </div>
+
+    <!-- 首次互换奖励 -->
+    <div class="card">
+      <div class="card-body">
+        <div class="card-title"><span class="priority-badge badge-p0">P0</span><span>🎁 邀请裂变 - 首次互换奖励</span><span style="margin-left:auto;color:var(--text-sub);font-size:12px">⏱ 3h</span></div>
+        <p class="feature-desc">被邀请人完成首次互换后，双方获得额外积分奖励。</p>
+        <table class="task-table">
+          <thead><tr><th>事件</th><th>邀请人</th><th>被邀请人</th></tr></thead>
+          <tbody>
+            <tr><td>注册（已实现）</td><td class="credit-plus">+10 积分</td><td class="credit-plus">+5 积分</td></tr>
+            <tr><td>首次互换</td><td class="credit-plus">+20 积分</td><td class="credit-plus">+10 积分</td></tr>
+          </tbody>
+        </table>
+        <div class="notice info" style="margin-top:12px"><span>💡</span><div>在 orderMgr 云函数订单完成时检查是否首次互换，发放奖励并记录到 invite_rewards 表。</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== P1 ==================== -->
+  <div class="section" id="sec-p1">
+    <div class="section-header">
+      <div class="section-icon" style="background:#FFFBEB">⚡</div>
+      <div><h2>P1 · 重要功能</h2><p>体验优化功能，下周完成（25h）</p></div>
+    </div>
+
+    <!-- 纠纷仲裁 -->
+    <div class="card">
+      <div class="card-body">
+        <div class="card-title"><span class="priority-badge badge-p1">P1</span><span>⚖️ 纠纷仲裁（人工介入）</span><span style="margin-left:auto;color:var(--text-sub);font-size:12px">⏱ 8h</span></div>
+        <p class="feature-desc">用户可申请纠纷，管理员后台处理，支持查看证据、做出裁决。</p>
+        <h4 style="font-size:14px;margin:16px 0 12px;color:var(--text-sub)">🗄️ 数据库设计</h4>
+        <div class="schema-block"><pre><span class="cm">// orders.dispute 字段</span>
+<span class="kw">dispute</span>: {
+  <span class="kw">applicant</span>: <span class="typ">String</span>,     <span class="cm">// 申请人 openid</span>
+  <span class="kw">reason</span>: <span class="typ">String</span>,        <span class="cm">// 纠纷原因</span>
+  <span class="kw">images</span>: <span class="typ">Array</span>,         <span class="cm">// 证据图片</span>
+  <span class="kw">status</span>: <span class="str">'pending'</span>|<span class="str">'resolved'</span>,
+  <span class="kw">result</span>: <span class="typ">String</span>,        <span class="cm">// 处理结果</span>
+  <span class="kw">resolveTime</span>: <span class="typ">Date</span>
+}</pre></div>
+        <h4 style="font-size:14px;margin:16px 0 12px;color:var(--text-sub)">☁️ 云函数 API</h4>
+        <table class="task-table">
+          <thead><tr><th>云函数</th><th>action</th><th>功能描述</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method-tag tag-cf">orderMgr</span></td><td>applyDispute</td><td>用户申请纠纷，上传证据</td></tr>
+            <tr><td><span class="method-tag tag-cf">adminMgr</span></td><td>getDisputeList</td><td>管理后台获取纠纷列表</td></tr>
+            <tr><td><span class="method-tag tag-cf">adminMgr</span></td><td>resolveDispute</td><td>管理员裁决纠纷</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 订单状态推送 -->
+    <div class="card">
+      <div class="card-body">
+        <div class="card-title"><span class="priority-badge badge-p1">P1</span><span>📩 订单状态推送通知</span><span style="margin-left:auto;color:var(--text-sub);font-size:12px">⏱ 12h</span></div>
+        <p class="feature-desc">订单状态变更时，通过微信服务消息通知买卖双方。</p>
+        <table class="task-table">
+          <thead><tr><th>场景</th><th>接收人</th><th>模板</th></tr></thead>
+          <tbody>
+            <tr><td>互换请求</td><td>接收方</td><td>有人想和你互换特产</td></tr>
+            <tr><td>互换确认</td><td>发起方</td><td>对方已确认互换</td></tr>
+            <tr><td>对方发货</td><td>接收方</td><td>特产已发出</td></tr>
+            <tr><td>订单完成</td><td>双方</td><td>互换完成，去评价</td></tr>
+          </tbody>
+        </table>
+        <div class="notice warning" style="margin-top:12px"><span>⚠️</span><div><strong>前置条件：</strong>需申请微信订阅消息模板，审核可能需要时间。</div></div>
+      </div>
+    </div>
+
+    <!-- 新用户引导 -->
+    <div class="card">
+      <div class="card-body">
+        <div class="card-title"><span class="priority-badge badge-p1">P1</span><span>👋 邀请裂变 - 新用户引导页</span><span style="margin-left:auto;color:var(--text-sub);font-size:12px">⏱ 5h</span></div>
+        <p class="feature-desc">被邀请人首次进入小程序时显示专属引导页。</p>
+        <ul style="margin:12px 0 0 20px;color:var(--text-sub);font-size:13px">
+          <li>邀请人信息（头像、昵称）</li>
+          <li>新人礼包说明（积分、特权）</li>
+          <li>引导完善资料</li>
+          <li>引导浏览特产</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== P2 ==================== -->
+  <div class="section" id="sec-p2">
+    <div class="section-header">
+      <div class="section-icon" style="background:#F0FDF4">✨</div>
+      <div><h2>P2 · 增值功能</h2><p>第三周完成（16h）</p></div>
+    </div>
+
+    <!-- 心愿单 -->
+    <div class="card">
+      <div class="card-body">
+        <div class="card-title"><span class="priority-badge badge-p2">P2</span><span>💫 心愿单</span><span style="margin-left:auto;color:var(--text-sub);font-size:12px">⏱ 10h</span></div>
+        <p class="feature-desc">用户发布想要的特产，系统精准匹配并推送通知。</p>
+        <h4 style="font-size:14px;margin:16px 0 12px;color:var(--text-sub)">🗄️ 数据库设计</h4>
+        <div class="schema-block"><pre><span class="cm">// wishlist 表（新建）</span>
+{
+  <span class="kw">_openid</span>: <span class="typ">String</span>,
+  <span class="kw">province</span>: <span class="typ">String</span>,        <span class="cm">// 想要的省份</span>
+  <span class="kw">category</span>: <span class="typ">String</span>,        <span class="cm">// 想要的品类</span>
+  <span class="kw">keywords</span>: <span class="typ">Array</span>,        <span class="cm">// 关键词</span>
+  <span class="kw">status</span>: <span class="str">'active'</span>|<span class="str">'matched'</span>,
+  <span class="kw">matchedProducts</span>: <span class="typ">Array</span>, <span class="cm">// 匹配到的特产ID</span>
+  <span class="kw">createTime</span>: <span class="typ">Date</span>
+}</pre></div>
+        <div class="notice success" style="margin-top:12px"><span>💡</span><div><strong>功能价值：</strong>精准匹配用户需求，提高互换成功率，增加用户粘性。</div></div>
+      </div>
+    </div>
+
+    <!-- 海报排行榜 -->
+    <div class="card">
+      <div class="card-body">
+        <div class="card-title"><span class="priority-badge badge-p2">P2</span><span>🖼️ 邀请海报/排行榜</span><span style="margin-left:auto;color:var(--text-sub);font-size:12px">⏱ 6h</span></div>
+        <p class="feature-desc">Canvas 绘制邀请海报，展示邀请排行榜 TOP 10。</p>
+        <table class="task-table">
+          <thead><tr><th>任务</th><th>工作量</th></tr></thead>
+          <tbody>
+            <tr><td>海报 Canvas 绘制</td><td><span class="time-badge">3h</span></td></tr>
+            <tr><td>海报保存功能</td><td><span class="time-badge">1h</span></td></tr>
+            <tr><td>排行榜数据接口</td><td><span class="time-badge">1h</span></td></tr>
+            <tr><td>排行榜页面</td><td><span class="time-badge">1h</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== P3 ==================== -->
+  <div class="section" id="sec-p3">
+    <div class="section-header">
+      <div class="section-icon" style="background:#F5F3FF">👑</div>
+      <div><h2>P3 · 商业化功能</h2><p>后期规划，需前置条件（42h+）</p></div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <div class="card-title"><span class="priority-badge badge-p3">P3</span><span>👑 会员订阅</span><span style="margin-left:auto;color:var(--text-sub);font-size:12px">⏱ 42h+</span></div>
+        <div class="notice danger" style="margin-top:12px"><span>🚨</span><div><strong>前置条件：</strong>需微信支付商户号资质，申请周期 3-5 个工作日。</div></div>
+        <h4 style="font-size:14px;margin:16px 0 12px;color:var(--text-sub)">👑 会员权益设计</h4>
+        <table class="task-table">
+          <thead><tr><th>权益</th><th>普通用户</th><th>会员用户</th><th>复杂度</th></tr></thead>
+          <tbody>
+            <tr><td>发布特产数量</td><td>5 个</td><td>20 个</td><td><span class="time-badge">低</span></td></tr>
+            <tr><td>神秘特产发布</td><td>1 个/月</td><td>无限制</td><td><span class="time-badge">低</span></td></tr>
+            <tr><td>优先匹配</td><td>普通</td><td>优先展示</td><td><span class="time-badge">中</span></td></tr>
+            <tr><td>每日签到积分</td><td>+1</td><td>+2</td><td><span class="time-badge">低</span></td></tr>
+            <tr><td>专属标识</td><td>无</td><td>会员徽章</td><td><span class="

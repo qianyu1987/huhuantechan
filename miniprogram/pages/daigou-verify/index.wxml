@@ -1,0 +1,236 @@
+<!-- pages/daigou-verify/index.wxml - 代购实名认证 iOS 26 毛玻璃风格 -->
+<view class="page-root">
+  <view class="bg-blob blob-a"></view>
+  <view class="bg-blob blob-b"></view>
+
+  <!-- 加载态 -->
+  <view wx:if="{{loading}}" class="loading-wrap">
+    <view class="spinner-ring"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <block wx:elif="{{!loading}}">
+
+    <!-- ══ 已通过认证 ══ -->
+    <block wx:if="{{verifyStatus === 'approved'}}">
+      <view class="status-hero approved-hero glass">
+        <text class="hero-icon">✅</text>
+        <text class="hero-title">实名认证已通过</text>
+        <text class="hero-sub">您可以发布代购商品</text>
+        <view class="verify-info-row">
+          <text class="vi-key">姓名</text>
+          <text class="vi-val">{{verifyInfo.realName}}</text>
+        </view>
+        <view class="verify-info-row">
+          <text class="vi-key">证件号</text>
+          <text class="vi-val mono">{{verifyInfo.idCardNoMasked}}</text>
+        </view>
+        <view class="verify-info-row" wx:if="{{verifyInfo.reviewTime}}">
+          <text class="vi-key">通过时间</text>
+          <text class="vi-val">{{verifyInfo.reviewTime}}</text>
+        </view>
+      </view>
+
+      <!-- 当前代购等级 -->
+      <view class="level-card glass" wx:if="{{levelInfo}}">
+        <view class="level-hd">
+          <text class="level-icon">{{levelInfo.icon}}</text>
+          <view class="level-info">
+            <text class="level-name" style="color:{{levelInfo.color}}">{{levelInfo.name}}</text>
+            <text class="level-trust">{{levelInfo.trustDesc}}</text>
+          </view>
+          <view class="level-badge {{levelInfo.badge === 'certified' ? 'badge-cert' : 'badge-free'}}">
+            {{levelInfo.badge === 'certified' ? '平台认证' : '自由代购'}}
+          </view>
+        </view>
+        <view class="level-privileges">
+          <view class="priv-item" wx:for="{{levelInfo.privileges}}" wx:key="*this">
+            <text class="priv-dot">•</text>
+            <text class="priv-text">{{item}}</text>
+          </view>
+        </view>
+        <view class="level-btn-row">
+          <button class="level-view-btn" bindtap="viewLevels">查看全部等级</button>
+        </view>
+      </view>
+
+      <button class="submit-btn primary-btn" bindtap="goPublish">返回发布页面</button>
+    </block>
+
+    <!-- ══ 审核中 ══ -->
+    <block wx:elif="{{verifyStatus === 'pending'}}">
+      <view class="status-hero pending-hero glass">
+        <text class="hero-icon">⏳</text>
+        <text class="hero-title">认证申请审核中</text>
+        <text class="hero-sub">管理员将在1-3个工作日内完成审核，请耐心等待</text>
+        <view class="verify-info-row">
+          <text class="vi-key">提交时间</text>
+          <text class="vi-val">{{verifyInfo.submitTime}}</text>
+        </view>
+      </view>
+    </block>
+
+    <!-- ══ 被拒绝 / 未认证 ══ -->
+    <block wx:else>
+
+      <!-- 拒绝提示 -->
+      <view wx:if="{{verifyStatus === 'rejected'}}" class="reject-notice glass">
+        <text class="reject-icon">❌</text>
+        <text class="reject-title">上次申请未通过</text>
+        <text class="reject-reason">原因：{{verifyInfo.reviewNote || '请重新提交正确的证件信息'}}</text>
+      </view>
+
+      <!-- 认证说明 -->
+      <view class="intro-card glass">
+        <view class="intro-hd">
+          <text class="intro-icon">🔐</text>
+          <text class="intro-title">为什么需要实名认证？</text>
+        </view>
+        <view class="intro-items">
+          <view class="intro-row"><text class="ir-dot">①</text><text class="ir-text">平台保障买家安全，防止欺诈行为</text></view>
+          <view class="intro-row"><text class="ir-dot">②</text><text class="ir-text">认证后可获得代购等级徽章，提升成交率</text></view>
+          <view class="intro-row"><text class="ir-dot">③</text><text class="ir-text">您的信息加密存储，仅用于平台审核</text></view>
+          <view class="intro-row"><text class="ir-dot">④</text><text class="ir-text">每人只需认证一次，终身有效</text></view>
+        </view>
+      </view>
+
+      <!-- 表单 -->
+      <view class="form-card glass">
+        <view class="form-hd">
+          <text class="form-title">📝 填写认证信息</text>
+        </view>
+
+        <!-- 真实姓名 -->
+        <view class="field-row">
+          <text class="field-label">真实姓名 <text class="required">*</text></text>
+          <input
+            class="field-input"
+            style="display:block;width:100%;"
+            placeholder="请输入身份证上的姓名"
+            placeholder-class="ph"
+            value="{{form.realName}}"
+            bindinput="onInput"
+            data-field="realName"
+          />
+        </view>
+
+        <!-- 身份证号 -->
+        <view class="field-row">
+          <text class="field-label">身份证号码 <text class="required">*</text></text>
+          <input
+            class="field-input mono"
+            style="display:block;width:100%;"
+            placeholder="请输入18位身份证号码"
+            placeholder-class="ph"
+            value="{{form.idCardNo}}"
+            bindinput="onInput"
+            data-field="idCardNo"
+            maxlength="18"
+          />
+        </view>
+
+        <!-- 身份证正面 -->
+        <view class="upload-section">
+          <text class="upload-label">身份证正面 <text class="required">*</text></text>
+          <text class="upload-hint">（人像面，需清晰可见姓名和照片）</text>
+          <view
+            class="upload-box {{form.idCardFront ? 'has-image' : ''}}"
+            bindtap="chooseImage"
+            data-type="front"
+          >
+            <block wx:if="{{previewImages.front}}">
+              <image class="upload-img" src="{{previewImages.front}}" mode="aspectFill" catchtap="previewImage" data-type="front" />
+              <view class="img-replace">重新上传</view>
+            </block>
+            <block wx:elif="{{uploading.front}}">
+              <view class="upload-loading">
+                <view class="mini-spinner"></view>
+                <text>上传中...</text>
+              </view>
+            </block>
+            <block wx:else>
+              <view class="upload-placeholder">
+                <text class="upload-plus">+</text>
+                <text class="upload-desc">点击上传</text>
+                <text class="upload-eg">示例：正面朝上，四角完整</text>
+              </view>
+            </block>
+          </view>
+        </view>
+
+        <!-- 身份证反面 -->
+        <view class="upload-section">
+          <text class="upload-label">身份证反面 <text class="required">*</text></text>
+          <text class="upload-hint">（国徽面，需清晰可见有效期）</text>
+          <view
+            class="upload-box {{form.idCardBack ? 'has-image' : ''}}"
+            bindtap="chooseImage"
+            data-type="back"
+          >
+            <block wx:if="{{previewImages.back}}">
+              <image class="upload-img" src="{{previewImages.back}}" mode="aspectFill" catchtap="previewImage" data-type="back" />
+              <view class="img-replace">重新上传</view>
+            </block>
+            <block wx:elif="{{uploading.back}}">
+              <view class="upload-loading"><view class="mini-spinner"></view><text>上传中...</text></view>
+            </block>
+            <block wx:else>
+              <view class="upload-placeholder">
+                <text class="upload-plus">+</text>
+                <text class="upload-desc">点击上传</text>
+                <text class="upload-eg">示例：反面朝上，四角完整</text>
+              </view>
+            </block>
+          </view>
+        </view>
+
+        <!-- 手持身份证自拍 -->
+        <view class="upload-section">
+          <text class="upload-label">手持身份证自拍 <text class="required">*</text></text>
+          <text class="upload-hint">（手持身份证正面，五官清晰，不遮挡面部）</text>
+          <view
+            class="upload-box {{form.holdIdCardPhoto ? 'has-image' : ''}}"
+            bindtap="chooseImage"
+            data-type="hold"
+          >
+            <block wx:if="{{previewImages.hold}}">
+              <image class="upload-img" src="{{previewImages.hold}}" mode="aspectFill" catchtap="previewImage" data-type="hold" />
+              <view class="img-replace">重新上传</view>
+            </block>
+            <block wx:elif="{{uploading.hold}}">
+              <view class="upload-loading"><view class="mini-spinner"></view><text>上传中...</text></view>
+            </block>
+            <block wx:else>
+              <view class="upload-placeholder">
+                <text class="upload-plus">+</text>
+                <text class="upload-desc">点击上传（相机拍照效果更佳）</text>
+                <text class="upload-eg">示例：单手持证+正脸，光线充足</text>
+              </view>
+            </block>
+          </view>
+        </view>
+
+        <!-- 隐私声明 -->
+        <view class="privacy-note">
+          <text class="pn-icon">🔒</text>
+          <text class="pn-text">您的证件信息加密存储，仅平台管理员可见，绝不对外共享</text>
+        </view>
+      </view>
+
+      <!-- 提交按钮 -->
+      <button
+        class="submit-btn primary-btn"
+        bindtap="submitVerify"
+        loading="{{submitting}}"
+        disabled="{{submitting}}"
+      >{{submitting ? '提交中...' : '提交认证申请'}}</button>
+
+      <!-- 查看等级 -->
+      <button class="submit-btn ghost-btn" bindtap="viewLevels">查看代购等级体系</button>
+
+    </block>
+
+  </block>
+
+  <view style="height:60rpx"></view>
+</view>

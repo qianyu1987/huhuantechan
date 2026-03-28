@@ -11,8 +11,38 @@
 
   <block wx:else>
   <view class="page-header px-md">
-    <text class="page-title">{{isEdit ? '编辑特产' : '发布你的特产'}}</text>
-    <text class="page-sub">{{isEdit ? '修改你的特产信息' : '告诉大家你有什么好东西'}}</text>
+    <view class="page-header-main">
+      <view class="page-header-left">
+        <text class="page-title">{{isEdit ? '编辑特产' : '发布你的特产'}}</text>
+        <text class="page-sub">{{isEdit ? '修改你的特产信息' : '告诉大家你有什么好东西'}}</text>
+      </view>
+      <!-- 开启代购开关（非神秘、非编辑模式显示） -->
+      <view class="page-daigou-toggle" wx:if="{{!form.isMystery}}">
+        <view class="page-daigou-label">
+          <text class="page-daigou-icon">🛒</text>
+          <text class="page-daigou-text">开启代购</text>
+        </view>
+        <switch
+          class="daigou-switch"
+          checked="{{form.daigouEnabled}}"
+          bindchange="toggleDaigou"
+          color="#FF9500"
+        />
+      </view>
+    </view>
+
+    <!-- ── 表单完整度进度条 ── -->
+    <view class="completeness-bar-wrap" wx:if="{{!featureDisabled}}">
+      <view class="completeness-header">
+        <text class="completeness-label">填写完整度</text>
+        <text class="completeness-count {{completeness === 100 ? 'done' : ''}}">
+          {{completenessText}} {{completeness === 100 ? '✓ 完整' : ''}}
+        </text>
+      </view>
+      <view class="completeness-track">
+        <view class="completeness-fill {{completeness === 100 ? 'full' : completeness >= 60 ? 'mid' : 'low'}}" style="width: {{completeness}}%"></view>
+      </view>
+    </view>
   </view>
 
   <scroll-view scroll-y class="form-scroll">
@@ -40,10 +70,11 @@
       </view>
 
       <!-- 图片上传 -->
-      <view class="section" wx:if="{{!form.isMystery}}">
+      <view id="section-images" class="section {{errors.images ? 'section-error' : ''}}" wx:if="{{!form.isMystery}}">
         <view class="section-label">
           特产图片 
           <text class="required">*</text>
+          <text class="field-error-tag" wx:if="{{errors.images}}">{{ errors.images }}</text>
         </view>
         <view class="img-upload-grid">
           <block wx:for="{{images}}" wx:key="index">
@@ -54,18 +85,22 @@
               </view>
             </view>
           </block>
-          <view class="img-add" bindtap="chooseImages" wx:if="{{images.length < 6}}">
+          <view class="img-add {{errors.images ? 'img-add-error' : ''}}" bindtap="chooseImages" wx:if="{{images.length < 6}}">
             <view class="icon-plus-o"></view>
             <text class="img-add-text">{{images.length}}/6</text>
           </view>
         </view>
+        <view class="field-hint" wx:if="{{images.length === 0 && !errors.images}}">建议上传3张以上清晰图片，提高互换成功率</view>
       </view>
 
       <!-- 特产名称 -->
-      <view class="section" wx:if="{{!form.isMystery}}">
-        <view class="section-label">特产名称 <text class="required">*</text></view>
+      <view id="section-name" class="section {{errors.name ? 'section-error' : ''}}" wx:if="{{!form.isMystery}}">
+        <view class="section-label">
+          特产名称 <text class="required">*</text>
+          <text class="field-error-tag" wx:if="{{errors.name}}">{{ errors.name }}</text>
+        </view>
         <input 
-          class="form-input"
+          class="form-input {{errors.name ? 'input-error' : ''}}"
           placeholder="如：云南古树普洱茶饼"
           value="{{form.name}}"
           bindinput="onInput"
@@ -75,11 +110,37 @@
         <view class="input-counter">{{form.name.length}}/30</view>
       </view>
 
+      <!-- 特产描述（必填） -->
+      <view id="section-description" class="section {{errors.description ? 'section-error' : ''}}" wx:if="{{!form.isMystery}}">
+        <view class="section-label">
+          特产描述 <text class="required">*</text>
+          <text class="field-error-tag" wx:if="{{errors.description}}">{{ errors.description }}</text>
+        </view>
+        <view class="section-sub">详细描述特产的特点、口感、包装等，帮助对方了解</view>
+        <textarea
+          class="form-textarea {{errors.description ? 'input-error' : ''}}"
+          placeholder="如：本款普洱茶产自云南勐海，树龄50年以上古树，口感醇厚，回甘持久，500g饼装…（至少10字）"
+          value="{{form.description}}"
+          bindinput="onInput"
+          data-field="description"
+          maxlength="200"
+          auto-height
+        />
+        <view class="input-counter {{form.description.length >= 10 ? 'counter-ok' : ''}}">
+          {{form.description.length}}/200
+          <text wx:if="{{form.description.length > 0 && form.description.length < 10}}" class="counter-warn"> 还需 {{10 - form.description.length}} 字</text>
+          <text wx:if="{{form.description.length >= 10}}" class="counter-done"> ✓</text>
+        </view>
+      </view>
+
       <!-- 特产产地 -->
-      <view class="section">
-        <view class="section-label">特产产地 <text class="required">*</text></view>
+      <view id="section-province" class="section {{errors.province ? 'section-error' : ''}}">
+        <view class="section-label">
+          特产产地 <text class="required">*</text>
+          <text class="field-error-tag" wx:if="{{errors.province}}">{{ errors.province }}</text>
+        </view>
         <picker mode="region" value="{{region}}" bindchange="onRegionChange">
-          <view class="picker-field">
+          <view class="picker-field {{errors.province ? 'picker-error' : ''}}">
             <view class="picker-text {{region.length ? 'text-dark' : 'placeholder'}}">
               {{region.length ? region[0] + ' ' + region[1] + ' ' + region[2] : '选择省/市/区县'}}
             </view>
@@ -89,8 +150,11 @@
       </view>
 
       <!-- 品类 -->
-      <view class="section" wx:if="{{!form.isMystery}}">
-        <view class="section-label">品类 <text class="required">*</text></view>
+      <view id="section-category" class="section {{errors.category ? 'section-error' : ''}}" wx:if="{{!form.isMystery}}">
+        <view class="section-label">
+          品类 <text class="required">*</text>
+          <text class="field-error-tag" wx:if="{{errors.category}}">{{ errors.category }}</text>
+        </view>
         <view class="tag-select-wrap">
           <block wx:for="{{categories}}" wx:key="id">
             <view 
@@ -103,8 +167,11 @@
       </view>
 
       <!-- 估值区间 -->
-      <view class="section" wx:if="{{!form.isMystery}}">
-        <view class="section-label">估值区间 <text class="required">*</text></view>
+      <view id="section-valueRange" class="section {{errors.valueRange ? 'section-error' : ''}}" wx:if="{{!form.isMystery}}">
+        <view class="section-label">
+          估值区间 <text class="required">*</text>
+          <text class="field-error-tag" wx:if="{{errors.valueRange}}">{{ errors.valueRange }}</text>
+        </view>
         <view class="value-grid">
           <block wx:for="{{valueRanges}}" wx:key="id">
             <view 
@@ -135,12 +202,15 @@
       </view>
 
       <!-- 性别选择 -->
-      <view class="section">
-        <view class="section-label">你的性别 <text class="required">*</text></view>
+      <view id="section-gender" class="section {{errors.gender ? 'section-error' : ''}}">
+        <view class="section-label">
+          你的性别 <text class="required">*</text>
+          <text class="field-error-tag" wx:if="{{errors.gender}}">{{ errors.gender }}</text>
+        </view>
         <view class="section-sub">用于特产展示时标注，方便对方了解</view>
         <view class="gender-select-wrap">
           <view 
-            class="gender-select-item {{form.gender === 'male' ? 'selected' : ''}}"
+            class="gender-select-item {{form.gender === 'male' ? 'selected' : ''}} {{errors.gender ? 'gender-error' : ''}}"
             bindtap="selectGender"
             data-gender="male"
           >
@@ -148,7 +218,7 @@
             <text class="gender-text">男生</text>
           </view>
           <view 
-            class="gender-select-item {{form.gender === 'female' ? 'selected' : ''}}"
+            class="gender-select-item {{form.gender === 'female' ? 'selected' : ''}} {{errors.gender ? 'gender-error' : ''}}"
             bindtap="selectGender"
             data-gender="female"
           >
@@ -201,6 +271,67 @@
         </view>
       </view>
 
+      <!-- 代购设置详情（开启代购后展开，非神秘特产才显示） -->
+      <view id="section-daigou" class="section daigou-section {{(errors.daigouPrice || errors.daigouOriginalPrice) ? 'section-error' : ''}}" wx:if="{{form.daigouEnabled && !form.isMystery}}">
+        <view class="daigou-header-row">
+          <view class="daigou-header-left">
+            <view class="daigou-icon-badge">🛒</view>
+            <view class="daigou-header-info">
+              <text class="daigou-header-title">代购设置</text>
+              <text class="daigou-header-desc">无需互换，买家直接付款购买</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="daigou-body">
+          <view class="daigou-tip">平台收取 5% 服务费，买家看到的最终价格由你设定</view>
+
+          <!-- 代购价格 -->
+          <view class="daigou-field-row">
+            <view class="daigou-field-label">代购价格 <text class="required">*</text></view>
+            <view class="daigou-input-wrap {{errors.daigouPrice ? 'daigou-input-error' : ''}}">
+              <text class="currency-sign">¥</text>
+              <input
+                class="daigou-input"
+                type="digit"
+                placeholder="买家实付金额"
+                value="{{form.daigouPrice}}"
+                bindinput="onDaigouInput"
+                data-field="daigouPrice"
+              />
+            </view>
+          </view>
+          <view class="field-error-row" wx:if="{{errors.daigouPrice}}">{{errors.daigouPrice}}</view>
+
+          <!-- 划线原价（可选） -->
+          <view class="daigou-field-row">
+            <view class="daigou-field-label">划线原价</view>
+            <view class="daigou-input-wrap {{errors.daigouOriginalPrice ? 'daigou-input-error' : ''}}">
+              <text class="currency-sign">¥</text>
+              <input
+                class="daigou-input"
+                type="digit"
+                placeholder="原价（可选，用于展示优惠）"
+                value="{{form.daigouOriginalPrice}}"
+                bindinput="onDaigouInput"
+                data-field="daigouOriginalPrice"
+              />
+            </view>
+          </view>
+          <view class="field-error-row" wx:if="{{errors.daigouOriginalPrice}}">{{errors.daigouOriginalPrice}}</view>
+
+          <!-- 库存 -->
+          <view class="daigou-field-row">
+            <view class="daigou-field-label">库存数量 <text class="required">*</text></view>
+            <view class="daigou-stock-wrap">
+              <view class="stock-btn" catchtap="changeStock" data-delta="-1">－</view>
+              <text class="stock-num">{{form.daigouStock}}</text>
+              <view class="stock-btn" catchtap="changeStock" data-delta="1">＋</view>
+            </view>
+          </view>
+        </view>
+      </view>
+
       <!-- 注意事项 -->
       <view class="notice-box">
         <view class="icon-info"></view>
@@ -209,11 +340,15 @@
 
       <!-- 提交按钮 -->
       <button 
-        class="btn btn-primary btn-full submit-btn"
+        class="btn btn-primary btn-full submit-btn {{completeness < 100 ? 'submit-btn-incomplete' : ''}}"
         bindtap="submit"
         loading="{{submitting}}"
         disabled="{{submitting}}"
-      >{{submitting ? (isEdit ? '保存中...' : '发布中...') : (isEdit ? '保存修改' : '立即发布')}}</button>
+      >
+        <text wx:if="{{submitting}}">{{isEdit ? '保存中...' : '发布中...'}}</text>
+        <text wx:elif="{{completeness < 100}}">完善信息后发布 ({{completenessText}})</text>
+        <text wx:else>{{isEdit ? '保存修改' : '🎉 立即发布'}}</text>
+      </button>
 
       <view class="safe-bottom" style="height:160rpx"></view>
     </view>

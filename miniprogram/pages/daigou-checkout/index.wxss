@@ -1,0 +1,574 @@
+/* pages/daigou-checkout/index.wxss - iOS 26 毛玻璃风格 */
+
+/* ─────────── 基础 ─────────── */
+page {
+  background: #f0f2f7;
+}
+
+.page-root {
+  min-height: 100vh;
+  background: linear-gradient(160deg, #fff7eb 0%, #ffe8cc 25%, #e8f4ff 65%, #f0f2f7 100%);
+  position: relative;
+  overflow-x: hidden;
+  padding: 20rpx 0 0;
+}
+
+/* ─────────── 毛玻璃 ─────────── */
+.glass {
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1rpx solid rgba(255, 255, 255, 0.75);
+  box-shadow:
+    0 2rpx 16rpx rgba(0, 0, 0, 0.06),
+    0 1rpx 0 rgba(255,255,255,0.85) inset;
+}
+
+/* ─────────── 背景光晕 ─────────── */
+.bg-blob {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+.blob-a {
+  width: 500rpx; height: 500rpx;
+  top: -150rpx; right: -120rpx;
+  background: radial-gradient(circle, rgba(255,149,0,0.2) 0%, transparent 70%);
+}
+.blob-b {
+  width: 400rpx; height: 400rpx;
+  top: 500rpx; left: -120rpx;
+  background: radial-gradient(circle, rgba(10,132,255,0.15) 0%, transparent 70%);
+}
+
+/* ─────────── 加载 ─────────── */
+.loading-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 80vh;
+  gap: 20rpx;
+}
+.spinner-ring {
+  width: 64rpx; height: 64rpx;
+  border: 4rpx solid rgba(255,149,0,0.2);
+  border-top-color: #FF9500;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text {
+  font-size: 26rpx;
+  color: rgba(60,60,67,0.45);
+}
+
+/* ─────────── 通用卡片 ─────────── */
+.section-card {
+  margin: 16rpx 24rpx 0;
+  border-radius: 28rpx;
+  padding: 28rpx 32rpx;
+  position: relative;
+  z-index: 1;
+}
+
+.section-hd {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  margin-bottom: 20rpx;
+}
+.section-icon { font-size: 26rpx; }
+.section-label {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: rgba(60,60,67,0.5);
+  letter-spacing: 1rpx;
+}
+
+.card-hover { transform: scale(0.985); transition: transform 0.15s ease; }
+
+/* ─────────── 地址卡 ─────────── */
+.addr-card {
+  padding: 24rpx 28rpx;
+}
+.addr-content {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+.addr-icon-wrap {
+  width: 64rpx; height: 64rpx;
+  border-radius: 16rpx;
+  background: rgba(255,149,0,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.addr-icon { font-size: 32rpx; }
+.addr-text { flex: 1; min-width: 0; }
+.addr-top {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 8rpx;
+}
+.addr-name {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1c1c1e;
+}
+.addr-phone {
+  font-size: 26rpx;
+  color: rgba(60,60,67,0.6);
+}
+.default-chip {
+  font-size: 18rpx;
+  color: #FF9500;
+  background: rgba(255,149,0,0.1);
+  border-radius: 8rpx;
+  padding: 2rpx 10rpx;
+  font-weight: 600;
+}
+.addr-detail {
+  font-size: 24rpx;
+  color: rgba(60,60,67,0.65);
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.addr-arrow {
+  font-size: 44rpx;
+  color: rgba(60,60,67,0.2);
+  font-weight: 300;
+  flex-shrink: 0;
+}
+.grey { color: rgba(60,60,67,0.3); }
+.addr-empty {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  width: 100%;
+}
+.addr-empty-icon { font-size: 40rpx; }
+.addr-empty-text {
+  flex: 1;
+  font-size: 28rpx;
+  color: rgba(60,60,67,0.45);
+}
+
+/* ─────────── 商品卡 ─────────── */
+.product-card { }
+.product-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 20rpx;
+}
+.product-img-wrap {
+  position: relative;
+  width: 130rpx; height: 130rpx;
+  border-radius: 20rpx;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: rgba(0,0,0,0.04);
+}
+.product-img { width: 100%; height: 100%; }
+.daigou-badge {
+  position: absolute;
+  top: 8rpx; left: 8rpx;
+  font-size: 18rpx;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #FF9500, #FF6B00);
+  border-radius: 8rpx;
+  padding: 3rpx 10rpx;
+}
+.product-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  min-width: 0;
+}
+.product-name {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1c1c1e;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.product-origin {
+  font-size: 22rpx;
+  color: rgba(60,60,67,0.5);
+}
+.product-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+}
+.product-price {
+  font-size: 34rpx;
+  font-weight: 800;
+  color: #FF453A;
+}
+.product-original {
+  font-size: 22rpx;
+  color: rgba(60,60,67,0.35);
+  text-decoration: line-through;
+}
+.product-stock {
+  font-size: 20rpx;
+  color: rgba(60,60,67,0.4);
+}
+.product-qty {
+  font-size: 26rpx;
+  color: rgba(60,60,67,0.4);
+  flex-shrink: 0;
+  padding-top: 8rpx;
+}
+
+/* ─────────── 备注 ─────────── */
+.remark-card { }
+.remark-input {
+  width: 100%;
+  height: 72rpx;
+  font-size: 28rpx;
+  color: #1c1c1e;
+  background: rgba(118,118,128,0.06);
+  border-radius: 14rpx;
+  padding: 0 20rpx;
+  box-sizing: border-box;
+}
+.input-ph { color: rgba(60,60,67,0.3); }
+
+/* ─────────── 积分抵扣 ─────────── */
+.points-card { }
+.points-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+.points-left {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  flex: 1;
+  min-width: 0;
+}
+.points-coin-icon { font-size: 44rpx; flex-shrink: 0; }
+.points-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  min-width: 0;
+}
+.points-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1c1c1e;
+}
+.points-sub {
+  font-size: 22rpx;
+  color: rgba(60,60,67,0.5);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.points-right {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  flex-shrink: 0;
+}
+.points-amount {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #30D158;
+}
+
+/* 开关 */
+.toggle-switch {
+  width: 96rpx;
+  height: 56rpx;
+  border-radius: 28rpx;
+  background: rgba(118,118,128,0.25);
+  position: relative;
+  transition: background 0.25s ease;
+  flex-shrink: 0;
+}
+.toggle-switch.toggle-on {
+  background: #FF9500;
+  box-shadow: 0 0 12rpx rgba(255,149,0,0.4);
+}
+.toggle-thumb {
+  position: absolute;
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  background: #fff;
+  top: 4rpx;
+  left: 4rpx;
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.2);
+}
+.toggle-on .toggle-thumb {
+  transform: translateX(40rpx);
+}
+
+/* 无积分提示 */
+.no-points-tip {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin: 16rpx 24rpx 0;
+  padding: 18rpx 28rpx;
+  background: rgba(255,255,255,0.45);
+  backdrop-filter: blur(12px);
+  border-radius: 20rpx;
+  border: 1rpx solid rgba(255,255,255,0.65);
+  position: relative;
+  z-index: 1;
+}
+.npt-icon { font-size: 28rpx; }
+.npt-text {
+  font-size: 22rpx;
+  color: rgba(60,60,67,0.5);
+}
+
+/* ─────────── 费用明细 ─────────── */
+.fee-card { }
+.fee-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12rpx 0;
+}
+.fee-label {
+  font-size: 26rpx;
+  color: rgba(60,60,67,0.6);
+}
+.fee-val {
+  font-size: 26rpx;
+  color: #1c1c1e;
+}
+.free-tag { color: #30D158; font-weight: 600; }
+.deduct-val { color: #30D158; font-weight: 700; }
+.fee-divider {
+  height: 1rpx;
+  background: rgba(60,60,67,0.08);
+  margin: 8rpx 0;
+}
+.total-row { margin-top: 4rpx; }
+.fee-total-label {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1c1c1e;
+}
+.total-price-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 2rpx;
+}
+.total-symbol {
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #FF453A;
+}
+.total-num {
+  font-size: 44rpx;
+  font-weight: 900;
+  color: #FF453A;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─────────── 积分奖励提示 ─────────── */
+.reward-hint-card {
+  margin: 16rpx 24rpx 0;
+  border-radius: 20rpx;
+  padding: 18rpx 24rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  background: rgba(48,209,88,0.06) !important;
+  border-color: rgba(48,209,88,0.2) !important;
+  position: relative;
+  z-index: 1;
+}
+.rh-icon { font-size: 28rpx; }
+.rh-text {
+  font-size: 22rpx;
+  color: rgba(60,60,67,0.6);
+}
+.rh-num {
+  font-weight: 700;
+  color: #30D158;
+}
+
+/* ─────────── 安全免责提示卡 ─────────── */
+.safety-alert-card {
+  margin: 20rpx 24rpx 0;
+  border-radius: 20rpx;
+  background: rgba(255, 59, 48, 0.06);
+  border: 1.5rpx solid rgba(255, 59, 48, 0.28);
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+  /* 左侧警示色条 */
+  border-left: 4rpx solid #FF3B30;
+}
+.safety-alert-hd {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 20rpx 24rpx 12rpx;
+}
+.safety-alert-icon {
+  font-size: 30rpx;
+}
+.safety-alert-title {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #FF3B30;
+  letter-spacing: 0.5rpx;
+}
+.safety-alert-divider {
+  height: 1rpx;
+  background: rgba(255, 59, 48, 0.15);
+  margin: 0 24rpx;
+}
+.safety-alert-body {
+  padding: 16rpx 24rpx 14rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+.safety-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10rpx;
+}
+.safety-dot {
+  font-size: 22rpx;
+  color: rgba(255, 59, 48, 0.6);
+  flex-shrink: 0;
+  line-height: 1.6;
+}
+.safety-text {
+  font-size: 22rpx;
+  color: rgba(60, 60, 67, 0.7);
+  line-height: 1.6;
+  flex: 1;
+}
+.safety-em {
+  font-weight: 700;
+  color: #FF3B30;
+}
+.safety-alert-footer {
+  background: rgba(255, 59, 48, 0.07);
+  padding: 12rpx 24rpx;
+  border-top: 1rpx solid rgba(255, 59, 48, 0.12);
+}
+.safety-footer-text {
+  font-size: 20rpx;
+  color: rgba(255, 59, 48, 0.65);
+  display: block;
+  text-align: center;
+}
+
+/* ─────────── 付款说明 ─────────── */
+.checkout-tips {
+  display: flex;
+  align-items: flex-start;
+  gap: 8rpx;
+  margin: 16rpx 24rpx 0;
+  padding: 18rpx 24rpx;
+  background: rgba(10,132,255,0.06);
+  border-radius: 16rpx;
+  border: 1rpx solid rgba(10,132,255,0.15);
+  position: relative;
+  z-index: 1;
+  font-size: 22rpx;
+  color: rgba(60,60,67,0.55);
+  line-height: 1.6;
+}
+.tips-icon {
+  font-size: 24rpx;
+  flex-shrink: 0;
+  margin-top: 2rpx;
+}
+
+/* ─────────── 底部提交栏 ─────────── */
+.bottom-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 50;
+  border-radius: 28rpx 28rpx 0 0;
+  padding: 20rpx 32rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  border-top: 1rpx solid rgba(255,255,255,0.8);
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+}
+
+.bottom-price-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2rpx;
+  flex-shrink: 0;
+}
+.bottom-label {
+  font-size: 20rpx;
+  color: rgba(60,60,67,0.45);
+}
+.bottom-price {
+  display: flex;
+  align-items: baseline;
+  gap: 2rpx;
+}
+.bottom-sym {
+  font-size: 20rpx;
+  font-weight: 700;
+  color: #FF453A;
+}
+.bottom-num {
+  font-size: 40rpx;
+  font-weight: 900;
+  color: #FF453A;
+  font-variant-numeric: tabular-nums;
+}
+.bottom-points-tag {
+  font-size: 18rpx;
+  color: #30D158;
+  font-weight: 600;
+}
+
+.submit-btn {
+  flex: 1;
+  height: 90rpx;
+  border-radius: 45rpx;
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #FF9500 0%, #FF6B00 100%);
+  box-shadow: 0 8rpx 24rpx rgba(255,149,0,0.45);
+  border: none;
+}
+.submit-btn::after { border: none; }
+.submit-hover {
+  opacity: 0.88;
+  transform: scale(0.985);
+}
+.submit-btn[disabled] {
+  background: linear-gradient(135deg, rgba(255,149,0,0.4) 0%, rgba(255,107,0,0.4) 100%);
+  box-shadow: none;
+  color: rgba(255,255,255,0.7);
+}

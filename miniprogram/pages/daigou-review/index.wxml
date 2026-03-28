@@ -1,0 +1,241 @@
+<!-- pages/daigou-review/index.wxml - 代购交易评价 iOS 26 毛玻璃风格 -->
+<view class="page-root">
+  <view class="bg-blob blob-a"></view>
+  <view class="bg-blob blob-b"></view>
+
+  <view wx:if="{{loading}}" class="loading-wrap">
+    <view class="spinner-ring"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <block wx:elif="{{!loading}}">
+
+    <!-- ══ 已评价完成展示 ══ -->
+    <block wx:if="{{myReviewed}}">
+      <view class="reviewed-hero glass">
+        <text class="rh-icon">✅</text>
+        <text class="rh-title">您的评价已提交</text>
+        <text class="rh-sub">感谢您的真实反馈！</text>
+
+        <!-- 我的评价内容 -->
+        <view wx:if="{{myReview}}" class="my-review-content">
+          <view class="star-display">
+            <text wx:for="{{stars}}" wx:key="*this"
+              class="star {{myReview.rating >= item ? 'star-on' : 'star-off'}}">★</text>
+            <text class="rating-num">{{myReview.rating}}.0</text>
+          </view>
+          <text class="review-text-show">{{myReview.content}}</text>
+          <view wx:if="{{myReview.images && myReview.images.length > 0}}" class="review-imgs-show">
+            <image
+              wx:for="{{myReview.images}}"
+              wx:key="*this"
+              wx:for-item="img"
+              src="{{img}}"
+              class="review-img-thumb"
+              mode="aspectFill"
+            />
+          </view>
+        </view>
+
+        <!-- 对方评价状态 -->
+        <view class="other-status">
+          <text class="os-icon">{{otherReviewed ? '✅' : '⏳'}}</text>
+          <text class="os-text">{{otherReviewed ? (isBuyer ? '卖家已评价' : '买家已评价') : (isBuyer ? '等待卖家评价中...' : '等待买家评价中...')}}</text>
+        </view>
+      </view>
+
+      <button class="go-back-btn glass" bindtap="goBack">返回订单</button>
+    </block>
+
+    <!-- ══ 评价表单 ══ -->
+    <block wx:else>
+
+      <!-- 订单信息 -->
+      <view class="order-info-card glass">
+        <view class="oi-title">{{productName || '代购订单'}}</view>
+        <view class="oi-role-tag {{isBuyer ? 'role-buyer' : 'role-seller'}}">
+          {{isBuyer ? '🛒 买家评价' : '📦 卖家评价'}}
+        </view>
+        <view wx:if="{{!isBuyer}}" class="seller-review-tip">
+          <text class="srt-icon">💡</text>
+          <text class="srt-text">您的评价将影响买家下次购买决策，请客观填写</text>
+        </view>
+      </view>
+
+      <!-- 星级评分 -->
+      <view class="rating-card glass">
+        <text class="rating-label">综合评分</text>
+        <view class="star-picker">
+          <view
+            wx:for="{{stars}}"
+            wx:key="*this"
+            class="star-btn {{rating >= item ? 'star-on' : 'star-off'}}"
+            bindtap="setRating"
+            data-star="{{item}}"
+          >★</view>
+        </view>
+        <text class="rating-desc">
+          {{rating === 5 ? '非常满意 ⭐⭐⭐⭐⭐' :
+            rating === 4 ? '比较满意 ⭐⭐⭐⭐' :
+            rating === 3 ? '一般般 ⭐⭐⭐' :
+            rating === 2 ? '不太满意 ⭐⭐' : '非常不满意 ⭐'}}
+        </text>
+      </view>
+
+      <!-- 文字评价 -->
+      <view class="content-card glass">
+        <view class="content-hd">
+          <text class="content-label">评价内容 <text class="required">*</text></text>
+          <text class="content-count {{contentLen >= MIN_CONTENT_LEN ? 'count-ok' : 'count-warn'}}">{{contentLen}}/10+</text>
+        </view>
+        <textarea
+          class="content-input"
+          placeholder="{{isBuyer ? '描述收到商品的实际情况，质量、包装、是否与描述一致...' : '对本次买家的评价，是否如期付款、沟通是否顺畅...'}}"
+          placeholder-class="ph"
+          value="{{content}}"
+          bindinput="onContentInput"
+          maxlength="500"
+          auto-height
+        />
+        <view wx:if="{{contentLen < MIN_CONTENT_LEN}}" class="content-warning">
+          <text class="warn-icon">⚠️</text>
+          <text class="warn-text">还需再输入 {{MIN_CONTENT_LEN - contentLen}} 个字</text>
+        </view>
+      </view>
+
+      <!-- 图片上传（买家必须，卖家可选）-->
+      <view class="images-card glass">
+        <view class="images-hd">
+          <text class="images-label">
+            {{isBuyer ? '收货照片' : '附件图片（可选）'}}
+            <text wx:if="{{isBuyer}}" class="required"> * 必须上传3张</text>
+          </text>
+          <text class="images-count">{{images.length}}/{{isBuyer ? '3+' : '6'}}</text>
+        </view>
+
+        <view wx:if="{{isBuyer}}" class="buyer-img-tip">
+          <text class="bit-icon">📸</text>
+          <text class="bit-text">请上传收货实拍图，保障双方权益（如包装、外观、内容物等）</text>
+        </view>
+
+        <!-- 进度条（买家用）-->
+        <view wx:if="{{isBuyer}}" class="img-progress">
+          <view class="ip-bar">
+            <view class="ip-fill" style="width:{{(images.length >= 3 ? 100 : images.length / 3 * 100)}}%"></view>
+          </view>
+          <text class="ip-text {{images.length >= 3 ? 'ip-done' : ''}}">
+            {{images.length >= 3 ? '✅ 已达最低要求' : '已上传 ' + images.length + '/3 张'}}
+          </text>
+        </view>
+
+        <!-- 图片列表 -->
+        <view class="images-grid">
+          <view
+            wx:for="{{localImages}}"
+            wx:key="*this"
+            class="img-item"
+            wx:for-index="idx"
+          >
+            <image
+              src="{{item}}"
+              class="img-thumb"
+              mode="aspectFill"
+              bindtap="previewImg"
+              data-idx="{{idx}}"
+            />
+            <view class="img-del" catchtap="removeImage" data-idx="{{idx}}">×</view>
+          </view>
+
+          <!-- 添加按钮 -->
+          <view
+            wx:if="{{images.length < 6}}"
+            class="img-add {{uploading ? 'img-uploading' : ''}}"
+            bindtap="addImage"
+          >
+            <block wx:if="{{uploading}}">
+              <view class="mini-spinner"></view>
+            </block>
+            <block wx:else>
+              <text class="add-plus">+</text>
+              <text class="add-text">添加</text>
+            </block>
+          </view>
+        </view>
+      </view>
+
+      <!-- 提示条 -->
+      <view class="submit-tips glass">
+        <view class="tip-row">
+          <text class="tip-icon">ℹ️</text>
+          <text class="tip-text">评价提交后<text class="tip-em">不可撤回</text>，请确认内容真实客观</text>
+        </view>
+        <view wx:if="{{isBuyer}}" class="tip-row">
+          <text class="tip-icon">🖼️</text>
+          <text class="tip-text">买家评价需上传至少3张收货实拍图</text>
+        </view>
+        <view class="tip-row">
+          <text class="tip-icon">✍️</text>
+          <text class="tip-text">评价内容不得少于10个字</text>
+        </view>
+      </view>
+
+      <!-- 提交按钮 -->
+      <button
+        class="submit-btn {{(contentLen >= MIN_CONTENT_LEN && (!isBuyer || images.length >= 3)) ? 'btn-active' : 'btn-inactive'}}"
+        bindtap="submitReview"
+        loading="{{submitting}}"
+        disabled="{{submitting}}"
+      >
+        {{submitting ? '提交中...' : '提交评价'}}
+      </button>
+
+    </block>
+  </block>
+
+  <view style="height:60rpx"></view>
+
+  <!-- ══ 提交确认弹窗 ══ -->
+  <view wx:if="{{confirmVisible}}" class="confirm-mask" bindtap="hideConfirm"></view>
+  <view wx:if="{{confirmVisible}}" class="confirm-sheet glass">
+    <view class="cs-handle"></view>
+    <view class="cs-title">确认提交评价</view>
+
+    <!-- 评分预览 -->
+    <view class="cs-row">
+      <text class="cs-label">综合评分</text>
+      <view class="cs-stars">
+        <text wx:for="{{stars}}" wx:key="*this"
+          class="cs-star {{rating >= item ? 'cs-star-on' : 'cs-star-off'}}">★</text>
+        <text class="cs-star-num">{{rating}}.0</text>
+      </view>
+    </view>
+
+    <!-- 内容预览 -->
+    <view class="cs-content-preview">
+      <text class="cs-content-text">{{content}}</text>
+    </view>
+
+    <!-- 图片数量（买家） -->
+    <view wx:if="{{isBuyer}}" class="cs-img-count">
+      <text class="cs-ic-icon">🖼️</text>
+      <text class="cs-ic-text">已附 {{images.length}} 张收货实拍图</text>
+    </view>
+
+    <!-- 警告提示 -->
+    <view class="cs-warn">
+      <text class="cs-warn-icon">⚠️</text>
+      <text class="cs-warn-text">评价提交后不可修改，请确认内容真实客观</text>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="cs-btns">
+      <button class="cs-btn cs-cancel" bindtap="hideConfirm">再想想</button>
+      <button
+        class="cs-btn cs-confirm"
+        bindtap="doSubmitReview"
+        loading="{{submitting}}"
+        disabled="{{submitting}}"
+      >{{submitting ? '提交中...' : '确认提交'}}</button>
+    </view>
+  </view>
+</view>

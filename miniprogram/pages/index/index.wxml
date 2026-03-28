@@ -116,6 +116,7 @@
             <view class="square-img-wrap">
               <image class="square-img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load binderror="onImageError" data-index="{{index}}"/>
               <view wx:if="{{featureFlags.feature_value_display !== false}}" class="square-value-tag">{{item.valueLabel}}</view>
+              <view wx:if="{{item.daigou && item.daigou.enabled}}" class="daigou-badge">代购</view>
             </view>
             <view class="square-info">
               <view class="square-title">{{item.name}}</view>

@@ -138,7 +138,40 @@ Page({
   },
 
   onShow() {
-    this.loadUserData()
+    // 只在需要时刷新，比如从其他页面返回时
+    // 不再每次都调用 loadUserData，避免性能浪费
+    const app = getApp()
+    
+    // 如果 globalData 有数据，说明已经加载过
+    if (app.globalData.userInfo) {
+      // 只刷新关键数据（积分、订单数等可能变化的数据）
+      this._refreshKeyDataIfNeeded()
+    } else {
+      // 完全没有数据时才 full load
+      this.loadUserData()
+    }
+  },
+
+  // 轻量刷新关键数据（积分、订单数）
+  _refreshKeyDataIfNeeded() {
+    // 节流：距离上次刷新少于 30 秒不刷新
+    if (this._lastRefreshTime && Date.now() - this._lastRefreshTime < 30000) {
+      return
+    }
+    this._lastRefreshTime = Date.now()
+    
+    // 只获取统计数据，不重新获取用户信息
+    callCloud('userInit', { action: 'getStats' }).then(res => {
+      if (res) {
+        this.setData({
+          publishCount: res.publishCount || 0,
+          swapCount: res.swapCount || 0,
+          badgeCount: res.badgeCount || 0,
+          pendingCount: res.pendingCount || 0,
+          points: res.points || this.data.points
+        })
+      }
+    }).catch(() => {})
   },
 
   onUnload() {
@@ -166,132 +199,174 @@ Page({
     }
     
     const app = getApp()
-    const appInstance = this
     
-    // ✅ 等待 app.js 完成 initUser，避免与 app.js 并发创建新用户
-    // app.initUser 是异步的，mine 页面 onLoad 可能比它先跑完
-    const waitForAppInit = () => new Promise(resolve => {
-      if (app.globalData.openid) {
-        resolve()
-        return
+    // ========== 策略：优先用缓存，减少等待 ==========
+    
+    // 1. 如果 globalData 已有用户信息，先渲染（秒开）
+    if (app.globalData.userInfo && app.globalData.openid) {
+      const userInfo = app.globalData.userInfo
+      const needGuide = !userInfo.nickName || userInfo.nickName === '微信用户' || !userInfo.avatarUrl || userInfo.avatarUrl.includes('default-avatar')
+      
+      this.setData({
+        userInfo,
+        creditScore: app.globalData.creditScore || 100,
+        provinceName: getProvinceByCode(app.globalData.province)?.name || '',
+        points: app.globalData.points || 0,
+        phoneNumber: app.globalData.phoneNumber || '',
+        phoneVerified: app.globalData.phoneVerified || false,
+        showProfileGuide: needGuide,
+        guideAvatarUrl: needGuide ? (userInfo.avatarUrl || '') : '',
+        guideNickName: needGuide ? (userInfo.nickName === '微信用户' ? '' : (userInfo.nickName || '')) : ''
+      })
+      
+      // 检查管理员缓存
+      const cachedAdmin = wx.getStorageSync('isAdmin')
+      const adminCacheTime = wx.getStorageSync('adminCacheTime')
+      if (cachedAdmin !== '' && adminCacheTime && (Date.now() - adminCacheTime < 5 * 60 * 1000)) {
+        this.setData({ isAdmin: cachedAdmin === 'true' })
       }
-      // 轮询等待，最多等 5 秒
-      let count = 0
-      const timer = setInterval(() => {
-        count++
-        if (app.globalData.openid || count > 50) {
-          clearInterval(timer)
-          resolve()
-        }
-      }, 100)
-    })
+    }
     
-    await waitForAppInit()
-    
-    // 先获取用户信息
-    try {
-      const userRes = await callCloud('userInit', { action: 'init' })
-      if (userRes && userRes.userInfo) {
-        const userInfo = userRes.userInfo
+    // 2. 后台并行刷新数据（不阻塞 UI）
+    this._refreshUserDataInBackground()
+  },
 
-        app.globalData.userInfo = userInfo
+  // 后台刷新用户数据（不阻塞 UI）
+  async _refreshUserDataInBackground() {
+    const app = getApp()
+    
+    try {
+      // 并行调用：init（获取用户信息）+ getStats（获取统计数据）
+      const [userRes, statsRes] = await Promise.all([
+        callCloud('userInit', { action: 'init' }),
+        callCloud('userInit', { action: 'getStats' })
+      ])
+      
+      // 更新 globalData
+      if (userRes && userRes.userInfo) {
+        app.globalData.userInfo = userRes.userInfo
         app.globalData.creditScore = userRes.creditScore
         app.globalData.province = userRes.province
         app.globalData.points = userRes.points || 0
-
-        const creditInfo = getCreditLevel(userRes.creditScore || 100)
-        const province = getProvinceByCode(userRes.province)
+        app.globalData.phoneNumber = userRes.phoneNumber || ''
+        app.globalData.phoneVerified = userRes.phoneVerified || false
         
-        console.log('[mine] loadUserData 返回的手机号信息:', {
-          phoneNumber: userRes.phoneNumber,
-          phoneVerified: userRes.phoneVerified
-        })
-        
+        // 更新 UI
+        const userInfo = userRes.userInfo
         const needGuide = !userInfo.nickName || userInfo.nickName === '微信用户' || !userInfo.avatarUrl || userInfo.avatarUrl.includes('default-avatar')
-
+        
         this.setData({
-          userInfo: userInfo,
+          userInfo,
           creditScore: userRes.creditScore || 100,
-          creditClass: creditInfo.class,
-          provinceName: province ? province.name : '',
+          creditClass: getCreditLevel(userRes.creditScore || 100).class,
+          provinceName: getProvinceByCode(userRes.province)?.name || '',
           points: userRes.points || 0,
-          // 手机号验证状态
           phoneNumber: userRes.phoneNumber || '',
           phoneVerified: userRes.phoneVerified || false,
-          // 若未完善信息，自动弹出引导
           showProfileGuide: needGuide,
-          guideAvatarUrl: (needGuide ? (userInfo.avatarUrl || '') : ''),
-          guideNickName: (needGuide ? (userInfo.nickName === '微信用户' ? '' : (userInfo.nickName || '')) : '')
+          guideAvatarUrl: needGuide ? (userInfo.avatarUrl || '') : '',
+          guideNickName: needGuide ? (userInfo.nickName === '微信用户' ? '' : (userInfo.nickName || '')) : ''
         })
       }
-    } catch (e) {
-      console.error('获取用户信息失败', e)
-    }
-
-    // 检查管理员身份
-    try {
-      const adminRes = await callCloud('adminMgr', { action: 'getAdminStatus' })
-      this.setData({ isAdmin: !!(adminRes && adminRes.isSuperAdmin) })
-    } catch (e) {
-      this.setData({ isAdmin: false })
-    }
-
-    // 先修复统计数据（防止数据不同步）
-    try {
-      await callCloud('userInit', { action: 'fixMyStats' })
-    } catch (e) {
-      console.log('[mine] 修复统计数据失败（忽略）:', e.message)
-    }
-
-    try {
-      const res = await callCloud('userInit', { action: 'getStats' })
-      if (res) {
+      
+      // 更新统计数据
+      if (statsRes) {
         this.setData({
-          publishCount: res.publishCount || 0,
-          swapCount: res.swapCount || 0,
-          badgeCount: res.badgeCount || 0,
-          pendingCount: res.pendingCount || 0,
-          orderStats: res.orderStats || {}
+          publishCount: statsRes.publishCount || 0,
+          swapCount: statsRes.swapCount || 0,
+          badgeCount: statsRes.badgeCount || 0,
+          pendingCount: statsRes.pendingCount || 0,
+          orderStats: statsRes.orderStats || {}
         })
+        
         // 更新集章
-        const badges = res.provincesBadges || []
+        const badges = statsRes.provincesBadges || []
         const provinces = PROVINCES.map(p => ({ ...p, collected: badges.includes(p.code) }))
         this.setData({ provinces })
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('[mine] 刷新用户数据失败:', e)
+    }
+    
+    // 3. 检查管理员身份（独立，不阻塞其他操作）
+    this._checkAdminStatus()
+    
+    // 4. 加载我的特产预览（独立，不阻塞其他操作）
+    this._loadMyProductsPreview()
+  },
 
-    // 加载我的特产预览（最多5个）
+  // 检查管理员身份（带缓存）
+  async _checkAdminStatus() {
+    // 检查缓存
+    const cachedAdmin = wx.getStorageSync('isAdmin')
+    const adminCacheTime = wx.getStorageSync('adminCacheTime')
+    const CACHE_TTL = 5 * 60 * 1000 // 5分钟
+    
+    // 使用缓存
+    if (cachedAdmin !== '' && adminCacheTime && (Date.now() - adminCacheTime < CACHE_TTL)) {
+      this.setData({ isAdmin: cachedAdmin === 'true' })
+      return
+    }
+    
+    // 缓存过期或不存在，请求服务器
     try {
-      const res2 = await callCloud('productMgr', { action: 'myList', page: 1, pageSize: 5 })
-      const list = (res2.list || []).map(item => {
+      const res = await callCloud('adminMgr', { action: 'getAdminStatus' })
+      const isAdmin = !!(res && res.isSuperAdmin)
+      this.setData({ isAdmin })
+      wx.setStorageSync('isAdmin', isAdmin ? 'true' : 'false')
+      wx.setStorageSync('adminCacheTime', Date.now())
+    } catch (e) {
+      console.error('[mine] 检查管理员失败:', e)
+      // 请求失败时，尝试使用缓存（即使过期）
+      if (cachedAdmin !== '') {
+        this.setData({ isAdmin: cachedAdmin === 'true' })
+      }
+    }
+  },
+
+  // 加载我的特产预览（独立，不阻塞）
+  async _loadMyProductsPreview() {
+    try {
+      const res = await callCloud('productMgr', { action: 'myList', page: 1, pageSize: 5 })
+      const list = (res.list || []).map(item => {
         let statusLabel = '展示中', statusClass = 'status-active'
         if (item.status === 'in_swap') { statusLabel = '换中'; statusClass = 'status-in-swap' }
         if (item.status === 'swapped') { statusLabel = '已换出'; statusClass = 'status-swapped' }
-        // 神秘特产处理
+        
         const isMystery = item.isMystery || false
         let mysteryStyle = {}
         if (isMystery) {
           const MYSTERY_EMOJIS = ['🎁', '🎀', '🎉', '🎊', '🎄', '🎃', '🎈', '🎯', '🎲', '🎳']
           const provinceName = item.province ? getProvinceByCode(item.province)?.name || item.province : '神秘'
           const code = provinceName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
-          mysteryStyle = {
-            isMystery: true,
-            colorClass: `color-${(code % 10) + 1}`,
-            emoji: MYSTERY_EMOJIS[code % MYSTERY_EMOJIS.length],
-            provinceName: provinceName
+          const emoji = MYSTERY_EMOJIS[code % MYSTERY_EMOJIS.length]
+          mysteryStyle = { background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }
+          item.coverUrl = emoji
+          item.colorClass = `color-${(code % 10) + 1}`
+          item.emoji = emoji
+          item.provinceName = provinceName
+          item.displayName = provinceName + '神秘特产'
+        } else {
+          // 处理普通特产的图片链接
+          let coverUrl = '/images/default-product.png'
+          if (item.images && item.images.length > 0) {
+            coverUrl = processImageUrl(item.images[0])
+          } else if (item.coverUrl) {
+            coverUrl = processImageUrl(item.coverUrl)
           }
+          item.coverUrl = coverUrl
+          item.displayName = item.name || '特产'
         }
         
-        return {
-          ...item,
-          ...mysteryStyle,
-          coverUrl: isMystery ? '' : (item.images && item.images[0] ? processImageUrl(item.images[0]) : ''),
-          statusLabel,
-          statusClass
-        }
+        item.statusLabel = statusLabel
+        item.statusClass = statusClass
+        item.mysteryStyle = mysteryStyle
+        return item
       })
       this.setData({ myProducts: list })
-    } catch (e) {}
+    } catch (e) {
+      console.error('[mine] 加载特产预览失败:', e)
+    }
   },
 
   // 选择头像（使用新版组件）
@@ -319,10 +394,24 @@ Page({
     try {
       // 上传到云存储，得到 cloud:// fileID
       const fileID = await uploadImage(tempPath, 'avatars')
+      
+      // 立即保存到数据库
+      const saveRes = await callCloud('userInit', {
+        action: 'updateProfile',
+        avatarUrl: fileID
+      })
+      
       wx.hideLoading()
-      const userInfo = this.data.userInfo || {}
-      userInfo.avatarUrl = fileID
-      this.setData({ userInfo })
+      
+      if (saveRes && saveRes.success) {
+        const userInfo = this.data.userInfo || {}
+        userInfo.avatarUrl = fileID
+        this.setData({ userInfo })
+        getApp().globalData.userInfo = userInfo
+        toast('头像已保存', 'success')
+      } else {
+        toast(saveRes?.error || '保存失败')
+      }
     } catch (err) {
       wx.hideLoading()
       console.error('头像上传失败', err)
@@ -330,12 +419,21 @@ Page({
     }
   },
 
-  // 输入昵称
+  // 输入昵称（同时自动保存）
   onNicknameInput(e) {
     const nickName = e.detail.value
     const userInfo = this.data.userInfo || {}
     userInfo.nickName = nickName
     this.setData({ userInfo })
+    
+    // 如果头像已设置且昵称至少2个字，自动保存
+    if (userInfo.avatarUrl && !userInfo.avatarUrl.includes('default-avatar') && nickName && nickName.trim().length >= 2) {
+      // 防抖：延迟500ms后保存，避免每次输入都调用
+      if (this._saveTimer) clearTimeout(this._saveTimer)
+      this._saveTimer = setTimeout(() => {
+        this.saveUserProfile()
+      }, 500)
+    }
   },
 
   // 保存用户信息（头像+昵称）
@@ -399,11 +497,26 @@ Page({
     if (!tempPath) return
     showLoading('上传中...')
     try {
+      // 上传到云存储，得到 cloud:// fileID
       const fileID = await uploadImage(tempPath, 'avatars')
+      
+      // 立即保存到数据库
+      const saveRes = await callCloud('userInit', {
+        action: 'updateProfile',
+        avatarUrl: fileID
+      })
+      
       wx.hideLoading()
-      this.setData({ guideAvatarUrl: fileID })
+      
+      if (saveRes && saveRes.success) {
+        this.setData({ guideAvatarUrl: fileID })
+        toast('头像已保存', 'success')
+      } else {
+        toast(saveRes?.error || '头像保存失败')
+      }
     } catch (err) {
       wx.hideLoading()
+      console.error('头像上传失败', err)
       toast('头像上传失败，请重试')
     }
   },
@@ -588,6 +701,12 @@ Page({
     wx.navigateTo({ url: '/pages/about/index' })
   },
 
+  // 代购实名认证
+  goDaigouVerify() {
+    wx.navigateTo({ url: '/pages/daigou-verify/index' })
+  },
+
+
   // 跳转我的收藏
   goToFavorites() {
     wx.navigateTo({ url: '/pages/favorites/index' })
@@ -612,6 +731,13 @@ Page({
   goToReview() {
     wx.navigateTo({ url: '/pages/my-reviews/index' })
   },
+
+  // 代购订单
+  goToDaigouOrders() {
+    wx.navigateTo({ url: '/pages/daigou-order-list/index' })
+  },
+
+
 
   toggleBadgeExpand() {
     this.setData({

@@ -1,0 +1,9 @@
+{
+  "functions": [
+    {
+      "name": "cleanupUsers",
+      "timeout": 60,
+      "memorySize": 256
+    }
+  ]
+}

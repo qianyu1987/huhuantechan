@@ -28,7 +28,9 @@ Page({
     mysteryColorClass: 'color-1',
     // 评价
     reviews: [],
-    reviewCount: 0
+    reviewCount: 0,
+    // 代购卖家信息（异步加载）
+    sellerDaigouInfo: null
   },
 
   getMysteryColor(name) {
@@ -148,6 +150,11 @@ Page({
       // 加载发布者评价
       this.loadReviews(res.product.openid)
 
+      // 若商品支持代购且非自己发布，异步加载代购卖家信息
+      if (!res.isMine && p.daigou && p.daigou.enabled) {
+        this.loadSellerDaigouInfo(p.openid || p._openid)
+      }
+
       wx.setNavigationBarTitle({ title: isMystery ? '惊喜特产' : p.name })
     } catch (e) {
       toast('加载失败')
@@ -183,6 +190,22 @@ Page({
       }
     } catch (e) {
       // 静默失败
+    }
+  },
+
+  // 异步加载代购卖家等级/评分信息
+  async loadSellerDaigouInfo(sellerOpenid) {
+    if (!sellerOpenid) return
+    try {
+      const res = await callCloud('daigouMgr', {
+        action: 'getSellerDaigouInfo',
+        sellerOpenid
+      })
+      if (res.success && res.seller) {
+        this.setData({ sellerDaigouInfo: res.seller })
+      }
+    } catch (e) {
+      // 静默失败，不影响主要功能
     }
   },
 
@@ -222,6 +245,19 @@ Page({
 
   initiateSwap() {
     wx.navigateTo({ url: `/pages/match/index?targetId=${this.data.product._id}` })
+  },
+
+  // 代购：跳转下单页
+  initiateBuy() {
+    const product = this.data.product
+    if (!product || !product.daigou || !product.daigou.enabled) return
+    if (product.daigou.stock <= 0) {
+      toast('该特产已售罄')
+      return
+    }
+    wx.navigateTo({
+      url: `/pages/daigou-checkout/index?productId=${product._id}`
+    })
   },
 
   editProduct() {

@@ -1,6 +1,6 @@
 // app.js
 const { DEFAULT_FEATURE_FLAGS } = require('./utils/constants')
-const $pl = require('./utils/platform')
+const platformUtil = require('./utils/platform')
 
 App({
   globalData: {
@@ -19,10 +19,10 @@ App({
 
   onLaunch() {
     // 获取平台信息（支持三端）
-    const $pi = $pl.getPlatformInfo()
-    this.globalData.platform = $pi.platform
-    this.globalData.platformInfo = $pi
-    console.log('[App] 平台:', $pi)
+    const platformInfo = platformUtil.getPlatformInfo()
+    this.globalData.platform = platformInfo.platform
+    this.globalData.platformInfo = platformInfo
+    console.log('[App] 平台:', platformInfo)
 
     // 初始化云开发
     if (!wx.cloud) {
@@ -35,42 +35,15 @@ App({
     }
     
     // 使用指定的环境ID初始化
-    // 多端应用扩展库在 Windows 开发工具上需要特殊处理
-    const $initCloud = () => {
-      try {
-        // 方案1：不指定 env，让扩展库自动选择环境
-        wx.cloud.init({
-          traceUser: true
-        })
-        console.log('[App] 云开发初始化成功（自动环境）')
-        return true
-      } catch ($ex) {
-        console.error('[App] 云开发初始化失败（自动环境）', $ex)
-        return false
-      }
-    }
-
-    const $initCloudWithEnv = () => {
-      try {
-        // 方案2：显式指定环境ID
-        wx.cloud.init({
-          env: this.globalData.envId,
-          traceUser: true
-        })
-        console.log('[App] 云开发初始化成功（指定环境）', this.globalData.envId)
-        return true
-      } catch ($ex) {
-        console.error('[App] 云开发初始化失败（指定环境）', $ex)
-        return false
-      }
-    }
-
-    // 优先尝试自动环境，失败后再尝试指定环境
-    if (!$initCloud()) {
-      if (!$initCloudWithEnv()) {
-        // 两种方案都失败，但不要弹窗打断用户
-        console.error('[App] 云开发初始化完全失败，将在调用云函数时重试')
-      }
+    // 强制指定环境ID，避免 "Environment not found" 错误
+    try {
+      wx.cloud.init({
+        env: this.globalData.envId,
+        traceUser: true
+      })
+      console.log('[App] 云开发初始化成功，环境:', this.globalData.envId)
+    } catch (ex) {
+      console.error('[App] 云开发初始化失败', ex)
     }
 
     // TDesign图标字体通过CSS自动加载，无需手动处理
@@ -87,24 +60,24 @@ App({
   loadFeatureFlags() {
     // 先读本地缓存（同步）
     try {
-      const $ca = wx.getStorageSync('featureFlags')
-      const $tl = wx.getStorageSync('featureFlagsTTL')
-      if ($ca && $tl && Date.now() < $tl) {
-        this.applyFeatureFlags($ca)
+      const cached = wx.getStorageSync('featureFlags')
+      const cachedTTL = wx.getStorageSync('featureFlagsTTL')
+      if (cached && cachedTTL && Date.now() < cachedTTL) {
+        this.applyFeatureFlags(cached)
         console.log('[App] 使用缓存的功能开关配置')
         return
       }
-    } catch ($e1) {
+    } catch (err) {
       // 缓存读取失败，继续走网络
     }
 
     // 缓存过期或不存在，异步加载
     this.callCloudFunctionWithRetry('adminMgr', { action: 'getFeatureFlags' }, 3)
-      .then($r1 => {
-        if ($r1.result && $r1.result.success && $r1.result.flags) {
-          this.applyFeatureFlags($r1.result.flags)
+      .then(res => {
+        if (res.result && res.result.success && res.result.flags) {
+          this.applyFeatureFlags(res.result.flags)
           // 缓存5分钟
-          wx.setStorageSync('featureFlags', $r1.result.flags)
+          wx.setStorageSync('featureFlags', res.result.flags)
           wx.setStorageSync('featureFlagsTTL', Date.now() + 5 * 60 * 1000)
           console.log('[App] 从云端加载功能开关配置')
         } else {
@@ -112,24 +85,24 @@ App({
           console.log('[App] 云端无配置，使用默认值')
         }
       })
-      .catch($e2 => {
-        console.error('[App] 加载功能开关失败', $e2)
+      .catch(err => {
+        console.error('[App] 加载功能开关失败', err)
         this.applyFeatureFlags({ ...DEFAULT_FEATURE_FLAGS })
       })
   },
 
   // 应用功能开关（处理审核模式）
-  applyFeatureFlags($fl) {
-    const $ap = { ...DEFAULT_FEATURE_FLAGS, ...$fl }
+  applyFeatureFlags(flags) {
+    const appliedFlags = { ...DEFAULT_FEATURE_FLAGS, ...flags }
     // 审核模式：自动隐藏敏感功能
-    if ($ap.review_mode) {
-      $ap.tab_match = false
-      $ap.tab_order = false
-      $ap.feature_mystery = false
-      $ap.feature_value_display = false
-      $ap.feature_swap = false
+    if (appliedFlags.review_mode) {
+      appliedFlags.tab_match = false
+      appliedFlags.tab_order = false
+      appliedFlags.feature_mystery = false
+      appliedFlags.feature_value_display = false
+      appliedFlags.feature_swap = false
     }
-    this.globalData.featureFlags = $ap
+    this.globalData.featureFlags = appliedFlags
     this.globalData.featureFlagsReady = true
   },
 
@@ -145,16 +118,16 @@ App({
     try {
       wx.removeStorageSync('featureFlags')
       wx.removeStorageSync('featureFlagsTTL')
-      const $r3 = await this.callCloudFunctionWithRetry('adminMgr', { action: 'getFeatureFlags' }, 3)
-      if ($r3.result && $r3.result.success && $r3.result.flags) {
-        this.applyFeatureFlags($r3.result.flags)
-        wx.setStorageSync('featureFlags', $r3.result.flags)
+      const res = await this.callCloudFunctionWithRetry('adminMgr', { action: 'getFeatureFlags' }, 3)
+      if (res.result && res.result.success && res.result.flags) {
+        this.applyFeatureFlags(res.result.flags)
+        wx.setStorageSync('featureFlags', res.result.flags)
         wx.setStorageSync('featureFlagsTTL', Date.now() + 5 * 60 * 1000)
       } else {
         this.applyFeatureFlags({ ...DEFAULT_FEATURE_FLAGS })
       }
-    } catch ($e3) {
-      console.error('[App] 刷新功能开关失败', $e3)
+    } catch (err) {
+      console.error('[App] 刷新功能开关失败', err)
     }
   },
 
@@ -173,18 +146,18 @@ App({
 
   // 显示协议确认弹窗
   showAgreementModal() {
-    const $t = this
+    const self = this
     wx.showModal({
       title: '用户协议与隐私政策',
       content: '欢迎使用风物之小程序！\n\n在使用本小程序前，请先阅读并同意：\n\n• 《用户服务协议》\n• 《隐私政策》\n\n点击"同意"即表示您已阅读并同意相关条款。',
       confirmText: '同意并继续',
       cancelText: '不同意',
-      success: ($r4) => {
-        if ($r4.confirm) {
+      success: (modalRes) => {
+        if (modalRes.confirm) {
           // 用户同意，保存状态并继续
           wx.setStorageSync('userAgreedAgreement', true)
           wx.setStorageSync('agreementDate', new Date().toISOString())
-          $t.initUser()
+          self.initUser()
         } else {
           // 用户不同意，提示并退出
           wx.showModal({
@@ -203,9 +176,9 @@ App({
 
   // 图标字体加载（多端兼容）
   loadIcons() {
-    const $pi = this.globalData.platformInfo
+    const platformInfo = this.globalData.platformInfo
     // HarmonyOS 和 App 平台字体加载可能有兼容性问题，跳过或使用本地字体
-    if ($pi && ($pi.isOhos || $pi.isApp)) {
+    if (platformInfo && (platformInfo.isOhos || platformInfo.isApp)) {
       console.log('[App] 非微信平台，跳过远程字体加载')
       return
     }
@@ -225,86 +198,92 @@ App({
 
   async initUser() {
     try {
-      const $r7 = await this.callCloudFunctionWithRetry('userInit', {}, 3)
-      if ($r7.result && $r7.result.success) {
-        this.globalData.openid = $r7.result.openid
-        this.globalData.userInfo = $r7.result.userInfo
-        this.globalData.creditScore = $r7.result.creditScore || 100
-        this.globalData.province = $r7.result.province || ''
-        this.globalData.provincesBadges = $r7.result.provincesBadges || []
-        this.globalData.points = $r7.result.points || 0 // ✅ 补充 points
+      console.log('[App] 开始初始化用户...')
+      const res = await this.callCloudFunctionWithRetry('userInit', { action: 'init' }, 3)
+      console.log('[App] userInit 响应:', res.result)
+      if (res.result && res.result.success) {
+        this.globalData.openid = res.result.openid
+        this.globalData.userInfo = res.result.userInfo
+        this.globalData.creditScore = res.result.creditScore || 100
+        this.globalData.province = res.result.province || ''
+        this.globalData.provincesBadges = res.result.provincesBadges || []
+        this.globalData.points = res.result.points || 0 // ✅ 补充 points
+
+        console.log('[App] 用户初始化成功, openid:', res.result.openid, 'points:', res.result.points)
 
         // 检查并绑定邀请关系
         await this.bindInviteIfNeeded()
+      } else {
+        console.error('[App] userInit 返回失败:', res.result)
       }
-    } catch ($e5) {
-      console.error('[App] 用户初始化失败', $e5)
+    } catch (err) {
+      console.error('[App] 用户初始化失败', err)
     }
   },
 
   // 检查并绑定邀请关系
   async bindInviteIfNeeded() {
     try {
-      const $pic = wx.getStorageSync('pendingInviteCode')
-      const $bi = wx.getStorageSync('boundInvite')
+      const pendingInviteCode = wx.getStorageSync('pendingInviteCode')
+      const alreadyBound = wx.getStorageSync('boundInvite')
 
       // 如果有待绑定的邀请码且未绑定
-      if ($pic && !$bi) {
-        const $r5 = await this.callCloudFunctionWithRetry('userInit', {
+      if (pendingInviteCode && !alreadyBound) {
+        const res = await this.callCloudFunctionWithRetry('userInit', {
           action: 'bindInvite',
-          inviteCode: $pic
+          inviteCode: pendingInviteCode
         }, 3)
 
-        if ($r5.result && $r5.result.success) {
-          wx.setStorageSync('boundInvite', $pic)
+        if (res.result && res.result.success) {
+          wx.setStorageSync('boundInvite', pendingInviteCode)
           wx.removeStorageSync('pendingInviteCode')
 
           // 提示获得积分
-          if ($r5.result.reward > 0) {
+          if (res.result.reward > 0) {
             wx.showModal({
               title: '邀请成功',
-              content: `恭喜获得 ${$r5.result.reward} 积分奖励！`,
+              content: `恭喜获得 ${res.result.reward} 积分奖励！`,
               showCancel: false
             })
           }
         }
       }
-    } catch ($e4) {
-      console.error('[App] 绑定邀请关系失败', $e4)
+    } catch (err) {
+      console.error('[App] 绑定邀请关系失败', err)
     }
   },
 
   // ========== 云函数调用辅助方法（含重试和平台兼容性） ==========
-  callCloudFunctionWithRetry($nm, $dt = {}, $mr = 3) {
-    return new Promise(($rs, $rj) => {
-      let $rc = 0
+  callCloudFunctionWithRetry(funcName, data = {}, maxRetries = 3) {
+    return new Promise((resolve, reject) => {
+      let retryCount = 0
 
-      const $dc = () => {
+      const doCall = () => {
         if (!wx.cloud) {
-          $rj(new Error('云开发尚未初始化'))
+          reject(new Error('云开发尚未初始化'))
           return
         }
 
         wx.cloud.callFunction({
-          name: $nm,
-          data: $dt
-        }).then($r6 => {
-          $rs($r6)
-        }).catch($err => {
-          $rc++
-          console.warn(`[App] 云函数调用失败 (${$nm}), 重试 ${$rc}/${$mr}:`, $err)
+          name: funcName,
+          data: data
+        }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          retryCount++
+          console.warn(`[App] 云函数调用失败 (${funcName}), 重试 ${retryCount}/${maxRetries}:`, err)
 
           // 错误码 -601002 在 HarmonyOS 上通常是环境问题，尝试重试
-          if ($rc < $mr && ($err.errCode === -601002 || $err.errCode === -1)) {
+          if (retryCount < maxRetries && (err.errCode === -601002 || err.errCode === -1)) {
             // 延迟后重试，避免立即重试导致连接被拒
-            setTimeout($dc, 1000 * $rc)
+            setTimeout(doCall, 1000 * retryCount)
           } else {
-            $rj($err)
+            reject(err)
           }
         })
       }
 
-      $dc()
+      doCall()
     })
   }
 })

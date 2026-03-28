@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>特产互换小程序 - 功能开发规划方案</title>
+  <style>
+    :root {
+      --primary: #07C160;
+      --primary-dark: #06AD56;
+      --danger: #FF3B30;
+      --warning: #FF9500;
+      --info: #007AFF;
+      --success: #34C759;
+      --gray-100: #F8F9FA;
+      --gray-200: #E9ECEF;
+      --gray-300: #DEE2E6;
+      --gray-500: #ADB5BD;
+      --gray-700: #495057;
+      --gray-900: #212529;
+    }
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      color: var(--gray-900);
+      background: var(--gray-100);
+    }
+    
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    
+    header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      padding: 40px 0;
+      margin-bottom: 30px;
+    }
+    
+    header h1 { font-size: 2rem; margin-bottom: 10px; }
+    header p { opacity: 0.9; }
+    
+    .meta-info { display: flex; gap: 20px; margin-top: 15px; font-size: 0.9rem; }
+    .meta-info span { background: rgba(255,255,255,0.2); padding: 5px 12px; border-radius: 20px; }
+    
+    .section {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .section-title {
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--gray-200);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+    th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--gray-200); }
+    th { background: var(--gray-100); font-weight: 600; }
+    tr:hover { background: var(--gray-100); }
+    
+    .priority-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    
+    .priority-p0 { background: #FEE2E2; color: #DC2626; }
+    .priority-p1 { background: #FEF3C7; color: #D97706; }
+    .priority-p2 { background: #DBEAFE; color: #2563EB; }
+    .priority-p3 { background: #F3E8FF; color: #7C3AED; }
+    
+    .feature-card { border: 1px solid var(--gray-200); border-radius: 8px; margin-bottom: 15px; overflow: hidden; }
+    
+    .feature-header {
+      background: var(--gray-100);
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+    
+    .feature-header h3 { font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
+    .feature-body { padding: 20px; }
+    .feature-body.collapsed { display: none; }
+    
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      margin-right: 5px;
+    }
+    
+    .tag-green { background: #D1FAE5; color: #059669; }
+    .tag-yellow { background: #FEF3C7; color: #D97706; }
+    .tag-red { background: #FEE2E2; color: #DC2626; }
+    
+    .work-hours {
+      background: var(--gray-100);
+      padding: 10px 15px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      margin-top: 15px;
+    }
+    
+    .work-hours strong { color: var(--primary); }
+    
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+    
+    .info-box {
+      background: var(--gray-100);
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 4px solid var(--info);
+      margin: 10px 0;
+    }
+    
+    .warning-box {
+      background: #FFFBEB;
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 4px solid var(--warning);
+      margin: 10px 0;
+    }
+    
+    .danger-box {
+      background: #FEF2F2;
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 4px solid var(--danger);
+      margin: 10px 0;
+    }
+    
+    .code-block {
+      background: #1E293B;
+      color: #E2E8F0;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-family: monospace;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      margin: 10px 0;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin: 15px 0;
+    }
+    
+    .stat-card {
+      background: var(--gray-100);
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    
+    .stat-card .value { font-size: 1.8rem; font-weight: 700; color: var(--primary); }
+    .stat-card .label { font-size: 0.85rem; color: var(--gray-700); }
+    
+    .arrow { transition: transform 0.3s; }
+    .arrow.expanded { transform: rotate(180deg); }
+    
+    h4 { margin: 15px 0 10px 0; color: var(--gray-900); }
+    ul { margin: 10px 0; padding-left: 20px; }
+    li { margin: 5px 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>特产互换小程序 - 功能开发规划方案</h1>
+      <p>基于现有架构的功能扩展与技术实现方案</p>
+      <div class="meta-info">
+        <span>版本: v1.0.0</span>
+        <span>更新日期: 2026-03-28</span>
+        <span>总工作量: ~98h</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- 概览 -->
+    <div class="section">
+      <h2 class="section-title">项目概览</h2>
+      
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="value">7</div>
+          <div class="label">功能模块</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">15h</div>
+          <div class="label">P0 工作量</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">25h</div>
+          <div class="label">P1 工作量</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">16h</div>
+          <div class="label">P2 工作量</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">42h+</div>
+          <div class="label">P3 工作量</div>
+        </div>
+      </div>
+
+      <div class="warning-box">
+        <strong>重要提示</strong><br>
+        P3 会员订阅功能需要微信支付资质，建议先实现积分会员（简化版），积累用户数据后再评估付费会员。
+      </div>
+    </div>
+
+    <!-- 优先级矩阵 -->
+    <div class="section">
+      <h2 class="section-title">功能优先级矩阵</h2>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>优先级</th>
+            <th>功能</th>
+            <th>用户价值</th>
+            <th>商业价值</th>
+            <th>复杂度</th>
+            <th>工作量</th>
+            <th>依赖</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="priority-badge priority-p0">P0</span></td>
+            <td><strong>订单超时机制</strong></td>
+            <td>⭐⭐⭐⭐⭐</td>
+            <td>⭐⭐⭐</td>
+            <td><span class="tag tag-green">低</span></td>
+            <td>4h</td>
+            <td>无</td>
+          </tr>
+          <tr>
+            <td><span class="priority-badge priority-p0">P0</span></td>
+            <td><strong>信用分机制完善</strong></td>
+            <td>⭐⭐⭐⭐⭐</td>
+            <td>⭐⭐⭐⭐</td>
+            <td><span class="tag tag-yellow">中</span></td>
+            <td>8h</td>
+            <td>无</td>
+          </tr>
+          <tr>
+            <td><span class="priority-badge priority-p0">P0</span></td>
+            <td><strong>邀请裂变-首次互换奖励</strong></td>
+            <td>⭐⭐⭐⭐</td>
+            <td>⭐⭐⭐⭐⭐</td>
+            <td><span class="tag tag-green">低</span></td>
+            <td>3h</td>
+            <td>无</td>
+          </tr>
+          <tr>
+            <td><span class="priority-badge priority-p1">P1</span></td>
+            <td><strong>纠纷仲裁</strong></td>
+            <td>⭐⭐⭐⭐⭐</td>
+            <td>⭐⭐⭐⭐</td>
+            <td><span class="tag tag-yellow">中</span></td>
+            <td>8h</td>
+            <td>无</td>
+          </tr>
+          <tr>
+            <td><span class="priority-badge priority-p1">P1</span></td>
+            <td><strong>订单状态推送</strong></td>
+            <td>⭐⭐⭐⭐</td>
+            <td>⭐⭐⭐</td>
+            <td><span class="tag tag-red">高</span></td>
+            <td>12h</td>
+            <td>模板消息</td>
+          </tr>
+          <tr>
+            <td><span class="priority-badge priority-p1">P1</span></td>
+            <td><strong>新用户引导</strong></td>
+            <td>⭐⭐⭐⭐</td>
+            <td>⭐⭐⭐⭐</td>
+            <td><span class="tag tag-yellow">中</span></td>
+            <td>5h</td>
+            <td>无</td>
+          </tr>
+          <tr>
+            <td><span class="priority-badge priority-p2">P2</span></td>
+            <td><strong>心愿单</strong></td>
+            <td>⭐⭐⭐⭐</td>
+            <td>⭐⭐⭐</td>
+            <td><span class="tag tag-yellow">中</span></td>
+            <td>10h</td>
+            <td>数据积累</td>
+          </tr>
+          <tr>
+            <td><span class="priority-badge priority-p2">P2</span></td>
+            <td><strong>邀请海报/排行榜</strong></td>
+            <td>⭐⭐⭐</td>
+            <td>⭐⭐⭐</td>
+            <td><span class="tag tag-yellow">中</span></td>
+            <td>6h</td>
+            <td>无</td>
+          </tr>
+          <tr>
+            <td><span class="priority-badge priority-p3">P3</span></td>
+            <td><strong>会员订阅</strong></td>
+            <td>⭐⭐⭐</td>
+            <td>⭐⭐⭐⭐⭐</td>
+            <td><span class="tag tag-red">高</span></td>
+            <td>42h+</td>
+            <td>微信支付</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- P0 功能详情 -->
+    <div class="section">
+      <h2 class="section-title">
+        <span class="priority-badge priority-p0">P0</span>
+        核心功能（本周完成 - 15h）
+      </h2>
+
+      <!-- 订单超时机制 -->
+      <div class="feature-card">
+        <div class="feature-header" onclick="toggleFeature(this)">
+          <h3>订单超时机制</h3>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="feature-body">
+          <div class="grid-2">
+            <div>
+              <h4>功能说明</h4>
+              <ul>
+                <li>确认后 <strong>72小时</strong> 未发货，自动取消订单</li>
+                <li>订单取消后，双方特产恢复为 active 状态</li>
+                <li>发送系统通知给双方</li>
+                <li>记录取消原因和时间</li>
+              </ul>
+              
+              <h4>业务规则</h4>
+              <table>
+                <tr><th>场景</th><th>触发条件</th><th>处理方式</th></tr>
+                <tr><td>超时未发货</td><td>确认后 72h</td><td>自动取消 + 扣信用分</td></tr>
+                <tr><td>超时未收货</td><td>发货后 7 天</td><td>自动确认收货</td></tr>
+              </table>
+            </div>
+            
+            <div>
+              <h4>技术方案</h4>
+              <div class="info-box">
+                <strong>方案：云函数定时触发器</strong>
+                <p>每小时执行一次，批量处理超时订单</p>
+              </div>
+              
+              <div class="code-block">
+// checkOrderTimeout 云函数
+const now = new Date()
+const deadline = new Date(now - 72*60*60*1000)
+
+const orders = await db.collection('orders')
+  .where({
+    status: 'confirmed',
+    confirmTime: db.command.lt(deadline)
+  }).get()
+
+// 批量取消订单
+for (const order of orders.data) {
+  await cancelOrder(order._id, '超时未发货')
+}
+              </div>
+              
+              <h4>数据结构</h4>
+              <div class="code-block">
+// orders 表新增字段
+{
+  confirmTime: Date,      // 确认时间
+  shipDeadline: Date,     // 发货截止时间
+  autoCancelReason: String
+}
+              </div>
+            </div>
+          </div>
+          
+          <div class="work-hours">
+            <strong>预估工作量：4h</strong>
+            <span>（云函数 2h + 定时器 0.5h + 取消逻辑 1h + 前端 0.5h）</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 信用分机制完善 -->
+      <div class="feature-card">
+        <div class="feature-header" onclick="toggleFeature(this)">
+          <h3>信用分机制完善</h3>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="feature-body">
+          <div class="grid-2">
+            <div>
+              <h4>现有规则</h4>
+              <table>
+                <tr><th>事件</th><th>分值</th></tr>
+                <tr><td>完成互换</td><td class="tag tag-green">+5</td></tr>
+                <tr><td>收到好评</td><td class="tag tag-green">+2</td></tr>
+                <tr><td>收到差评</td><td class="tag tag-red">-10</td></tr>
+                <tr><td>确认后取消</td><td class="tag tag-red">-5</td></tr>
+                <tr><td>纠纷败诉</td><td class="tag tag-red">-15</td></tr>
+              </table>
+              
+              <h4>新增规则</h4>
+              <table>
+                <tr><th>事件</th><th>分值</th><th>触发条件</th></tr>
+                <tr><td>超时未发货</td><td class="tag tag-red">-8</td><td>72h未发货</td></tr>
+                <tr><td>超时未收货</td><td class="tag tag-red">-5</td><td>7天未确认</td></tr>
+                <tr><td>首次互换</td><td class="tag tag-green">+3</td><td>完成首次互换</td></tr>
+                <tr><td>连续守信</td><td class="tag tag-green">+1</td><td>连续3次无违约</td></tr>
+              </table>
+            </div>
+            
+            <div>
+              <h4>技术方案</h4>
+              <div class="code-block">
+// 统一信用分更新函数
+async function updateCreditScore(openid, delta, reason) {
+  // 1. 更新用户信用分
+  await db.collection('users').doc(userId).update({
+    data: { creditScore: _.inc(delta) }
+  })
+  
+  // 2. 记录变动日志
+  await db.collection('credit_log').add({
+    data: {
+      _openid: openid,
+      delta, reason,
+      createTime: db.serverDate()
+    }
+  })
+}
+              </div>
+              
+              <h4>数据结构</h4>
+              <div class="code-block">
+// users 表新增字段
+{
+  consecutiveGoodSwaps: Number,
+  lastSwapTime: Date,
+}
+              </div>
+            </div>
+          </div>
+          
+          <div class="work-hours">
+            <strong>预估工作量：8h</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- 首次互换奖励 -->
+      <div class="feature-card">
+        <div class="feature-header" onclick="toggleFeature(this)">
+          <h3>邀请裂变 - 首次互换奖励</h3>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="feature-body">
+          <div class="grid-2">
+            <div>
+              <h4>奖励规则</h4>
+              <table>
+                <tr><th>事件</th><th>邀请人</th><th>被邀请人</th></tr>
+                <tr><td>注册（已实现）</td><td class="tag tag-green">+10</td><td class="tag tag-green">+5</td></tr>
+                <tr><td>首次互换</td><td class="tag tag-green">+20</td><td class="tag tag-green">+10</td></tr>
+              </table>
+            </div>
+            
+            <div>
+              <h4>技术方案</h4>
+              <div class="code-block">
+// orderMgr - 订单完成时
+if (user.swapCount === 1 && user.invitedBy) {
+  if (!user.firstSwapRewardSent) {
+    // 邀请人 +20，被邀请人 +10
+    await sendFirstSwapReward(user)
+    await db.collection('users').doc(user._id).update({
+      data: { firstSwapRewardSent: true }
+    })
+  }
+}
+              </div>
+            </div>
+          </div>
+          
+          <div class="work-hours">
+            <strong>预估工作量：3h</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- P1 功能详情 -->
+    <div class="section">
+      <h2 class="section-title">
+        <span class="priority-badge priority-p1">P1</span>
+        重要功能（下周完成 - 25h）
+      </h2>
+
+      <!-- 纠纷仲裁 -->
+      <div class="feature-card">
+        <div class="feature-header" onclick="toggleFeature(this)">
+          <h3>纠纷仲裁（人工介入）</h3>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="feature-body">
+          <div class="grid-2">
+            <div>
+              <h4>功能说明</h4>
+              <ul>
+                <li>用户申请纠纷（提交原因+证据图片）</li>
+                <li>管理员后台处理纠纷</li>
+                <li>支持查看证据、做出裁决</li>
+                <li>裁决结果自动扣分/加分</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4>数据结构</h4>
+              <div class="code-block">
+// orders 表新增字段
+{
+  dispute: {
+    applicant: String,
+    reason: String,
+    images: Array,
+    status: 'pending' | 'resolved',
+    result: String,
+    resolveTime: Date
+  }
+}
+              </div>
+            </div>
+          </div>
+          
+          <div class="work-hours">
+            <strong>预估工作量：8h</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- 订单状态推送 -->
+      <div class="feature-card">
+        <div class="feature-header" onclick="toggleFeature(this)">
+          <h3>订单状态推送通知</h3>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="feature-body">
+          <div class="grid-2">
+            <div>
+              <h4>通知场景</h4>
+              <table>
+                <tr><th>场景</th><th>接收人</th></tr>
+                <tr><td>互换请求</td><td>接收方</td></tr>
+                <tr><td>互换确认</td><td>发起方</td></tr>
+                <tr><td>对方发货</td><td>接收方</td></tr>
+                <tr><td>确认收货</td><td>发送方</td></tr>
+                <tr><td>订单完成</td><td>双方</td></tr>
+              </table>
+            </div>
+            
+            <div>
+              <h4>技术方案</h4>
+              <div class="code-block">
+await cloud.openapi.subscribeMessage.send({
+  touser: openid,
+  template_id: templateId,
+  page: '/pages/order-detail/index?id=' + orderId,
+  data: {
+    thing1: { value: productName },
+    thing2: { value: status }
+  }
+})
+              </div>
+              
+              <div class="warning-box">
+                <strong>前置条件</strong>：需申请微信订阅消息模板
+              </div>
+            </div>
+          </div>
+          
+          <div class="work-hours">
+            <strong>预估工作量：12h</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- 新用户引导 -->
+      <div class="feature-card">
+        <div class="feature-header" onclick="toggleFeature(this)">
+          <h3>新用户引导页</h3>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="feature-body">
+          <ul>
+            <li>显示邀请人信息（头像、昵称）</li>
+            <li>新人礼包说明（积分、特权）</li>
+            <li>引导完善资料、浏览特产</li>
+          </ul>
+          
+          <div class="work-hours">
+            <strong>预估工作量：5h</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- P2 功能详情 -->
+    <div class="section">
+      <h2 class="section-title">
+        <span class="priority-badge priority-p2">P2</span>
+        优化功能（第三周 - 16h）
+      </h2>
+
+      <div class="feature-card">
+        <div class="feature-header" onclick="toggleFeature(this)">
+          <h3>心愿单</h3>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="feature-body">
+          <ul>
+            <li>用户发布想要换的特产（省份、品类、关键词）</li>
+            <li>有匹配特产时推送通知</li>
+            <li>精准匹配提升互换成功率</li>
+          </ul>
+          <div class="work-hours"><strong>预估工作量：10h</strong></div>
+        </div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-header" onclick="toggleFeature(this)">
+          <h3>邀请海报/排行榜</h3>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="feature-body">
+          <ul>
+            <li>Canvas 绘制邀请海报（头像+昵称+小程序码）</li>
+            <li>邀请人数排行榜（TOP 10）</li>
+          </ul>
+          <div class="work-hours"><strong>预估工作量：6h</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- P3 功能详情 -->
+    <div class="section">
+      <h2 class="section-title">
+        <span class="priority-badge priority-p3">P3</span>
+        后期规划（42h+）
+      </h2>
+
+      <div class="feature-card">
+        <div class="feature-header" onclick="toggleFeature(this)">
+          <h3>会员订阅</h3>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="feature-body">
+          <div class="danger-box">
+            <strong>不建议现在做付费会员</strong>
+            <ul>
+              <li>需要微信支付资质，申请周期长</li>
+              <li>功能复杂（42h+），ROI 不确定</li>
+              <li>用户量不够，付费转化率可能很低</li>
+            </ul>
+          </div>
+          
+          <h4>建议替代方案：积分会员</h4>
+          <table>
+            <tr><th>权益</th><th>普通用户</th><th>会员用户</th><th>复杂度</th></tr>
+            <tr><td>发布特产数量</td><td>5 个</td><td>20 个</td><td><span class="tag tag-green">低</span></td></tr>
+            <tr><td>神秘特产发布</td><td>1 个/月</td><td>无限制</td><td><span class="tag tag-green">低</span></td></tr>
+            <tr><td>每日签到积分</td><td>+1</td><td>+2</td><td><span class="tag tag-green">低</span></td></tr>
+            <tr><td>优先匹配</td><td>普通</td><td>优先展示</td><td><span class="tag tag-yellow">中</span></td></tr>
+            <tr><td>专属标识</td><td>无</td><td>会员徽章</td><td><span class="tag tag-green">低</span></td></tr>
+          </table>
+          
+          <div class="work-hours">
+            <strong>积分会员工作量：20h</strong>（无支付集成）
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 开发时间表 -->
+    <div class="section">
+      <h2 class="section-title">开发时间表</h2>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>阶段</th>
+            <th>功能</th>
+            <th>工作量</th>
+            <th>时间</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td rowspan="3"><span class="priority-badge priority-p0">P0</span></td>
+            <td>订单超时机制</td>
+            <td>4h</td>
+            <td>本周</td>
+          </tr>
+          <tr>
+            <td>信用分机制完善</td>
+            <td>8h</td>
+            <td>本周</td>
+          </tr>
+          <tr>
+            <td>首次互换奖励</td>
+            <td>3h</td>
+            <td>本周</td>
+          </tr>
+          <tr>
+            <td rowspan="3"><span class="priority-badge priority-p1">P1</span></td>
+            <td>纠纷仲裁</td>
+            <td>8h</td>
+            <td>下周</td>
+          </tr>
+          <tr>
+            <td>订单状态推送</td>
+            <td>12h</td>
+            <td>下周</td>
+          </tr>
+          <tr>
+            <td>新用户引导</td>
+            <td>5h</td>
+            <td>下周</td>
+          </tr>
+          <tr>
+            <td rowspan="2"><span class="priority-badge priority-p2">P2</span></td>
+            <td>心愿单</td>
+            <td>10h</td>
+            <td>第三周</td>
+          </tr>
+          <tr>
+            <td>邀请海报/排行榜</td>
+            <td>6h</td>
+            <td>第三周</td>
+          </tr>
+          <tr>
+            <td><span class="priority-badge priority-p3">P3</span></td>
+            <td>会员订阅（积分会员）</td>
+            <td>20h</td>
+            <td>后期</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 风险与建议 -->
+    <div class="section">
+      <h2 class="section-title">风险与建议</h2>
+      
+      <div class="grid-2">
+        <div class="danger-box">
+          <h4>风险点</h4>
+          <ul>
+            <li><strong>消息推送</strong>：需申请模板消息，审核可能不通过</li>
+            <li><strong>会员订阅</strong>：需微信支付资质，申请周期长</li>
+            <li><strong>防刷机制</strong>：邀请奖励可能被恶意刷取</li>
+          </ul>
+        </div>
+        
+        <div class="info-box">
+          <h4>建议</h4>
+          <ul>
+            <li><strong>先做低风险功能</strong>：订单超时、信用分、首次互换奖励</li>
+            <li><strong>同步申请资质</strong>：消息模板、微信支付</li>
+            <li><strong>灰度发布</strong>：新功能先小范围测试</li>
+            <li><strong>数据驱动</strong>：积累数据后再做付费会员</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleFeature(header) {
+      const body = header.nextElementSibling;
+      const arrow = header.querySelector('.arrow');
+      body.classList.toggle('collapsed');
+      arrow.classList.toggle('expanded');
+    }
+  </script>
+</body>
+</html>

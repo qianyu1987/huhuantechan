@@ -6,6 +6,7 @@ Page({
   data: {
     currentTab: 0,
     tabs: ['概览', '用户', '特产', '订单', '审核', '积分', '信用'],
+    verifyTabIndex: 99, // 超管后更新为 5
     isSuperAdmin: false,
     defaultAvatar: '/images/default-avatar.png',
     // 概览数据
@@ -95,6 +96,28 @@ Page({
     statusOptions: ['active', 'pending_review', 'rejected', 'removed', 'banned'],
     statusLabels: ['展示中', '待审核', '已拒绝', '已下架', '已封禁'],
     statusIndex: 0,
+    // 代购管理
+    daigouOrders: [],
+    daigouOrderPage: 1,
+    daigouOrderLoading: false,
+    daigouOrderNoMore: false,
+    daigouOrderFilter: 'all',
+    daigouOrderKeyword: '',
+    daigouStats: {
+      total: 0,
+      pendingShipment: 0,
+      shipped: 0,
+      completed: 0,
+      refunding: 0,
+      totalAmount: 0
+    },
+    // 代购实名审核队列
+    daigouVerifyList: [],
+    daigouVerifyPage: 1,
+    daigouVerifyLoading: false,
+    daigouVerifyNoMore: false,
+    daigouVerifyFilter: 'all',
+    daigouVerifyStats: { pending: 0, approved: 0, rejected: 0 },
     // 功能开关
     featureFlags: {},
     flagsLoading: false,
@@ -111,7 +134,9 @@ Page({
   onLoad() {
     this.loadStats()
     this.checkAdminStatus()
+    // loadDaigouVerifyStats 在 checkAdminStatus 确认超管后调用
   },
+
 
   onUnload() {
     if (this._searchTimer) clearTimeout(this._searchTimer)
@@ -177,9 +202,15 @@ Page({
       const res = await callCloud('adminMgr', { action: 'getAdminStatus' })
       this.setData({ isSuperAdmin: res.isSuperAdmin })
       
-      // 如果是超级管理员，添加神秘特产Tab和开关Tab
+      // 如果是超级管理员，添加实名审核Tab、神秘特产Tab、代购管理Tab和开关Tab
+      // Tab顺序：概览(0) 用户(1) 特产(2) 订单(3) 审核(4) 实名(5) 积分(6) 信用(7) 神秘特产(8) 代购(9) 开关(10)
       if (res.isSuperAdmin) {
-        this.setData({ tabs: ['概览', '用户', '特产', '订单', '审核', '积分', '信用', '神秘特产', '开关'] })
+        this.setData({
+          tabs: ['概览', '用户', '特产', '订单', '审核', '实名', '积分', '信用', '神秘特产', '代购', '开关'],
+          verifyTabIndex: 5
+        })
+        // 权限确认后再加载实名审核统计
+        this.loadDaigouVerifyStats()
       }
     } catch (e) {
       console.error('检查管理员状态失败', e)
@@ -195,7 +226,11 @@ Page({
       
       if (res.success) {
         wx.showToast({ title: '已设为超级管理员', icon: 'success' })
-        this.setData({ isSuperAdmin: true, tabs: ['概览', '用户', '特产', '订单', '审核', '积分', '信用', '神秘特产', '开关'] })
+        this.setData({
+          isSuperAdmin: true,
+          tabs: ['概览', '用户', '特产', '订单', '审核', '实名', '积分', '信用', '神秘特产', '代购', '开关'],
+          verifyTabIndex: 5
+        })
       } else {
         wx.showToast({ title: res.error || '设置失败', icon: 'none' })
       }
@@ -204,6 +239,11 @@ Page({
       console.error('设置超级管理员失败', e)
       wx.showToast({ title: '设置失败', icon: 'none' })
     }
+  },
+
+  // 跳转到数据看板
+  goDashboard() {
+    wx.navigateTo({ url: '/pages/dashboard/index' })
   },
 
   // 切换Tab
@@ -219,13 +259,23 @@ Page({
       this.loadOrders()
     } else if (index === 4 && this.data.pendingProducts.length === 0) {
       this.loadPendingProducts()
-    } else if (index === 5 && this.data.pointsUsers.length === 0) {
+    } else if (index === 5) {
+      // 实名审核 Tab（index=5，verifyTabIndex=5）
+      if (this.data.daigouVerifyList.length === 0) this.loadDaigouVerifyList()
+    } else if (index === 6 && this.data.pointsUsers.length === 0) {
+      // 积分管理 Tab（index=6）
       this.loadPointsUsers()
-    } else if (index === 6 && this.data.creditUsers.length === 0) {
+    } else if (index === 7 && this.data.creditUsers.length === 0) {
+      // 信用分管理 Tab（index=7）
       this.loadCreditUsers()
-    } else if (index === 7 && this.data.mysteryProducts.length === 0) {
+    } else if (index === 8 && this.data.mysteryProducts.length === 0) {
+      // 神秘特产管理 Tab（index=8）
       this.loadMysteryProducts()
-    } else if (index === 8) {
+    } else if (index === 9) {
+      // 代购管理：加载统计 + 订单
+      if (this.data.daigouOrders.length === 0) this.loadDaigouOrders()
+      this.loadDaigouStats()
+    } else if (index === 10) {
       this.loadFeatureFlags()
     }
   },
@@ -525,6 +575,44 @@ Page({
     })
   },
 
+  // 删除特产
+  deleteProduct(e) {
+    const productId = e.currentTarget.dataset.id
+    const productName = e.currentTarget.dataset.name || '该特产'
+    
+    wx.showModal({
+      title: '确认删除',
+      content: `确定要删除"${productName}"吗？此操作不可恢复。`,
+      confirmText: '删除',
+      confirmColor: '#FF3B30',
+      success: async (res) => {
+        if (res.confirm) {
+          try {
+            wx.showLoading({ title: '删除中...' })
+            const result = await callCloud('productMgr', {
+              action: 'adminRemove',
+              productId: productId
+            })
+            wx.hideLoading()
+            
+            if (result.success) {
+              wx.showToast({ title: '删除成功', icon: 'success' })
+              // 从列表中移除该特产
+              const products = this.data.products.filter(p => p._id !== productId)
+              this.setData({ products })
+            } else {
+              wx.showToast({ title: result.message || '删除失败', icon: 'none' })
+            }
+          } catch (err) {
+            wx.hideLoading()
+            wx.showToast({ title: '删除失败', icon: 'none' })
+            console.error('[admin] deleteProduct error:', err)
+          }
+        }
+      }
+    })
+  },
+
   // 审核通过
   async approveReview(e) {
     const id = e.currentTarget.dataset.id
@@ -567,6 +655,43 @@ Page({
   goToOrderDetail(e) {
     const id = e.currentTarget.dataset.id
     wx.navigateTo({ url: `/pages/order-detail/index?id=${id}` })
+  },
+
+  // 删除订单
+  deleteOrder(e) {
+    const orderId = e.currentTarget.dataset.id
+    
+    wx.showModal({
+      title: '确认删除',
+      content: '确定要删除这个订单吗？此操作不可恢复。',
+      confirmText: '删除',
+      confirmColor: '#FF3B30',
+      success: async (res) => {
+        if (res.confirm) {
+          try {
+            wx.showLoading({ title: '删除中...' })
+            const result = await callCloud('orderMgr', {
+              action: 'deleteOrder',
+              orderId: orderId
+            })
+            wx.hideLoading()
+            
+            if (result.success) {
+              wx.showToast({ title: '删除成功', icon: 'success' })
+              // 从列表中移除该订单
+              const orders = this.data.orders.filter(o => o._id !== orderId)
+              this.setData({ orders })
+            } else {
+              wx.showToast({ title: result.message || '删除失败', icon: 'none' })
+            }
+          } catch (err) {
+            wx.hideLoading()
+            wx.showToast({ title: '删除失败', icon: 'none' })
+            console.error('[admin] deleteOrder error:', err)
+          }
+        }
+      }
+    })
   },
 
   // 辅助方法
@@ -1058,7 +1183,13 @@ Page({
       creditNoMore: false,
       mysteryProducts: [],
       mysteryPage: 1,
-      mysteryNoMore: false
+      mysteryNoMore: false,
+      daigouOrders: [],
+      daigouOrderPage: 1,
+      daigouOrderNoMore: false,
+      daigouVerifyList: [],
+      daigouVerifyPage: 1,
+      daigouVerifyNoMore: false
     })
     this.loadStats()
     const tab = this.data.currentTab
@@ -1066,10 +1197,20 @@ Page({
     else if (tab === 2) this.loadProducts()
     else if (tab === 3) this.loadOrders()
     else if (tab === 4) this.loadPendingProducts()
-    else if (tab === 5) this.loadPointsUsers()
-    else if (tab === 6) this.loadCreditUsers()
-    else if (tab === 7) this.loadMysteryProducts()
-    else if (tab === 8) this.loadFeatureFlags()
+    else if (tab === 5) {
+      // 实名审核 Tab
+      this.setData({ daigouVerifyList: [], daigouVerifyPage: 1, daigouVerifyNoMore: false })
+      this.loadDaigouVerifyList()
+    }
+    else if (tab === 6) this.loadPointsUsers()
+    else if (tab === 7) this.loadCreditUsers()
+    else if (tab === 8) this.loadMysteryProducts()
+    else if (tab === 9) {
+      this.loadDaigouStats()
+      this.loadDaigouOrders()
+      this.loadDaigouVerifyList()
+    }
+    else if (tab === 10) this.loadFeatureFlags()
     wx.stopPullDownRefresh()
   },
 
@@ -1079,9 +1220,14 @@ Page({
     else if (tab === 2) this.loadProducts()
     else if (tab === 3) this.loadOrders()
     else if (tab === 4) this.loadPendingProducts()
-    else if (tab === 5) this.loadPointsUsers()
-    else if (tab === 6) this.loadCreditUsers()
-    else if (tab === 7) this.loadMysteryProducts()
+    else if (tab === 5) this.loadDaigouVerifyList()
+    else if (tab === 6) this.loadPointsUsers()
+    else if (tab === 7) this.loadCreditUsers()
+    else if (tab === 8) this.loadMysteryProducts()
+    else if (tab === 9) {
+      if (this.data.daigouSubTab === 0) this.loadDaigouOrders()
+      else this.loadDaigouVerifyList()
+    }
   },
 
   // ========== 编辑用户 ==========
@@ -1092,6 +1238,93 @@ Page({
       editingUser: { ...user },
       userEditModalVisible: true,
       provinceIndex: provinceIndex >= 0 ? provinceIndex : -1
+    })
+  },
+
+  // 清除所有非管理员用户
+  cleanupNonAdminUsers() {
+    wx.showModal({
+      title: '⚠️ 危险操作',
+      content: '确定要删除所有非管理员用户吗？此操作不可恢复！所有特产、订单、收藏数据都将被删除。',
+      confirmText: '确认清除',
+      confirmColor: '#FF3B30',
+      success: async (res) => {
+        if (res.confirm) {
+          // 二次确认
+          wx.showModal({
+            title: '最后确认',
+            content: '真的要清除所有非管理员用户吗？',
+            confirmText: '确认清除',
+            confirmColor: '#FF3B30',
+            success: async (res2) => {
+              if (res2.confirm) {
+                try {
+                  wx.showLoading({ title: '清理中...', mask: true })
+                  const result = await callCloud('cleanupUsers', {})
+                  wx.hideLoading()
+                  
+                  if (result.success) {
+                    wx.showModal({
+                      title: '清理完成',
+                      content: `已删除 ${result.deletedCount} 个用户，保留 ${result.keptCount} 个管理员`,
+                      showCancel: false,
+                      success: () => {
+                        // 刷新用户列表
+                        this.loadUsers()
+                      }
+                    })
+                  } else {
+                    wx.showToast({ title: result.error || '清理失败', icon: 'none' })
+                  }
+                } catch (err) {
+                  wx.hideLoading()
+                  wx.showToast({ title: '清理失败', icon: 'none' })
+                  console.error('[admin] cleanupNonAdminUsers error:', err)
+                }
+              }
+            }
+          })
+        }
+      }
+    })
+  },
+
+  // 删除用户
+  deleteUser(e) {
+    const user = e.currentTarget.dataset.user
+    const userId = user._id || user._openid
+    const userName = user.nickName || '该用户'
+    
+    wx.showModal({
+      title: '确认删除',
+      content: `确定要删除用户"${userName}"吗？此操作不可恢复，相关特产和订单数据也将被删除。`,
+      confirmText: '删除',
+      confirmColor: '#FF3B30',
+      success: async (res) => {
+        if (res.confirm) {
+          try {
+            wx.showLoading({ title: '删除中...' })
+            const result = await callCloud('adminMgr', {
+              action: 'deleteUser',
+              userId: userId
+            })
+            wx.hideLoading()
+            
+            if (result.success) {
+              wx.showToast({ title: '删除成功', icon: 'success' })
+              // 从列表中移除该用户
+              const users = this.data.users.filter(u => (u._id || u._openid) !== userId)
+              this.setData({ users })
+            } else {
+              wx.showToast({ title: result.message || '删除失败', icon: 'none' })
+            }
+          } catch (err) {
+            wx.hideLoading()
+            wx.showToast({ title: '删除失败', icon: 'none' })
+            console.error('[admin] deleteUser error:', err)
+          }
+        }
+      }
     })
   },
 
@@ -1241,6 +1474,433 @@ Page({
 
   closeProductEditModal() {
     this.setData({ productEditModalVisible: false, editingProduct: null })
+  },
+
+  // ========== 代购管理 ==========
+
+
+  // 加载代购统计
+  async loadDaigouStats() {
+    try {
+      const res = await callCloud('adminMgr', { action: 'getDaigouStats' })
+      if (res.success) {
+        this.setData({ daigouStats: res.stats })
+      }
+    } catch (e) {
+      console.error('loadDaigouStats error', e)
+    }
+  },
+
+  // 加载代购订单列表
+  async loadDaigouOrders() {
+    if (this.data.daigouOrderLoading || this.data.daigouOrderNoMore) return
+    this.setData({ daigouOrderLoading: true })
+    try {
+      const res = await callCloud('adminMgr', {
+        action: 'getDaigouOrders',
+        page: this.data.daigouOrderPage,
+        pageSize: 20,
+        filter: this.data.daigouOrderFilter,
+        keyword: this.data.daigouOrderKeyword || ''
+      })
+      if (res.success) {
+          const list = (res.list || []).map(o => {
+          // 地址拼接
+          let addressText = ''
+          if (o.address) {
+            const a = o.address
+            addressText = [a.provinceName, a.cityName, a.countyName, a.detailInfo].filter(Boolean).join(' ')
+          }
+          // 物流信息归一化
+          const shipInfo = o.shipInfo || {}
+          // 收货人/手机号归一化
+          const receiverName = o.receiverName || (o.address && o.address.receiverName) || (o.address && o.address.userName) || ''
+          const receiverPhone = o.receiverPhone || (o.address && o.address.receiverPhone) || (o.address && o.address.telNumber) || ''
+          return {
+            ...o,
+            statusText: this.getDaigouOrderStatusText(o.status),
+            statusClass: this.getDaigouOrderStatusClass(o.status),
+            createTimeStr: o.createTime ? this.formatTime(o.createTime) : '',
+            payTimeStr: o.payTime ? this.formatTime(o.payTime) : '',
+            shipTimeStr: o.shipTime ? this.formatTime(o.shipTime) : '',
+            completeTimeStr: o.completeTime ? this.formatTime(o.completeTime) : '',
+            refundTimeStr: o.refundTime ? this.formatTime(o.refundTime) : '',
+            addressText,
+            receiverName,
+            receiverPhone,
+            shipInfo,
+            expressCompany: o.expressCompany || shipInfo.company || '',
+            expressNo: o.expressNo || shipInfo.trackingNo || '',
+            // 用户信息（云函数已关联查询）
+            buyerNickName: o.buyerNickName || '',
+            buyerAvatarUrl: o.buyerAvatarUrl || '',
+            buyerPhone: o.buyerPhone || '',
+            sellerNickName: o.sellerNickName || '',
+            sellerAvatarUrl: o.sellerAvatarUrl || '',
+            sellerPhone: o.sellerPhone || '',
+            // 单价归一化
+            unitPrice: o.unitPrice || 0,
+            expanded: false  // 默认折叠
+          }
+        })
+        this.setData({
+          daigouOrders: [...this.data.daigouOrders, ...list],
+          daigouOrderPage: this.data.daigouOrderPage + 1,
+          daigouOrderNoMore: list.length < 20
+        })
+      }
+    } catch (e) {
+      toast('加载代购订单失败')
+    } finally {
+      this.setData({ daigouOrderLoading: false })
+    }
+  },
+
+  // 切换代购订单展开/折叠
+  toggleDaigouOrderExpand(e) {
+    const id = e.currentTarget.dataset.id
+    const orders = this.data.daigouOrders.map(o => {
+      if (o._id === id) return { ...o, expanded: !o.expanded }
+      return o
+    })
+    this.setData({ daigouOrders: orders })
+  },
+
+  // 切换代购订单筛选
+  changeDaigouOrderFilter(e) {
+    const filter = e.currentTarget.dataset.filter
+    this.setData({
+      daigouOrderFilter: filter,
+      daigouOrders: [],
+      daigouOrderPage: 1,
+      daigouOrderNoMore: false
+    })
+    this.loadDaigouOrders()
+  },
+
+  // 代购订单关键词搜索
+  onDaigouOrderSearch(e) {
+    if (this._daigouSearchTimer) clearTimeout(this._daigouSearchTimer)
+    const keyword = e.detail.value
+    this._daigouSearchTimer = setTimeout(() => {
+      this.setData({
+        daigouOrderKeyword: keyword,
+        daigouOrders: [],
+        daigouOrderPage: 1,
+        daigouOrderNoMore: false
+      })
+      this.loadDaigouOrders()
+    }, 500)
+  },
+
+  // 管理员强制取消代购订单
+  forceCancelDaigouOrder(e) {
+    const orderId = e.currentTarget.dataset.id
+    wx.showModal({
+      title: '强制取消订单',
+      content: '确定要强制取消这个代购订单吗？',
+      editable: true,
+      placeholderText: '请输入取消原因',
+      confirmText: '确认取消',
+      confirmColor: '#FF3B30',
+      success: async (res) => {
+        if (res.confirm) {
+          try {
+            wx.showLoading({ title: '操作中...' })
+            const result = await callCloud('adminMgr', {
+              action: 'forceCancelDaigouOrder',
+              orderId,
+              reason: res.content || '管理员强制取消'
+            })
+            wx.hideLoading()
+            if (result.success) {
+              wx.showToast({ title: '已取消', icon: 'success' })
+              this.setData({ daigouOrders: [], daigouOrderPage: 1, daigouOrderNoMore: false })
+              this.loadDaigouOrders()
+              this.loadDaigouStats()
+            } else {
+              wx.showToast({ title: result.error || '操作失败', icon: 'none' })
+            }
+          } catch (err) {
+            wx.hideLoading()
+            wx.showToast({ title: '操作失败', icon: 'none' })
+          }
+        }
+      }
+    })
+  },
+
+  // 管理员处理退款申请
+  adminHandleRefund(e) {
+    const { id, approve } = e.currentTarget.dataset
+    const title = approve ? '确认同意退款' : '确认拒绝退款'
+    const content = approve ? '确定要同意这个退款申请吗？' : '确定要拒绝退款吗？请输入拒绝原因。'
+    wx.showModal({
+      title,
+      content,
+      editable: !approve,
+      placeholderText: approve ? '' : '请输入拒绝原因',
+      confirmText: approve ? '同意退款' : '确认拒绝',
+      confirmColor: approve ? '#30D158' : '#FF3B30',
+      success: async (res) => {
+        if (res.confirm) {
+          try {
+            wx.showLoading({ title: '操作中...' })
+            const result = await callCloud('adminMgr', {
+              action: 'adminHandleDaigouRefund',
+              orderId: id,
+              approve,
+              rejectReason: approve ? '' : (res.content || '管理员拒绝退款')
+            })
+            wx.hideLoading()
+            if (result.success) {
+              wx.showToast({ title: approve ? '已同意退款' : '已拒绝', icon: 'success' })
+              this.setData({ daigouOrders: [], daigouOrderPage: 1, daigouOrderNoMore: false })
+              this.loadDaigouOrders()
+              this.loadDaigouStats()
+            } else {
+              wx.showToast({ title: result.error || '操作失败', icon: 'none' })
+            }
+          } catch (err) {
+            wx.hideLoading()
+            wx.showToast({ title: '操作失败', icon: 'none' })
+          }
+        }
+      }
+    })
+  },
+
+  // 删除代购订单
+  deleteDaigouOrder(e) {
+    const orderId = e.currentTarget.dataset.id
+    wx.showModal({
+      title: '确认删除',
+      content: '确定要删除这个代购订单吗？此操作不可恢复。',
+      confirmText: '删除',
+      confirmColor: '#FF3B30',
+      success: async (res) => {
+        if (res.confirm) {
+          try {
+            wx.showLoading({ title: '删除中...' })
+            const result = await callCloud('adminMgr', {
+              action: 'deleteDaigouOrder',
+              orderId
+            })
+            wx.hideLoading()
+            if (result.success) {
+              wx.showToast({ title: '删除成功', icon: 'success' })
+              const orders = this.data.daigouOrders.filter(o => o._id !== orderId)
+              this.setData({ daigouOrders: orders })
+              this.loadDaigouStats()
+            } else {
+              wx.showToast({ title: result.error || '删除失败', icon: 'none' })
+            }
+          } catch (err) {
+            wx.hideLoading()
+            wx.showToast({ title: '删除失败', icon: 'none' })
+          }
+        }
+      }
+    })
+  },
+
+  // ---- 实名认证审核 ----
+
+  // 仅加载统计数字（概览页用）
+  async loadDaigouVerifyStats() {
+    try {
+      const res = await callCloud('adminMgr', {
+        action: 'getDaigouVerifyList',
+        page: 1,
+        pageSize: 1,
+        filter: 'all'
+      })
+      if (res.success) {
+        this.setData({ daigouVerifyStats: res.stats || { pending: 0, approved: 0, rejected: 0 } })
+      }
+    } catch (e) {
+      console.error('loadDaigouVerifyStats error', e)
+    }
+  },
+
+  // 加载实名审核队列
+  async loadDaigouVerifyList() {
+    if (this.data.daigouVerifyLoading || this.data.daigouVerifyNoMore) return
+    this.setData({ daigouVerifyLoading: true })
+    try {
+      const res = await callCloud('adminMgr', {
+        action: 'getDaigouVerifyList',
+        page: this.data.daigouVerifyPage,
+        pageSize: 20,
+        filter: this.data.daigouVerifyFilter
+      })
+      if (res.success) {
+        this.setData({
+          daigouVerifyList: [...this.data.daigouVerifyList, ...(res.list || [])],
+          daigouVerifyPage: this.data.daigouVerifyPage + 1,
+          daigouVerifyNoMore: (res.list || []).length < 20,
+          daigouVerifyStats: res.stats || { pending: 0, approved: 0, rejected: 0 }
+        })
+      }
+    } catch (e) {
+      toast('加载认证列表失败')
+    } finally {
+      this.setData({ daigouVerifyLoading: false })
+    }
+  },
+
+  // 切换实名审核筛选
+  changeDaigouVerifyFilter(e) {
+    const filter = e.currentTarget.dataset.filter
+    this.setData({
+      daigouVerifyFilter: filter,
+      daigouVerifyList: [],
+      daigouVerifyPage: 1,
+      daigouVerifyNoMore: false
+    })
+    this.loadDaigouVerifyList()
+  },
+
+  // 审核通过实名认证
+  async approveDaigouVerify(e) {
+    const { id, openid } = e.currentTarget.dataset
+    wx.showModal({
+      title: '确认通过',
+      content: '确定要通过该用户的实名认证吗？',
+      success: async (res) => {
+        if (res.confirm) {
+          try {
+            wx.showLoading({ title: '操作中...' })
+            const result = await callCloud('adminMgr', {
+              action: 'approveDaigouVerify',
+              verifyId: id,
+              userOpenid: openid
+            })
+            wx.hideLoading()
+            if (result.success) {
+              wx.showToast({ title: '已通过', icon: 'success' })
+              this.setData({ daigouVerifyList: [], daigouVerifyPage: 1, daigouVerifyNoMore: false })
+              this.loadDaigouVerifyList()
+            } else {
+              wx.showToast({ title: result.error || '操作失败', icon: 'none' })
+            }
+          } catch (err) {
+            wx.hideLoading()
+            wx.showToast({ title: '操作失败', icon: 'none' })
+          }
+        }
+      }
+    })
+  },
+
+  // 拒绝实名认证
+  async rejectDaigouVerify(e) {
+    const { id, openid } = e.currentTarget.dataset
+    const res = await new Promise(resolve => {
+      wx.showModal({
+        title: '拒绝原因',
+        content: '请输入拒绝原因',
+        editable: true,
+        placeholderText: '请输入拒绝理由（必填）',
+        confirmText: '确认拒绝',
+        confirmColor: '#FF3B30',
+        success: resolve
+      })
+    })
+    if (!res.confirm) return
+    if (!res.content || !res.content.trim()) {
+      toast('请填写拒绝原因')
+      return
+    }
+    try {
+      wx.showLoading({ title: '操作中...' })
+      const result = await callCloud('adminMgr', {
+        action: 'rejectDaigouVerify',
+        verifyId: id,
+        userOpenid: openid,
+        reason: res.content.trim()
+      })
+      wx.hideLoading()
+      if (result.success) {
+        wx.showToast({ title: '已拒绝', icon: 'success' })
+        this.setData({ daigouVerifyList: [], daigouVerifyPage: 1, daigouVerifyNoMore: false })
+        this.loadDaigouVerifyList()
+      } else {
+        wx.showToast({ title: result.error || '操作失败', icon: 'none' })
+      }
+    } catch (err) {
+      wx.hideLoading()
+      wx.showToast({ title: '操作失败', icon: 'none' })
+    }
+  },
+
+  // 辅助：代购订单状态文本
+  getDaigouOrderStatusText(status) {
+    const map = {
+      pending_payment: '待付款',
+      pending_shipment: '待发货',
+      shipped: '已发货',
+      completed: '已完成',
+      cancelled: '已取消',
+      refunding: '退款中',
+      refunded: '已退款'
+    }
+    return map[status] || status
+  },
+
+  // 辅助：代购订单状态样式
+  getDaigouOrderStatusClass(status) {
+    const map = {
+      pending_payment: 'status-pending',
+      pending_shipment: 'status-confirmed',
+      shipped: 'status-shipped',
+      completed: 'status-completed',
+      cancelled: 'status-cancelled',
+      refunding: 'status-refunding',
+      refunded: 'status-refunded'
+    }
+    return map[status] || 'status-pending'
+  },
+
+  // 处理退款（通过/拒绝）
+  async processRefund(e) {
+    const orderId = e.currentTarget.dataset.id
+    wx.showModal({
+      title: '处理退款',
+      content: '请选择退款处理方式',
+      cancelText: '拒绝退款',
+      confirmText: '同意退款',
+      success: async (res) => {
+        wx.showLoading({ title: '处理中...' })
+        try {
+          const result = await callCloud('adminMgr', {
+            action: 'handleDaigouRefund',
+            orderId,
+            approve: res.confirm,
+            remark: res.confirm ? '管理员同意退款' : '管理员拒绝退款'
+          })
+          wx.hideLoading()
+          if (result.success) {
+            wx.showToast({ title: res.confirm ? '退款已通过' : '退款已拒绝', icon: 'success' })
+            this.setData({ daigouOrders: [], daigouOrderPage: 1, daigouOrderNoMore: false })
+            this.loadDaigouOrders()
+            this.loadDaigouStats()
+          } else {
+            wx.showToast({ title: result.error || '操作失败', icon: 'none' })
+          }
+        } catch (err) {
+          wx.hideLoading()
+          wx.showToast({ title: '操作失败', icon: 'none' })
+        }
+      }
+    })
+  },
+
+  // 预览实名审核图片
+  previewVerifyImg(e) {
+    const url = e.currentTarget.dataset.url
+    if (!url) return
+    wx.previewImage({ current: url, urls: [url] })
   },
 
   // ========== 功能开关管理 ==========

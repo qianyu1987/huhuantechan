@@ -1,0 +1,355 @@
+<!-- pages/daigou-order/index.wxml - 订单详情 iOS 26 毛玻璃 -->
+<view class="page-root">
+
+  <!-- 加载态 -->
+  <view wx:if="{{loading}}" class="loading-wrap">
+    <view class="spinner-ring"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <block wx:elif="{{order}}">
+
+    <!-- ══ 背景光晕 ══ -->
+    <view class="bg-blob blob-a"></view>
+    <view class="bg-blob blob-b"></view>
+
+    <!-- ══ 状态英雄卡 ══ -->
+    <view class="hero-card glass status-hero-{{order.status}}">
+      <view class="hero-icon">{{statusIcon}}</view>
+      <view class="hero-text">{{statusText}}</view>
+      <view class="hero-desc">{{statusDesc}}</view>
+
+      <!-- 积分提示 -->
+      <view wx:if="{{order.status === 'shipped' && isBuyer}}" class="points-tip">
+        <text class="tip-icon">🪙</text>
+        <text class="tip-text">确认收货后可获得 {{estimatedReward}} 积分</text>
+      </view>
+      <view wx:if="{{order.status === 'completed' && pointsRewarded > 0}}" class="points-earned">
+        <text class="earned-icon">🎉</text>
+        <text class="earned-text">已获得 {{pointsRewarded}} 积分</text>
+      </view>
+
+      <!-- 评价状态提示 -->
+      <view wx:if="{{order.status === 'completed'}}" class="review-status-row">
+        <view class="rs-item {{myReviewed ? 'rs-done' : 'rs-pending'}}">
+          <text class="rs-icon">{{myReviewed ? '✅' : '📝'}}</text>
+          <text class="rs-label">{{isBuyer ? '我的评价' : '我的评价'}}</text>
+          <text class="rs-status">{{myReviewed ? '已完成' : '待评价'}}</text>
+        </view>
+        <view class="rs-divider"></view>
+        <view class="rs-item {{otherReviewed ? 'rs-done' : 'rs-wait'}}">
+          <text class="rs-icon">{{otherReviewed ? '✅' : '⏳'}}</text>
+          <text class="rs-label">{{isBuyer ? '卖家评价' : '买家评价'}}</text>
+          <text class="rs-status">{{otherReviewed ? '已完成' : '等待中'}}</text>
+        </view>
+      </view>
+
+      <!-- 当前积分余额（买家可见） -->
+      <view wx:if="{{isBuyer && order.status !== 'cancelled' && order.status !== 'refunded'}}" class="my-points-row">
+        <text class="my-points-label">我的积分：</text>
+        <text class="my-points-num">{{userPoints}}</text>
+        <text class="my-points-icon">🪙</text>
+      </view>
+    </view>
+
+    <!-- ══ 收货地址 ══ -->
+    <view class="section-card glass">
+      <view class="section-hd">
+        <text class="section-icon">📍</text>
+        <text class="section-title">收货信息</text>
+      </view>
+      <view class="addr-row">
+        <view class="addr-meta">
+          <text class="addr-name">{{order.shippingAddress.name || '未填写'}}</text>
+          <text class="addr-phone">{{order.shippingAddress.phone || '未填写'}}</text>
+        </view>
+        <view class="addr-detail">
+          <block wx:if="{{order.shippingAddress.province || order.shippingAddress.city || order.shippingAddress.district || order.shippingAddress.detail}}">{{order.shippingAddress.province}} {{order.shippingAddress.city}} {{order.shippingAddress.district}} {{order.shippingAddress.detail}}</block>
+          <block wx:else>未填写</block>
+        </view>
+      </view>
+    </view>
+
+    <!-- ══ 物流信息（已发货后） ══ -->
+    <view class="section-card glass" wx:if="{{order.status === 'shipped' || order.status === 'completed'}}">
+      <view class="section-hd">
+        <text class="section-icon">🚚</text>
+        <text class="section-title">物流信息</text>
+      </view>
+      <view class="express-row">
+        <view class="express-company">{{order.expressCompany || '快递公司'}}</view>
+        <view class="express-no-row" bindtap="copyExpressNo">
+          <text class="express-no">单号：{{order.expressNo}}</text>
+          <view class="copy-chip">复制</view>
+        </view>
+        <text class="ship-time" wx:if="{{shipTimeText}}">发货时间：{{shipTimeText}}</text>
+      </view>
+    </view>
+
+    <!-- ══ 商品信息 ══ -->
+    <view class="section-card glass">
+      <view class="section-hd">
+        <text class="section-icon">🛍</text>
+        <text class="section-title">商品</text>
+      </view>
+      <view class="product-row">
+        <view class="product-img-wrap">
+          <image
+            class="product-img"
+            src="{{order.productImage || '/images/default-product.png'}}"
+            mode="aspectFill"
+            lazy-load="{{true}}"
+          />
+        </view>
+        <view class="product-meta">
+          <text class="product-name">{{order.productName}}</text>
+          <text class="product-price">¥{{order.price}}</text>
+          <!-- 积分价值说明 -->
+          <view class="points-value-hint" wx:if="{{order.status !== 'cancelled' && order.status !== 'refunded'}}">
+            <text class="pv-icon">🪙</text>
+            <text class="pv-text">≈ {{estimatedReward}} 积分</text>
+          </view>
+        </view>
+        <view class="product-qty">× 1</view>
+      </view>
+      <view class="remark-row" wx:if="{{order.remark}}">
+        <text class="remark-label">备注：</text>
+        <text class="remark-text">{{order.remark}}</text>
+      </view>
+    </view>
+
+    <!-- ══ 支付说明（待发货状态下买家提示） ══ -->
+    <view class="payment-tip-card glass" wx:if="{{order.status === 'pending_shipment' && isBuyer}}">
+      <view class="ptip-hd">
+        <text class="ptip-icon">💡</text>
+        <text class="ptip-title">付款提示</text>
+      </view>
+      <view class="ptip-body">
+        <text>请通过微信直接向卖家转账 </text>
+        <text class="ptip-price">¥{{order.price}}</text>
+        <text>，卖家收款确认后将为您发货。</text>
+      </view>
+      <!-- 联系卖家入口 -->
+      <view class="ptip-contact-row" bindtap="goSellerProfile">
+        <view class="ptip-seller-info">
+          <image
+            class="ptip-seller-avatar"
+            src="{{(order.sellerInfo && order.sellerInfo.avatarUrl) || '/images/default-avatar.png'}}"
+            mode="aspectFill"
+          />
+          <view class="ptip-seller-meta">
+            <text class="ptip-seller-name">{{(order.sellerInfo && order.sellerInfo.nickName) || '卖家'}}</text>
+            <text class="ptip-seller-level">{{(order.sellerInfo && order.sellerInfo.levelIcon) || ''}} {{(order.sellerInfo && order.sellerInfo.levelName) || '代购者'}}</text>
+          </view>
+        </view>
+        <view class="ptip-contact-btn">查看主页</view>
+      </view>
+    </view>
+
+    <!-- ══ 安全免责提示 ══ -->
+    <view class="safety-notice-card" wx:if="{{order.status !== 'completed' && order.status !== 'cancelled' && order.status !== 'refunded'}}">
+      <view class="notice-hd">
+        <text class="notice-icon">⚠️</text>
+        <text class="notice-title">交易安全提示</text>
+      </view>
+      <view class="notice-items">
+        <view class="notice-row">
+          <text class="n-dot">•</text>
+          <text class="n-text">本平台<text class="n-em">不经手任何资金</text>，付款请直接微信转账给卖家</text>
+        </view>
+        <view class="notice-row">
+          <text class="n-dot">•</text>
+          <text class="n-text">收货前务必<text class="n-em">当面或视频验货</text>，确认无误再确认收货</text>
+        </view>
+        <view class="notice-row">
+          <text class="n-dot">•</text>
+          <text class="n-text">平台对交易中的<text class="n-em">货物损失、资金纠纷不承担责任</text></text>
+        </view>
+      </view>
+    </view>
+
+    <!-- ══ 订单信息 ══ -->
+    <view class="section-card glass">
+      <view class="section-hd">
+        <text class="section-icon">📋</text>
+        <text class="section-title">订单信息</text>
+      </view>
+      <view class="info-row" bindtap="copyOrderNo">
+        <text class="info-key">订单号</text>
+        <view class="info-val-row">
+          <text class="info-val mono">{{order.orderNo}}</text>
+          <view class="copy-chip">复制</view>
+        </view>
+      </view>
+      <view class="info-row">
+        <text class="info-key">下单时间</text>
+        <text class="info-val">{{createTimeText}}</text>
+      </view>
+      <view class="info-row" wx:if="{{order.payTime}}">
+        <text class="info-key">支付时间</text>
+        <text class="info-val">{{payTimeText}}</text>
+      </view>
+      <view class="info-row" wx:if="{{order.shipTime}}">
+        <text class="info-key">发货时间</text>
+        <text class="info-val">{{shipTimeText}}</text>
+      </view>
+      <view class="info-row" wx:if="{{order.completeTime}}">
+        <text class="info-key">完成时间</text>
+        <text class="info-val">{{completeTimeText}}</text>
+      </view>
+    </view>
+
+    <!-- ══ 金额明细 ══ -->
+    <view class="section-card glass">
+      <view class="section-hd">
+        <text class="section-icon">💰</text>
+        <text class="section-title">金额明细</text>
+      </view>
+      <view class="info-row">
+        <text class="info-key">商品单价</text>
+        <text class="info-val price-orange">¥{{order.price || 0}}</text>
+      </view>
+      <view class="info-row" wx:if="{{order.originalPrice && order.originalPrice > 0}}">
+        <text class="info-key">划线原价</text>
+        <text class="info-val price-line-through">¥{{order.originalPrice}}</text>
+      </view>
+      <view class="info-row" wx:if="{{order.pointsDeductAmount && order.pointsDeductAmount > 0}}">
+        <text class="info-key">积分抵扣</text>
+        <text class="info-val price-green">-¥{{order.pointsDeductAmount}}</text>
+      </view>
+      <view class="info-row info-row-total">
+        <text class="info-key info-key-bold">订单总价</text>
+        <text class="info-val price-orange price-bold">¥{{order.actualPrice || order.price || 0}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-key">平台服务费</text>
+        <text class="info-val">¥{{order.serviceFee || 0}}</text>
+      </view>
+    </view>
+
+    <!-- ══ 用户信息 ══ -->
+    <view class="section-card glass">
+      <view class="section-hd">
+        <text class="section-icon">👤</text>
+        <text class="section-title">用户信息</text>
+      </view>
+      <view class="info-row">
+        <text class="info-key">买家昵称</text>
+        <text class="info-val">{{buyerNickName}}</text>
+      </view>
+      <view class="info-row" wx:if="{{isBuyer}}">
+        <text class="info-key">买家ID</text>
+        <text class="info-val mono uid-text">{{buyerOpenidShort}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-key">代购者ID</text>
+        <text class="info-val mono uid-text">{{order.sellerOpenid}}</text>
+      </view>
+    </view>
+
+    <!-- 底部安全占位 -->
+    <view style="height:200rpx"></view>
+
+    <!-- ══ 底部操作栏 ══ -->
+    <view class="bottom-bar glass">
+      <block wx:if="{{isBuyer}}">
+        <!-- 待发货：取消订单 -->
+        <button
+          wx:if="{{order.status === 'pending_shipment'}}"
+          class="action-btn btn-ghost"
+          bindtap="cancelOrder"
+        >取消订单</button>
+        <!-- 已发货：确认收货 + 申请退款 -->
+        <block wx:if="{{order.status === 'shipped'}}">
+          <button class="action-btn btn-ghost" bindtap="applyRefund">申请退款</button>
+          <button class="action-btn btn-primary" bindtap="confirmReceived">
+            <text>确认收货</text>
+            <text class="btn-points-hint"> +{{estimatedReward}}🪙</text>
+          </button>
+        </block>
+        <!-- 已完成：去评价 -->
+        <button
+          wx:if="{{order.status === 'completed' && !myReviewed}}"
+          class="action-btn btn-review full-btn"
+          bindtap="goReview"
+        >📝 去评价（买家必须上传3张图）</button>
+        <button
+          wx:if="{{order.status === 'completed' && myReviewed}}"
+          class="action-btn btn-ghost full-btn"
+          disabled
+        >✅ 已完成评价</button>
+      </block>
+
+      <block wx:else>
+        <!-- 卖家：待发货 → 发货 -->
+        <button
+          wx:if="{{order.status === 'pending_shipment'}}"
+          class="action-btn btn-primary full-btn"
+          bindtap="showShipModal"
+        >填写快递发货</button>
+        <!-- 卖家：处理退款 -->
+        <block wx:if="{{order.status === 'refunding'}}">
+          <button class="action-btn btn-ghost" bindtap="rejectRefund">拒绝退款</button>
+          <button class="action-btn btn-danger" bindtap="agreeRefund">同意退款</button>
+        </block>
+        <!-- 卖家：已完成 → 去评价 -->
+        <button
+          wx:if="{{order.status === 'completed' && !myReviewed}}"
+          class="action-btn btn-review full-btn"
+          bindtap="goReview"
+        >📝 去评价买家</button>
+        <button
+          wx:if="{{order.status === 'completed' && myReviewed}}"
+          class="action-btn btn-ghost full-btn"
+          disabled
+        >✅ 已完成评价</button>
+      </block>
+    </view>
+
+  </block>
+
+  <!-- ══ 发货抽屉（底部滑出） ══ -->
+  <view
+    wx:if="{{showShipPanel}}"
+    class="panel-mask {{panelVisible ? 'mask-show' : ''}}"
+    bindtap="hideShipModal"
+  ></view>
+  <view wx:if="{{showShipPanel}}" class="ship-drawer {{panelVisible ? 'drawer-show' : ''}} glass">
+    <view class="drawer-handle"></view>
+    <view class="drawer-title">填写快递信息</view>
+
+    <view class="drawer-field">
+      <view class="drawer-label">快递公司</view>
+      <input
+        class="drawer-input"
+        placeholder="如：顺丰 / 圆通 / 中通"
+        value="{{shipForm.company}}"
+        bindinput="onShipInput"
+        data-field="company"
+        placeholder-class="input-ph"
+      />
+    </view>
+    <view class="drawer-field">
+      <view class="drawer-label">快递单号</view>
+      <input
+        class="drawer-input"
+        placeholder="输入快递单号"
+        value="{{shipForm.no}}"
+        bindinput="onShipInput"
+        data-field="no"
+        placeholder-class="input-ph"
+      />
+    </view>
+
+    <view class="drawer-actions">
+      <button class="drawer-btn btn-cancel" bindtap="hideShipModal">取消</button>
+      <button
+        class="drawer-btn btn-confirm"
+        bindtap="doShipOrder"
+        loading="{{shipping}}"
+        disabled="{{shipping}}"
+      >{{shipping ? '发货中...' : '确认发货'}}</button>
+    </view>
+  </view>
+
+</view>

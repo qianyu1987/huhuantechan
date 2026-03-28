@@ -76,6 +76,12 @@
   display: flex;
   align-items: center;
   margin-bottom: 24rpx;
+  width: 100%;
+}
+
+.counterpart-basic {
+  flex: 1;
+  margin-left: 20rpx;
 }
 
 .counterpart-avatar {
@@ -138,6 +144,43 @@
   background: linear-gradient(135deg, #007AFF 0%, #5AC8FA 100%);
   padding: 8rpx 20rpx;
   border-radius: 30rpx;
+}
+
+.counterpart-actions {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-left: auto;
+}
+
+.share-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8rpx 16rpx;
+  background: linear-gradient(135deg, #07C160 0%, #10B981 100%);
+  border-radius: 20rpx;
+  border: none;
+  min-width: 80rpx;
+  height: 60rpx;
+}
+
+.share-btn::after {
+  border: none;
+}
+
+.share-icon {
+  font-size: 24rpx;
+  color: #fff;
+  line-height: 1;
+}
+
+.share-text {
+  font-size: 18rpx;
+  color: #fff;
+  line-height: 1;
+  margin-top: 2rpx;
 }
 
 .badge-text {
@@ -1105,4 +1148,63 @@
   font-size: 26rpx;
   border-top: 1rpx solid #E5E5EA;
   margin-top: 24rpx;
+}
+
+/* ─────────── 安全提示横幅 ─────────── */
+.safety-notice-card {
+  margin: 0 20rpx 0;
+  border-radius: 18rpx;
+  background: rgba(255, 59, 48, 0.05);
+  border: 1.5rpx solid rgba(255, 59, 48, 0.22);
+  border-left: 4rpx solid #FF3B30;
+  overflow: hidden;
+}
+
+.notice-hd {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 16rpx 20rpx 10rpx;
+}
+
+.notice-icon {
+  font-size: 26rpx;
+}
+
+.notice-title {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #FF3B30;
+}
+
+.notice-items {
+  padding: 0 20rpx 16rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.notice-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8rpx;
+}
+
+.n-dot {
+  font-size: 20rpx;
+  color: rgba(255, 59, 48, 0.5);
+  flex-shrink: 0;
+  line-height: 1.6;
+}
+
+.n-text {
+  font-size: 20rpx;
+  color: rgba(60, 60, 67, 0.65);
+  line-height: 1.6;
+  flex: 1;
+}
+
+.n-em {
+  font-weight: 700;
+  color: #FF3B30;
 }

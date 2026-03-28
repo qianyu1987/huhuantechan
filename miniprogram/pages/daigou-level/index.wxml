@@ -1,0 +1,170 @@
+<!-- pages/daigou-level/index.wxml - 代购等级体系 iOS 26 毛玻璃风格 -->
+<view class="page-root">
+  <view class="bg-blob blob-a"></view>
+  <view class="bg-blob blob-b"></view>
+
+  <view wx:if="{{loading}}" class="loading-wrap">
+    <view class="spinner-ring"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <block wx:elif="{{!loading}}">
+
+    <!-- 我的当前等级 -->
+    <view wx:if="{{myLevelInfo}}" class="my-level-card glass">
+      <view class="my-level-hd">
+        <text class="ml-label">我的代购等级</text>
+        <view class="ml-badge {{myLevelInfo.badge === 'certified' ? 'badge-cert' : 'badge-free'}}">
+          {{myLevelInfo.badge === 'certified' ? '🏅 平台认证' : '🌐 自由代购'}}
+        </view>
+      </view>
+      <view class="my-level-main">
+        <text class="ml-icon">{{myLevelInfo.icon}}</text>
+        <view class="ml-info">
+          <text class="ml-name" style="color:{{myLevelInfo.color}}">{{myLevelInfo.name}}</text>
+          <text class="ml-trust">{{myLevelInfo.trustDesc}}</text>
+        </view>
+      </view>
+      <view wx:if="{{myStats}}" class="my-stats-row">
+        <view class="stat-item">
+          <text class="stat-num">{{myStats.completedOrders || 0}}</text>
+          <text class="stat-label">完成订单</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <text class="stat-num">{{myStats.creditScore || 60}}</text>
+          <text class="stat-label">信用分</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <text class="stat-num">¥{{myStats.depositPaid || 0}}</text>
+          <text class="stat-label">已缴押金</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 等级类型说明 -->
+    <view class="type-compare glass">
+      <view class="type-hd"><text class="type-title">两种代购类型</text></view>
+      <view class="type-row">
+        <view class="type-item free-type">
+          <text class="type-icon">🌐</text>
+          <text class="type-name">自由代购</text>
+          <text class="type-desc">等级1-4，无需平台认定，靠积累订单自然升级</text>
+          <view class="type-range">Lv.1 ~ Lv.4</view>
+        </view>
+        <view class="type-divider"></view>
+        <view class="type-item cert-type">
+          <text class="type-icon">🏅</text>
+          <text class="type-name">平台认证代购</text>
+          <text class="type-desc">等级5-7，需管理员人工认定，享有最高信任度和曝光</text>
+          <view class="type-range">Lv.5 ~ Lv.7</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 全部等级列表 -->
+    <view class="levels-list">
+      <view
+        wx:for="{{levels}}"
+        wx:key="level"
+        class="level-card glass {{myLevelInfo && myLevelInfo.level === item.level ? 'current-level' : ''}}"
+      >
+        <!-- 等级头部 -->
+        <view class="lc-hd">
+          <text class="lc-icon">{{item.icon}}</text>
+          <view class="lc-meta">
+            <view class="lc-name-row">
+              <text class="lc-name" style="color:{{item.color}}">Lv.{{item.level}} {{item.name}}</text>
+              <view class="lc-type {{item.badge === 'certified' ? 'type-cert' : 'type-free'}}">
+                {{item.badge === 'certified' ? '平台认证' : '自由代购'}}
+              </view>
+            </view>
+            <text class="lc-trust">{{item.trustDesc}}</text>
+          </view>
+          <view wx:if="{{myLevelInfo && myLevelInfo.level === item.level}}" class="current-tag">当前</view>
+        </view>
+
+        <!-- 等级要求 -->
+        <view class="lc-requires">
+          <view class="req-hd"><text class="req-title">📋 升级要求</text></view>
+          <view class="req-grid">
+            <view class="req-item">
+              <text class="req-key">完成订单</text>
+              <text class="req-val">≥ {{item.requiredOrders}} 笔</text>
+            </view>
+            <view class="req-item">
+              <text class="req-key">信用分</text>
+              <text class="req-val">≥ {{item.requiredCreditScore}} 分</text>
+            </view>
+            <view class="req-item">
+              <text class="req-key">押金</text>
+              <text class="req-val" style="color:{{item.requiredDeposit > 0 ? '#FF9500' : '#30D158'}}">{{item.requiredDeposit > 0 ? '¥' + item.requiredDeposit : '免押金'}}</text>
+            </view>
+            <view class="req-item" wx:if="{{item.badge === 'certified'}}">
+              <text class="req-key">平台认证</text>
+              <text class="req-val" style="color:#FFD700">需申请</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 额度权限 -->
+        <view class="lc-limits">
+          <view class="limit-item">
+            <text class="limit-icon">💰</text>
+            <text class="limit-text">单笔最大 ¥{{item.maxOrderAmount >= 999999 ? '不限' : item.maxOrderAmount}}</text>
+          </view>
+          <view class="limit-item">
+            <text class="limit-icon">📦</text>
+            <text class="limit-text">最多同时 {{item.maxConcurrentOrders >= 999 ? '不限' : item.maxConcurrentOrders}} 笔进行中</text>
+          </view>
+        </view>
+
+        <!-- 特权 -->
+        <view class="lc-privileges">
+          <view class="priv-item" wx:for="{{item.privileges}}" wx:key="*this" wx:for-item="priv">
+            <text class="priv-dot" style="color:{{item.color}}">✓</text>
+            <text class="priv-text">{{priv}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 诚信度说明 -->
+    <view class="credit-explain glass">
+      <view class="ce-hd"><text class="ce-icon">📊</text><text class="ce-title">信用分与诚信度</text></view>
+      <view class="ce-items">
+        <view class="ce-row">
+          <text class="ce-tag good">+2分</text>
+          <text class="ce-desc">买家给出5星好评</text>
+        </view>
+        <view class="ce-row">
+          <text class="ce-tag good">+1分</text>
+          <text class="ce-desc">买家给出4星好评</text>
+        </view>
+        <view class="ce-row">
+          <text class="ce-tag neutral">±0分</text>
+          <text class="ce-desc">买家给出3星评价</text>
+        </view>
+        <view class="ce-row">
+          <text class="ce-tag bad">-1分</text>
+          <text class="ce-desc">买家给出2星差评</text>
+        </view>
+        <view class="ce-row">
+          <text class="ce-tag bad">-3分</text>
+          <text class="ce-desc">买家给出1星差评</text>
+        </view>
+        <view class="ce-row">
+          <text class="ce-tag bad">-5分</text>
+          <text class="ce-desc">发生退款纠纷</text>
+        </view>
+        <view class="ce-row">
+          <text class="ce-tag bad">-10分</text>
+          <text class="ce-desc">被管理员强制取消订单</text>
+        </view>
+      </view>
+    </view>
+
+    <view style="height:60rpx"></view>
+  </block>
+</view>

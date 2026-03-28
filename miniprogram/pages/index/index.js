@@ -1,6 +1,7 @@
 // pages/index/index.js
 const { PROVINCES, PRODUCT_CATEGORIES, VALUE_RANGES, MYSTERY_EMOJIS } = require('../../utils/constants')
 const { callCloud, formatTime, getCreditLevel, formatValue, getProvinceByCode, processImageUrl } = require('../../utils/util')
+const imageOptimizer = require('../../utils/imageOptimizer')
 
 const PAGE_SIZE = 20
 const ALL_PRODUCTS_LIMIT = 500  // "全部"选项最多显示500条特产
@@ -24,26 +25,19 @@ Page({
   },
 
   onLoad(options) {
-    // 检查云开发状态
+    // 检查云开发状态（异步，不阻塞）
     this.checkCloudStatus()
+    
+    // 优先加载特产列表（用户最关心）
     this.loadProducts(true)
-    this.loadUnread()
-
-    // 加载功能开关
-    const flags = getApp().globalData.featureFlags || {}
-    this.setData({ featureFlags: flags })
-
-    // 预加载分享配置（热更新）
-    this._loadShareConfig()
-
-    // 开启分享按钮（包括右上角菜单和朋友圈）
-    wx.showShareMenu({ withShareTicket: true, menus: ['shareAppMessage', 'shareTimeline'] })
-
-    // 处理邀请码（分享链接直接带 inviteCode 参数）
+    
+    // 后台并行加载其他数据（不阻塞主流程）
+    this._loadAuxiliaryData()
+    
+    // 处理邀请码
     if (options.inviteCode) {
       this.handleInviteCode(options.inviteCode)
     }
-    // 处理扫码进入（scene 参数格式: inviteCode=XXXXXX）
     if (options.scene) {
       const scene = decodeURIComponent(options.scene)
       const match = scene.match(/inviteCode=(\w+)/)
@@ -51,6 +45,15 @@ Page({
         this.handleInviteCode(match[1])
       }
     }
+  },
+
+  // 后台加载辅助数据
+  _loadAuxiliaryData() {
+    // 并行加载：未读数 + 分享配置
+    Promise.all([
+      this.loadUnread(),
+      this._loadShareConfig()
+    ]).catch(() => {})
   },
 
   // 处理邀请码
@@ -101,41 +104,38 @@ Page({
     }
   },
 
-  // 检查云开发状态（异步、不阻塞用户操作）
+  // 检查云开发状态（完全异步，不阻塞）
   checkCloudStatus() {
     if (!wx.cloud) {
       console.error('[Index] wx.cloud 不可用')
       return
     }
     
-    // 检查云开发环境
     const envId = getApp().globalData.envId
     const platform = getApp().globalData.platform || 'weixin'
     console.log('[Index] 云开发环境ID:', envId, ', 平台:', platform)
     
-    // 异步测试云函数连通性（不显示错误弹窗，仅用于日志诊断）
+    // 完全后台执行，不等待结果
     wx.cloud.callFunction({
       name: 'testConnect',
       data: {},
-      timeout: 10000  // 设置超时10秒
+      timeout: 5000  // 减少超时时间
     }).then(res => {
       console.log('[Index] 云函数连通性测试成功:', res.result)
     }).catch(err => {
-      // 仅记录错误日志，不显示弹窗（特别是在 HarmonyOS 环境下可能失败）
-      console.warn('[Index] 云函数连通性测试失败（这在某些平台是正常的）:', {
-        errCode: err.errCode,
-        errMsg: err.errMsg,
-        platform: platform
-      })
-      
-      // 如果是 HarmonyOS，记录为预期行为
-      if (platform === 'harmony') {
-        console.log('[Index] HarmonyOS 多端开发环境，云函数调用可能有延迟，将在后续操作时自动重试')
-      }
+      // 不显示任何弹窗，静默失败
+      console.warn('[Index] 云函数连通性测试失败:', err.errCode, err.errMsg)
     })
   },
 
   onShow() {
+    // 节流：距离上次刷新少于 10 秒不刷新
+    if (this._lastShowTime && Date.now() - this._lastShowTime < 10000) {
+      return
+    }
+    this._lastShowTime = Date.now()
+    
+    // 只刷新未读数
     this.loadUnread()
   },
 
@@ -197,9 +197,6 @@ Page({
 
       let newItems = (res.list || []).map(item => this.formatProduct(item))
       
-      // 客户端侧补充转换：收集仍为 cloud:// 的图片，批量获取临时链接
-      await this.resolveCloudUrls(newItems)
-      
       // 刷新时随机排序（非全部模式）
       if (isReset && !isAllMode && newItems.length > 1) {
         newItems = this.shuffleArray(newItems)
@@ -207,7 +204,7 @@ Page({
       
       const allItems = isReset ? newItems : [...this.data.products, ...newItems]
       
-      // 全部模式直接显示所有数据，无需分页
+      // 先渲染 UI（不等待图片解析）
       this.setData({
         products: allItems,
         page: isReset ? 2 : this.data.page + 1,
@@ -215,6 +212,11 @@ Page({
         ...this.splitWaterfall(allItems),
         scrollTop: isReset ? 1 : undefined  // 刷新后滚动到顶部
       })
+      
+      // 图片链接解析放到后台执行（不阻塞渲染）
+      if (isReset) {
+        this._resolveImagesInBackground(newItems)
+      }
       
       console.log('[Index] 加载完成, products:', allItems.length)
     } catch (e) {
@@ -224,6 +226,19 @@ Page({
       this.setData({ loading: false, loadingMore: false, refreshing: false })
       wx.stopPullDownRefresh()
     }
+  },
+
+  // 后台解析图片链接（不阻塞 UI）
+  _resolveImagesInBackground(items) {
+    // 使用 setTimeout 延迟执行，让 UI 先渲染
+    setTimeout(async () => {
+      await this.resolveCloudUrls(items)
+      // 重新渲染（只更新需要变化的图片）
+      if (items.some(item => item.coverUrl && item.coverUrl.startsWith('cloud://'))) {
+        // 还有未解析的，递归继续
+        this._resolveImagesInBackground(items)
+      }
+    }, 100)
   },
 
   // 格式化单个特产数据
@@ -375,35 +390,20 @@ Page({
     wx.navigateTo({ url: '/pages/order/index' })
   },
 
-  // 客户端侧批量转换 cloud:// URL 为临时链接（云函数转换失败的兜底）
-  // getTempFileURL 单次最多50个，需分批处理
+  // 客户端侧批量转换 cloud:// URL 为临时链接（带 LRU 缓存，避免重复请求）
   async resolveCloudUrls(items) {
-    // 收集所有仍为 cloud:// 的 coverUrl
-    const cloudItems = []
-    items.forEach((item, idx) => {
-      if (item.coverUrl && item.coverUrl.startsWith('cloud://')) {
-        cloudItems.push({ idx, fileID: item.coverUrl })
+    const fileIDs = items
+      .filter(item => item.coverUrl && item.coverUrl.startsWith('cloud://'))
+      .map(item => item.coverUrl)
+
+    if (fileIDs.length === 0) return
+
+    const urlMap = await imageOptimizer.batchResolve([...new Set(fileIDs)])
+    items.forEach(item => {
+      if (item.coverUrl && urlMap[item.coverUrl]) {
+        item.coverUrl = urlMap[item.coverUrl]
       }
     })
-
-    if (cloudItems.length === 0) return
-
-    try {
-      const BATCH_SIZE = 50
-      for (let i = 0; i < cloudItems.length; i += BATCH_SIZE) {
-        const batch = cloudItems.slice(i, i + BATCH_SIZE)
-        const res = await wx.cloud.getTempFileURL({
-          fileList: batch.map(c => c.fileID)
-        })
-        res.fileList.forEach((f, j) => {
-          if (f.tempFileURL) {
-            items[batch[j].idx].coverUrl = f.tempFileURL
-          }
-        })
-      }
-    } catch (e) {
-      console.warn('[Index] 客户端 getTempFileURL 失败:', e)
-    }
   },
 
   // 图片加载失败处理

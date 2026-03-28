@@ -1,4 +1,4 @@
-/* pages/publish/index.wxss - 发布特产 - iOS 26 顶级玻璃风格 */
+/* pages/publish/index.wxss - 发布特产 - iOS 27 液态玻璃 (Liquid Glass) 风格 */
 
 @import '../../styles/lib/ani.wxss';
 
@@ -108,13 +108,61 @@
   margin-left: 8rpx;
 }
 
-/* ===== 页面头部 - 玻璃效果 ===== */
+/* ===== 页面头部 - 液态玻璃效果 ===== */
 .page-header {
   padding: 32rpx 20rpx 20rpx;
-  background: var(--color-surface);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1rpx solid var(--color-divider);
+  background: var(--liquid-surface);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.06);
+  box-shadow: var(--shadow-liquid);
+}
+
+/* 标题行 + 代购开关同一行 */
+.page-header-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.page-header-left {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+/* 代购开关区域 */
+.page-daigou-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+  flex-shrink: 0;
+}
+
+.page-daigou-label {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+}
+
+.page-daigou-icon {
+  font-size: 28rpx;
+  line-height: 1;
+}
+
+.page-daigou-text {
+  font-size: 22rpx;
+  color: #FF9500;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.daigou-switch {
+  transform: scale(0.85);
+  transform-origin: center center;
 }
 
 .page-title {
@@ -136,18 +184,21 @@
 .form-scroll { flex: 1; }
 .form-wrap { padding-top: 24rpx; }
 
-/* ===== 区块 - iOS 26 深色玻璃卡片 ===== */
+/* ===== 区块 - iOS 27 液态玻璃卡片 ===== */
 .section {
-  background: rgba(120, 120, 128, 0.16);
+  background: var(--liquid-surface);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
   border-radius: var(--radius-xl);
   padding: 24rpx 20rpx;
   margin-bottom: 24rpx;
-  box-shadow:
-    0 4rpx 24rpx rgba(0, 0, 0, 0.2),
-    inset 0 1rpx 0 rgba(255, 255, 255, 0.05);
+  box-shadow: var(--shadow-liquid);
   border: 1rpx solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  transition: all 0.25s ease;
+}
+
+.section:active {
+  background: var(--liquid-surface-hover);
 }
 
 .section-label {
@@ -249,42 +300,46 @@
   font-weight: 500;
 }
 
-/* ===== 输入框 - 玻璃风格 ===== */
+/* ===== 输入框 - 液态玻璃风格 ===== */
 .form-input {
   width: 100%;
   height: 88rpx;
-  background: var(--color-bg);
+  background: var(--liquid-surface);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-radius: var(--radius-lg);
   padding: 0 24rpx;
   font-size: 28rpx;
   color: var(--color-text);
-  border: 2rpx solid transparent;
-  transition: all 0.2s ease;
+  border: 2rpx solid rgba(255, 255, 255, 0.08);
+  transition: all 0.25s ease;
 }
 
 .form-input:focus {
-  background: var(--color-surface-solid);
+  background: var(--liquid-surface-hover);
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 4rpx rgba(0, 122, 255, 0.1);
+  box-shadow: 0 0 0 4rpx rgba(0, 122, 255, 0.15), var(--shadow-liquid);
 }
 
 .form-textarea {
   width: 100%;
   min-height: 160rpx;
-  background: var(--color-bg);
+  background: var(--liquid-surface);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-radius: var(--radius-lg);
   padding: 20rpx 24rpx;
   font-size: 26rpx;
   color: var(--color-text);
   line-height: 1.6;
-  border: 2rpx solid transparent;
-  transition: all 0.2s ease;
+  border: 2rpx solid rgba(255, 255, 255, 0.08);
+  transition: all 0.25s ease;
 }
 
 .form-textarea:focus {
-  background: var(--color-surface-solid);
+  background: var(--liquid-surface-hover);
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 4rpx rgba(0, 122, 255, 0.1);
+  box-shadow: 0 0 0 4rpx rgba(0, 122, 255, 0.15), var(--shadow-liquid);
 }
 
 .input-counter {
@@ -392,21 +447,160 @@
   font-weight: 500;
 }
 
-/* ===== 提交按钮 - iOS 26 蓝色渐变 ===== */
+/* ===== 提交按钮 - iOS 27 液态渐变 ===== */
 .submit-btn {
   height: 104rpx;
   font-size: 34rpx;
   border-radius: var(--radius-xl);
-  background: linear-gradient(180deg, #0A84FF 0%, #0066CC 100%);
-  box-shadow: 
-    0 8rpx 32rpx rgba(10, 132, 255, 0.35),
-    inset 0 2rpx 4rpx rgba(255, 255, 255, 0.2);
-  border: none;
+  background: var(--color-primary-gradient);
+  box-shadow: var(--shadow-liquid), var(--shadow-glow-blue);
+  border: 1rpx solid rgba(255, 255, 255, 0.2);
   color: white;
   font-weight: 700;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   margin-bottom: 40rpx;
+  position: relative;
+  overflow: hidden;
 }
+
+/* 液态光泽 */
+.submit-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.15),
+    transparent
+  );
+  pointer-events: none;
+}
+
+/* ========== 代购区块 ========== */
+.daigou-section {
+  background: rgba(255, 149, 0, 0.06);
+  border: 1.5rpx solid rgba(255, 149, 0, 0.2);
+  border-radius: 20rpx;
+}
+
+.daigou-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.daigou-header-left {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.daigou-icon-badge {
+  font-size: 44rpx;
+}
+
+.daigou-header-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.daigou-header-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1c1c1e;
+}
+
+.daigou-header-desc {
+  font-size: 24rpx;
+  color: rgba(60,60,67,0.6);
+  margin-top: 4rpx;
+}
+
+.daigou-body {
+  margin-top: 28rpx;
+  padding-top: 24rpx;
+  border-top: 1.5rpx solid rgba(255, 149, 0, 0.15);
+}
+
+.daigou-tip {
+  font-size: 23rpx;
+  color: #FF9500;
+  background: rgba(255, 149, 0, 0.1);
+  border-radius: 10rpx;
+  padding: 12rpx 16rpx;
+  margin-bottom: 24rpx;
+  line-height: 1.5;
+}
+
+.daigou-field-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+}
+
+.daigou-field-label {
+  font-size: 28rpx;
+  color: rgba(60,60,67,0.85);
+  flex-shrink: 0;
+  width: 180rpx;
+}
+
+.daigou-input-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: rgba(118,118,128,0.08);
+  border-radius: 12rpx;
+  padding: 0 20rpx;
+  height: 72rpx;
+}
+
+.currency-sign {
+  font-size: 28rpx;
+  color: rgba(60,60,67,0.6);
+  margin-right: 8rpx;
+}
+
+.daigou-input {
+  flex: 1;
+  font-size: 28rpx;
+  color: #1c1c1e;
+  height: 72rpx;
+  line-height: 72rpx;
+}
+
+.daigou-stock-wrap {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.stock-btn {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 50%;
+  background: rgba(255, 149, 0, 0.15);
+  color: #FF9500;
+  font-size: 36rpx;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.stock-num {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #1c1c1e;
+  min-width: 60rpx;
+  text-align: center;
+}
+
 
 .submit-btn::after {
   border: none;
@@ -745,4 +939,144 @@
 
 .gender-select-item.selected .gender-text {
   color: var(--color-primary);
+}
+
+/* ===== 完整度进度条 ===== */
+.completeness-bar-wrap {
+  margin-top: 20rpx;
+  padding: 16rpx 0 4rpx;
+  border-top: 1rpx solid var(--color-divider);
+}
+
+.completeness-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12rpx;
+}
+
+.completeness-label {
+  font-size: 24rpx;
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+}
+
+.completeness-count {
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.completeness-count.done {
+  color: #30D158;
+  font-weight: 700;
+}
+
+.completeness-track {
+  width: 100%;
+  height: 8rpx;
+  background: rgba(120, 120, 128, 0.18);
+  border-radius: 100rpx;
+  overflow: hidden;
+}
+
+.completeness-fill {
+  height: 100%;
+  border-radius: 100rpx;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.completeness-fill.low {
+  background: linear-gradient(90deg, #FF3B30 0%, #FF9500 100%);
+}
+
+.completeness-fill.mid {
+  background: linear-gradient(90deg, #FF9500 0%, #FFCC00 100%);
+}
+
+.completeness-fill.full {
+  background: linear-gradient(90deg, #30D158 0%, #34C759 100%);
+  box-shadow: 0 0 8rpx rgba(48, 209, 88, 0.4);
+}
+
+/* ===== 字段错误态 ===== */
+.section-error {
+  border: 2rpx solid rgba(255, 59, 48, 0.5) !important;
+  background: rgba(255, 59, 48, 0.04) !important;
+  box-shadow:
+    0 4rpx 24rpx rgba(255, 59, 48, 0.12),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.03) !important;
+}
+
+.field-error-tag {
+  display: inline-block;
+  font-size: 20rpx;
+  color: var(--color-danger, #FF3B30);
+  font-weight: 500;
+  margin-left: 12rpx;
+  background: rgba(255, 59, 48, 0.1);
+  padding: 2rpx 12rpx;
+  border-radius: 100rpx;
+  vertical-align: middle;
+}
+
+.input-error {
+  border-color: rgba(255, 59, 48, 0.5) !important;
+  background: rgba(255, 59, 48, 0.04) !important;
+}
+
+.picker-error {
+  border-color: rgba(255, 59, 48, 0.5) !important;
+  background: rgba(255, 59, 48, 0.04) !important;
+}
+
+.gender-error {
+  border-color: rgba(255, 59, 48, 0.3) !important;
+}
+
+.field-hint {
+  font-size: 22rpx;
+  color: var(--color-text-tertiary);
+  margin-top: 12rpx;
+  line-height: 1.5;
+}
+
+.field-error-row {
+  font-size: 22rpx;
+  color: var(--color-danger, #FF3B30);
+  margin-top: 8rpx;
+  padding-left: 4rpx;
+}
+
+.daigou-input-error {
+  border: 1.5rpx solid rgba(255, 59, 48, 0.5) !important;
+  background: rgba(255, 59, 48, 0.04) !important;
+}
+
+/* ===== 字数计数器增强 ===== */
+.counter-ok {
+  color: #30D158 !important;
+}
+
+.counter-warn {
+  color: #FF9500;
+  font-size: 20rpx;
+}
+
+.counter-done {
+  color: #30D158;
+  font-size: 20rpx;
+}
+
+/* ===== 未完整时发布按钮弱化 ===== */
+.submit-btn-incomplete {
+  background: linear-gradient(180deg, #636366 0%, #48484a 100%) !important;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.2) !important;
+  opacity: 0.85;
+}
+
+/* ===== 图片上传区错误态 ===== */
+.img-add-error {
+  border-color: rgba(255, 59, 48, 0.4) !important;
+  background: rgba(255, 59, 48, 0.04) !important;
 }

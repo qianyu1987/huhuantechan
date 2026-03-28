@@ -36,8 +36,14 @@
               <text class="credit-level">{{counterpart.creditInfo.level}}</text>
             </view>
           </view>
-          <view class="counterpart-badge">
-            <text class="badge-text">分享伙伴</text>
+          <view class="counterpart-actions">
+            <view class="counterpart-badge">
+              <text class="badge-text">互换伙伴</text>
+            </view>
+            <button class="share-btn" open-type="share" plain="true">
+              <text class="share-icon">↗</text>
+              <text class="share-text">分享</text>
+            </button>
           </view>
         </view>
       </view>
@@ -232,6 +238,28 @@
             </view>
           </view>
         </block>
+      </view>
+    </view>
+
+    <!-- 常驻安全提示横幅 -->
+    <view class="safety-notice-card" wx:if="{{order.status !== 'completed' && order.status !== 'cancelled' && order.status !== 'rejected'}}">
+      <view class="notice-hd">
+        <text class="notice-icon">⚠️</text>
+        <text class="notice-title">互换安全提示</text>
+      </view>
+      <view class="notice-items">
+        <view class="notice-row">
+          <text class="n-dot">•</text>
+          <text class="n-text">发货前请<text class="n-em">核对对方收货信息</text>，填写正确地址再寄出</text>
+        </view>
+        <view class="notice-row">
+          <text class="n-dot">•</text>
+          <text class="n-text">请<text class="n-em">妥善保存快递单号</text>，便于追踪和纠纷处理</text>
+        </view>
+        <view class="notice-row">
+          <text class="n-dot">•</text>
+          <text class="n-text">收货时建议<text class="n-em">当面验货</text>，确认特产无误后再确认收货</text>
+        </view>
       </view>
     </view>
 

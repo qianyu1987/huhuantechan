@@ -134,6 +134,68 @@ Page({
     }
   },
 
+  // 分享给好友
+  onShareAppMessage() {
+    const { order, myProduct, counterpart } = this.data
+    if (!order) return {}
+    
+    let title = '我在风物之情与你互换特产'
+    let imageUrl = ''
+    
+    // 如果有产品图片，用产品图片
+    if (myProduct && myProduct.coverUrl) {
+      imageUrl = myProduct.coverUrl
+    }
+    
+    // 如果是已完成订单，显示互换成功
+    if (order.status === 'completed') {
+      title = `与${counterpart?.nickName || '好友'}互换特产成功！`
+    } else if (order.status === 'confirmed' || order.status === 'shipped_a' || order.status === 'shipped_b') {
+      title = '我正在和好友互换特产，快来加入！'
+    }
+    
+    return {
+      title,
+      path: `/pages/order-detail/index?id=${order._id}`,
+      imageUrl
+    }
+  },
+
+  // 分享到朋友圈
+  onShareTimeline() {
+    const { order, myProduct, counterpart } = this.data
+    if (!order) return {}
+    
+    let title = '我在风物之情互换特产'
+    
+    if (order.status === 'completed') {
+      title = `与${counterpart?.nickName || '好友'}互换特产成功！🎉`
+    } else if (order.status === 'confirmed' || order.status === 'shipped_a' || order.status === 'shipped_b') {
+      title = '我正在和好友互换特产，快来一起玩！🎁'
+    }
+    
+    // 朋友圈分享使用产品封面图
+    let imageUrl = ''
+    if (myProduct && myProduct.coverUrl) {
+      imageUrl = myProduct.coverUrl
+    }
+    
+    return {
+      title,
+      imageUrl,
+      query: `id=${order._id}`
+    }
+  },
+
+  // 点击分享按钮
+  onShareTap() {
+    // 显示分享菜单
+    wx.showShareMenu({
+      withShareTicket: true,
+      menus: ['shareAppMessage', 'shareTimeline']
+    })
+  },
+
   async loadOrderDetail() {
     this.setData({ loading: true })
     showLoading('加载中...')
