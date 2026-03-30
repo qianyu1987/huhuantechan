@@ -1,6 +1,7 @@
 // pages/match/index.js
 const { PROVINCES, PRODUCT_CATEGORIES, VALUE_RANGES, MYSTERY_EMOJIS } = require('../../utils/constants')
 const { callCloud, formatTime, getCreditLevel, getProvinceByCode, toast, processImageUrl, getTempUrls } = require('../../utils/util')
+const imageOptimizer = require('../../utils/imageOptimizer')
 
 Page({
   data: {
@@ -159,8 +160,8 @@ Page({
     }
   },
 
-  // 客户端 cloud:// URL 批量转换（每批50个）
-  async resolveCloudUrls(items) {
+  // 客户端 cloud:// URL 批量转换（每批50个，使用缩略图优化流量）
+  async resolveCloudUrls(items, thumbW = 240) {
     const cloudItems = []
     items.forEach((item, idx) => {
       if (item.coverUrl && item.coverUrl.startsWith('cloud://')) {
@@ -169,14 +170,11 @@ Page({
     })
     if (cloudItems.length === 0) return
     try {
-      const BATCH_SIZE = 50
-      for (let i = 0; i < cloudItems.length; i += BATCH_SIZE) {
-        const batch = cloudItems.slice(i, i + BATCH_SIZE)
-        const res = await wx.cloud.getTempFileURL({ fileList: batch.map(c => c.fileID) })
-        res.fileList.forEach((f, j) => {
-          if (f.tempFileURL) items[batch[j].idx].coverUrl = f.tempFileURL
-        })
-      }
+      const fileIDs = [...new Set(cloudItems.map(c => c.fileID))]
+      const urlMap = await imageOptimizer.batchResolve(fileIDs, thumbW)
+      cloudItems.forEach(({ idx, fileID }) => {
+        if (urlMap[fileID]) items[idx].coverUrl = urlMap[fileID]
+      })
     } catch (e) {
       console.warn('[Match] resolveCloudUrls 失败:', e)
     }
@@ -215,7 +213,7 @@ Page({
             })
             if (result && result.success) {
               toast('分享请求已发出！', 'success')
-              wx.navigateTo({ url: `/pages/order/index?id=${result.orderId}` })
+              wx.navigateTo({ url: `/pages/order-detail/index?orderId=${result.orderId}` })
             } else {
               toast(result?.message || '发起失败，请重试')
             }

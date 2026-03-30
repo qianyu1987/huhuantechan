@@ -4,8 +4,8 @@
   <!-- 奖励总览 -->
   <view class="card reward-summary-card">
     <view class="reward-header">
-      <text class="reward-label">邀请奖励积分</text>
-      <text class="reward-total">{{rewardSummary.totalRewards}}</text>
+      <text class="reward-label">邀请奖励现金</text>
+      <text class="reward-total">¥{{rewardSummary.cashTotalRewards}}</text>
     </view>
     <view class="reward-detail-row">
       <view class="reward-detail-item">
@@ -14,12 +14,12 @@
       </view>
       <view class="reward-divider"></view>
       <view class="reward-detail-item">
-        <text class="reward-num">+{{rewardSummary.signupRewards}}</text>
+        <text class="reward-num">+¥{{rewardSummary.cashSignupRewards}}</text>
         <text class="reward-desc">注册奖励</text>
       </view>
       <view class="reward-divider"></view>
       <view class="reward-detail-item">
-        <text class="reward-num">+{{rewardSummary.swapRewards}}</text>
+        <text class="reward-num">+¥{{rewardSummary.cashSwapRewards}}</text>
         <text class="reward-desc">分享奖励</text>
       </view>
     </view>
@@ -29,7 +29,7 @@
   <view class="card poster-card">
     <view class="poster-header">
       <text class="poster-title">邀请好友</text>
-      <text class="poster-desc">邀请好友加入发现特产，双方各得10积分</text>
+      <text class="poster-desc">邀请好友加入发现特产，邀请人得¥{{rewardSummary.inviterCashReward}}现金+{{rewardSummary.inviterReward}}积分，被邀请人得¥{{rewardSummary.inviteeCashReward}}现金+{{rewardSummary.inviteeReward}}积分</text>
     </view>
     
     <!-- 积分规则入口 -->
@@ -74,9 +74,9 @@
           <text class="invite-time">{{item.inviteTime}}</text>
         </view>
         <view class="invite-badges">
-          <view class="badge badge-bound">已注册 +10</view>
+          <view class="badge badge-bound">已注册 +¥{{item.signupCashReward}}+{{item.signupPointsReward}}积分</view>
           <view class="badge {{item.hasFirstSwap ? 'badge-swapped' : 'badge-pending'}}">
-            {{item.hasFirstSwap ? '已分享 +20' : '待首次'}}
+            {{item.hasFirstSwap ? '已分享 +¥' + item.swapCashReward + '+' + item.swapPointsReward + '积分' : '待首次'}}
           </view>
         </view>
       </view>
@@ -103,9 +103,10 @@
   <view class="card tips-card">
     <view class="tips-title">活动说明</view>
     <view class="tips-list">
-      <view class="tips-item">1. 邀请好友成功注册，双方各得10积分</view>
-      <view class="tips-item">2. 好友首次分享成功，双方再各得20积分</view>
-      <view class="tips-item">3. 邀请人数无上限，积分奖励无上限</view>
+      <view class="tips-item">1. 邀请好友成功注册，邀请人得¥{{rewardSummary.inviterCashReward}}现金+{{rewardSummary.inviterReward}}积分，被邀请人得¥{{rewardSummary.inviteeCashReward}}现金+{{rewardSummary.inviteeReward}}积分</view>
+      <view class="tips-item">2. 好友首次分享成功，邀请人再得¥{{rewardSummary.firstSwapCashReward}}现金+20积分</view>
+      <view class="tips-item">3. 邀请人数无上限，现金奖励无上限</view>
+      <view class="tips-item">4. 现金奖励可提现，提现门槛¥30</view>
     </view>
   </view>
 

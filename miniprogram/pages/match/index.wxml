@@ -45,7 +45,7 @@
             <text class="mystery-mini-emoji">{{item.emoji || '🎁'}}</text>
           </view>
           <!-- 普通特产：缩略图 -->
-          <image wx:else class="my-product-img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load/>
+          <image wx:else class="my-product-img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load decode/>
           
           <view class="my-product-name">{{item.name}}</view>
           <view class="selected-check" wx:if="{{selectedMyId === item._id}}">✓</view>
@@ -106,7 +106,7 @@
               </view>
             </view>
             <view wx:else class="grid-img-wrap">
-              <image class="grid-img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load/>
+              <image class="grid-img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load decode/>
               <!-- 省份角标 -->
               <view class="province-badge" style="background:{{item.provinceColor}}">
                 <text class="province-badge-emoji">{{item.provinceEmoji}}</text>

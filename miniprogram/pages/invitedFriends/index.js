@@ -13,8 +13,25 @@ Page({
       signupRewards: 0,
       swapRewards: 0,
       totalRewards: 0,
-      firstSwapCount: 0
+      firstSwapCount: 0,
+      // 现金奖励（已格式化）
+      cashSignupRewards: '0.00',
+      cashSwapRewards: '0.00',
+      cashTotalRewards: '0.00',
+      inviterReward: 10,
+      inviteeReward: 5,
+      inviterCashReward: '5.00',
+      inviteeCashReward: '2.00',
+      firstSwapCashReward: '10.00'
     }
+  },
+
+  // 格式化现金金额，保留两位小数
+  formatCash(amount) {
+    if (typeof amount === 'string') {
+      amount = parseFloat(amount) || 0
+    }
+    return amount.toFixed(2)
   },
 
   onLoad() {
@@ -32,12 +49,34 @@ Page({
     try {
       const res = await callCloud('userInit', { action: 'getInviteData' })
       if (res) {
+        // 格式化现金奖励数据
+        const rewardSummary = res.rewardSummary || this.data.rewardSummary
+        const formattedRewardSummary = {
+          ...rewardSummary,
+          // 确保现金奖励有默认值并格式化
+          cashSignupRewards: this.formatCash(rewardSummary.cashSignupRewards || 0),
+          cashSwapRewards: this.formatCash(rewardSummary.cashSwapRewards || 0),
+          cashTotalRewards: this.formatCash(rewardSummary.cashTotalRewards || 0),
+          inviterCashReward: this.formatCash(rewardSummary.inviterCashReward || 5.00),
+          inviteeCashReward: this.formatCash(rewardSummary.inviteeCashReward || 2.00),
+          firstSwapCashReward: this.formatCash(rewardSummary.firstSwapCashReward || 10.00)
+        }
+        
+        // 格式化邀请列表中的现金奖励
+        const inviteList = (res.inviteList || []).map(item => ({
+          ...item,
+          signupCashReward: this.formatCash(item.signupCashReward || 0),
+          swapCashReward: this.formatCash(item.swapCashReward || 0),
+          signupPointsReward: item.signupPointsReward || 0,
+          swapPointsReward: item.swapPointsReward || 0
+        }))
+        
         this.setData({
           inviteCode: res.inviteCode || '',
           inviteCount: res.inviteCount || 0,
-          inviteList: res.inviteList || [],
+          inviteList: inviteList,
           myPoints: res.myPoints || 0,
-          rewardSummary: res.rewardSummary || this.data.rewardSummary
+          rewardSummary: formattedRewardSummary
         })
         // 生成小程序码
         if (res.inviteCode) {
@@ -104,7 +143,7 @@ Page({
   onShareAppMessage() {
     const inviteCode = this.data.inviteCode
     return {
-      title: '特产分享 - 邀请好友一起玩',
+      title: '朋友你愿意和我换家乡特产吗，没有金钱交易，只有真心款待！❤️',
       path: `/pages/index/index?inviteCode=${inviteCode}`,
       imageUrl: '/images/share-cover.png'
     }
@@ -114,7 +153,7 @@ Page({
   onShareTimeline() {
     const inviteCode = this.data.inviteCode
     return {
-      title: '特产分享 - 邀请好友一起玩',
+      title: '朋友你愿意和我换家乡特产吗，没有金钱交易，只有真心款待！❤️',
       query: `inviteCode=${inviteCode}`
     }
   },

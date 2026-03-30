@@ -1,5 +1,5 @@
 // pages/publish/index.js
-const { PROVINCES, PRODUCT_CATEGORIES_V2, VALUE_RANGES_V2, DESC_TAGS } = require('../../utils/constants')
+const { PROVINCES, PRODUCT_CATEGORIES, VALUE_RANGES, DESC_TAGS } = require('../../utils/constants')
 const { callCloud, uploadImage, toast, showLoading, hideLoading, getProvinceByName, getProvinceByCode, processImageUrl } = require('../../utils/util')
 
 Page({
@@ -29,8 +29,8 @@ Page({
     region: [],
     wantRegion: [],
     descTagsSelected: {},
-    categories: PRODUCT_CATEGORIES_V2,
-    valueRanges: VALUE_RANGES_V2,
+    categories: PRODUCT_CATEGORIES,
+    valueRanges: VALUE_RANGES,
     descTags: DESC_TAGS,
     submitting: false,
     isEdit: false,
@@ -347,26 +347,25 @@ Page({
     let firstErrorId = ''
 
     if (form.isMystery) {
-      if (!form.province) { errors['province'] = '请选择特产产地'; if (!firstErrorId) firstErrorId = 'section-province' }
-      if (!form.gender)   { errors['gender']   = '请选择你的性别';  if (!firstErrorId) firstErrorId = 'section-gender' }
+      if (!form.province) { errors['province'] = '请选择特产产地，让大家都知道它来自哪里'; if (!firstErrorId) firstErrorId = 'section-province' }
+      if (!form.gender)   { errors['gender']   = '请选择你的性别，方便对方了解';  if (!firstErrorId) firstErrorId = 'section-gender' }
     } else {
-      if (images.length === 0)               { errors['images']      = '请至少上传一张特产图片';    if (!firstErrorId) firstErrorId = 'section-images' }
-      if (!form.name || !form.name.trim())   { errors['name']        = '请填写特产名称';            if (!firstErrorId) firstErrorId = 'section-name' }
+      if (images.length === 0)               { errors['images']      = '请至少上传一张特产图片，展示特产的真实样子';    if (!firstErrorId) firstErrorId = 'section-images' }
+      if (!form.name || !form.name.trim())   { errors['name']        = '请填写特产名称，让大家知道是什么特产';            if (!firstErrorId) firstErrorId = 'section-name' }
       if (!form.description || form.description.trim().length < 10) {
-                                               errors['description']  = '请填写特产描述（至少10字）'; if (!firstErrorId) firstErrorId = 'section-description' }
-      if (!form.province)                    { errors['province']    = '请选择特产产地';            if (!firstErrorId) firstErrorId = 'section-province' }
-      if (!form.category)                    { errors['category']    = '请选择品类';               if (!firstErrorId) firstErrorId = 'section-category' }
-      if (!form.valueRange)                  { errors['valueRange']  = '请选择估值区间';            if (!firstErrorId) firstErrorId = 'section-valueRange' }
-      if (!form.gender)                      { errors['gender']      = '请选择你的性别';            if (!firstErrorId) firstErrorId = 'section-gender' }
+                                               errors['description']  = '请详细描述特产特点（至少10字），如口感、包装等'; if (!firstErrorId) firstErrorId = 'section-description' }
+      if (!form.province)                    { errors['province']    = '请选择特产产地，让大家知道特产来自哪里';            if (!firstErrorId) firstErrorId = 'section-province' }
+      if (!form.category)                    { errors['category']    = '请选择品类，方便大家快速找到';               if (!firstErrorId) firstErrorId = 'section-category' }
+      if (!form.valueRange)                  { errors['valueRange']  = '请选择估值区间，帮助大家了解价值';            if (!firstErrorId) firstErrorId = 'section-valueRange' }
+      if (!form.gender)                      { errors['gender']      = '请选择你的性别，方便对方了解';            if (!firstErrorId) firstErrorId = 'section-gender' }
 
-      // 代购字段校验
       if (form.daigouEnabled) {
         const price = parseFloat(form.daigouPrice)
-        if (!price || price <= 0)            { errors['daigouPrice'] = '请填写有效的代购价格';      if (!firstErrorId) firstErrorId = 'section-daigou' }
+        if (!price || price <= 0)            { errors['daigouPrice'] = '请填写有效的代购价格（1-9999元）';      if (!firstErrorId) firstErrorId = 'section-daigou' }
         else if (price > 9999)               { errors['daigouPrice'] = '代购价格不能超过9999元';    if (!firstErrorId) firstErrorId = 'section-daigou' }
         const originalPrice = parseFloat(form.daigouOriginalPrice)
         if (form.daigouOriginalPrice && originalPrice && originalPrice <= price) {
-                                               errors['daigouOriginalPrice'] = '划线原价应高于代购价格'; if (!firstErrorId) firstErrorId = 'section-daigou'
+                                               errors['daigouOriginalPrice'] = '划线原价应高于代购价格，展示优惠效果'; if (!firstErrorId) firstErrorId = 'section-daigou'
         }
       }
     }
@@ -427,6 +426,8 @@ Page({
       if (this.data.images.length > 0) {
         showLoading('上传图片中...')
 
+        const needUploadImages = []
+
         for (let i = 0; i < this.data.images.length; i++) {
           const filePath = this.data.images[i]
 
@@ -435,18 +436,23 @@ Page({
             continue
           }
 
-          // 编辑模式回显的已上传远程图片保留
           if ((filePath.startsWith('https://') || filePath.startsWith('http://')) && !filePath.includes('tmp')) {
             uploadedIds.push(filePath)
             continue
           }
 
+          needUploadImages.push(filePath)
+        }
+
+        if (needUploadImages.length > 0) {
           try {
-            showLoading(`上传图片 ${i + 1}/${this.data.images.length}...`)
-            const fileID = await uploadImage(filePath, 'products')
-            uploadedIds.push(fileID)
+            const uploadPromises = needUploadImages.map((filePath, index) => 
+              uploadImage(filePath, 'products')
+            )
+            const results = await Promise.all(uploadPromises)
+            uploadedIds.push(...results)
           } catch (uploadErr) {
-            throw new Error(`第 ${i + 1} 张图片上传失败，请重试`)
+            throw new Error('图片上传失败，请重试')
           }
         }
       }
@@ -458,7 +464,6 @@ Page({
         data: {
           ...this.data.form,
           images: uploadedIds,
-          // 整理代购数据
           daigou: this.data.form.daigouEnabled ? {
             enabled: true,
             price: parseFloat(this.data.form.daigouPrice) || 0,
@@ -475,15 +480,24 @@ Page({
 
       hideLoading()
 
-      // 积分不足提示
-      if (!res.success && res.message && res.message.includes('积分不足')) {
-        wx.showModal({
-          title: '积分不足',
-          content: res.message + '，可通过互换特产或邀请好友获得积分',
-          showCancel: false,
-          confirmText: '知道了'
-        })
-        return
+      if (!res.success) {
+        if (res.message && res.message.includes('积分不足')) {
+          wx.showModal({
+            title: '积分不足',
+            content: res.message + '，可通过互换特产或邀请好友获得积分',
+            showCancel: false,
+            confirmText: '知道了'
+          })
+          return
+        } else if (res.message) {
+          wx.showModal({
+            title: isEdit ? '保存失败' : '发布失败',
+            content: res.message || '请检查网络连接后重试',
+            showCancel: false,
+            confirmText: '知道了'
+          })
+          return
+        }
       }
 
       if (res && res.success) {
@@ -498,7 +512,6 @@ Page({
             const productId = res.productId
             const isMystery = this.data.form.isMystery
             
-            // 审核中或审核不通过的产品不跳转详情页
             if (isPending) {
               wx.reLaunch({ url: '/pages/my-products/index' })
               return
@@ -539,7 +552,22 @@ Page({
       }
     } catch (e) {
       hideLoading()
-      toast(e.message || (isEdit ? '保存失败，请重试' : '发布失败，请重试'))
+      console.error('[publish] 提交失败:', e)
+      
+      let errorMsg = e.message || (isEdit ? '保存失败，请重试' : '发布失败，请重试')
+      
+      if (errorMsg.includes('网络') || errorMsg.includes('timeout')) {
+        errorMsg = '网络连接异常，请检查网络后重试'
+      } else if (errorMsg.includes('上传')) {
+        errorMsg = '图片上传失败，请检查图片格式后重试'
+      }
+      
+      wx.showModal({
+        title: isEdit ? '保存失败' : '发布失败',
+        content: errorMsg,
+        showCancel: false,
+        confirmText: '知道了'
+      })
     } finally {
       this.setData({ submitting: false })
     }

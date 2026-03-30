@@ -21,10 +21,14 @@ Page({
     noMore: false,
     page: 1,
     unreadCount: 0,
-    scrollTop: 0
+    scrollTop: 0,
+    featureFlags: {}   // 功能开关，从 app.globalData 同步
   },
 
   onLoad(options) {
+    // 同步功能开关到页面 data（优先从 globalData 读，若未就绪则监听）
+    this._syncFeatureFlags()
+
     // 检查云开发状态（异步，不阻塞）
     this.checkCloudStatus()
     
@@ -39,11 +43,47 @@ Page({
       this.handleInviteCode(options.inviteCode)
     }
     if (options.scene) {
-      const scene = decodeURIComponent(options.scene)
-      const match = scene.match(/inviteCode=(\w+)/)
-      if (match && match[1]) {
-        this.handleInviteCode(match[1])
+      try {
+        const scene = decodeURIComponent(options.scene)
+        const match = scene.match(/inviteCode=(\w+)/)
+        if (match && match[1]) {
+          this.handleInviteCode(match[1])
+        }
+      } catch (e) {
+        console.warn('[Index] 解析 scene 参数失败:', e)
       }
+    }
+  },
+
+  // 同步功能开关到页面 data
+  _syncFeatureFlags() {
+    try {
+      const app = getApp()
+      if (!app) {
+        console.warn('[Index] getApp() 返回 undefined，延迟重试')
+        setTimeout(() => this._syncFeatureFlags(), 100)
+        return
+      }
+      
+      const flags = app.globalData && app.globalData.featureFlags
+      if (flags) {
+        this.setData({ featureFlags: flags })
+      } else {
+        // featureFlags 尚未加载完毕，轮询等待（最多等 3s）
+        let tries = 0
+        const timer = setInterval(() => {
+          tries++
+          const f = getApp() && getApp().globalData.featureFlags
+          if (f) {
+            this.setData({ featureFlags: f })
+            clearInterval(timer)
+          } else if (tries >= 30) {
+            clearInterval(timer)
+          }
+        }, 100)
+      }
+    } catch (e) {
+      console.error('[Index] _syncFeatureFlags 出错:', e)
     }
   },
 
@@ -58,22 +98,26 @@ Page({
 
   // 处理邀请码
   async handleInviteCode(inviteCode) {
-    // 获取本地存储的邀请码
-    const savedInviteCode = wx.getStorageSync('myInviteCode')
-    const boundInvite = wx.getStorageSync('boundInvite')
+    try {
+      // 获取本地存储的邀请码
+      const savedInviteCode = wx.getStorageSync('myInviteCode')
+      const boundInvite = wx.getStorageSync('boundInvite')
 
-    // 如果已经绑定过邀请关系，或者是自己邀请自己，不处理
-    if (boundInvite || (savedInviteCode && savedInviteCode === inviteCode)) {
-      return
-    }
+      // 如果已经绑定过邀请关系，或者是自己邀请自己，不处理
+      if (boundInvite || (savedInviteCode && savedInviteCode === inviteCode)) {
+        return
+      }
 
-    // 保存邀请码到本地
-    wx.setStorageSync('pendingInviteCode', inviteCode)
+      // 保存邀请码到本地
+      wx.setStorageSync('pendingInviteCode', inviteCode)
 
-    // 尝试自动绑定（如果已登录）
-    const app = getApp()
-    if (app.globalData.openid) {
-      await this.bindInvite(inviteCode)
+      // 尝试自动绑定（如果已登录）
+      const app = getApp()
+      if (app && app.globalData && app.globalData.openid) {
+        await this.bindInvite(inviteCode)
+      }
+    } catch (e) {
+      console.warn('[Index] handleInviteCode 出错:', e)
     }
   },
 
@@ -81,6 +125,10 @@ Page({
   async bindInvite(inviteCode) {
     try {
       const app = getApp()
+      if (!app || !app.callCloudFunctionWithRetry) {
+        console.warn('[Index] app 或 callCloudFunctionWithRetry 不可用')
+        return
+      }
       const res = await app.callCloudFunctionWithRetry('userInit', {
         action: 'bindInvite',
         inviteCode: inviteCode
@@ -106,37 +154,55 @@ Page({
 
   // 检查云开发状态（完全异步，不阻塞）
   checkCloudStatus() {
-    if (!wx.cloud) {
-      console.error('[Index] wx.cloud 不可用')
-      return
+    try {
+      if (!wx.cloud) {
+        console.error('[Index] wx.cloud 不可用')
+        return
+      }
+      
+      const app = getApp()
+      if (!app || !app.globalData) {
+        console.warn('[Index] getApp() 返回 undefined，延迟重试')
+        setTimeout(() => this.checkCloudStatus(), 500)
+        return
+      }
+      
+      const envId = app.globalData.envId
+      const platform = app.globalData.platform || 'weixin'
+      console.log('[Index] 云开发环境ID:', envId, ', 平台:', platform)
+      
+      // 完全后台执行，不等待结果
+      wx.cloud.callFunction({
+        name: 'testConnect',
+        data: {},
+        timeout: 5000  // 减少超时时间
+      }).then(res => {
+        console.log('[Index] 云函数连通性测试成功:', res.result)
+      }).catch(err => {
+        // 不显示任何弹窗，静默失败
+        console.warn('[Index] 云函数连通性测试失败:', err.errCode, err.errMsg)
+      })
+    } catch (e) {
+      console.error('[Index] checkCloudStatus 出错:', e)
     }
-    
-    const envId = getApp().globalData.envId
-    const platform = getApp().globalData.platform || 'weixin'
-    console.log('[Index] 云开发环境ID:', envId, ', 平台:', platform)
-    
-    // 完全后台执行，不等待结果
-    wx.cloud.callFunction({
-      name: 'testConnect',
-      data: {},
-      timeout: 5000  // 减少超时时间
-    }).then(res => {
-      console.log('[Index] 云函数连通性测试成功:', res.result)
-    }).catch(err => {
-      // 不显示任何弹窗，静默失败
-      console.warn('[Index] 云函数连通性测试失败:', err.errCode, err.errMsg)
-    })
   },
 
   onShow() {
-    // 节流：距离上次刷新少于 10 秒不刷新
-    if (this._lastShowTime && Date.now() - this._lastShowTime < 10000) {
-      return
+    try {
+      // 每次显示时同步最新功能开关（管理员可能已修改）
+      this._syncFeatureFlags()
+
+      // 节流：距离上次刷新少于 10 秒不刷新
+      if (this._lastShowTime && Date.now() - this._lastShowTime < 10000) {
+        return
+      }
+      this._lastShowTime = Date.now()
+      
+      // 只刷新未读数
+      this.loadUnread()
+    } catch (e) {
+      console.error('[Index] onShow 出错:', e)
     }
-    this._lastShowTime = Date.now()
-    
-    // 只刷新未读数
-    this.loadUnread()
   },
 
   // 加载特产列表
@@ -391,14 +457,15 @@ Page({
   },
 
   // 客户端侧批量转换 cloud:// URL 为临时链接（带 LRU 缓存，避免重复请求）
-  async resolveCloudUrls(items) {
+  // thumbW=240：列表卡片约 320rpx 宽，240px 已足够清晰且节省 60%+ 流量
+  async resolveCloudUrls(items, thumbW = 240) {
     const fileIDs = items
       .filter(item => item.coverUrl && item.coverUrl.startsWith('cloud://'))
       .map(item => item.coverUrl)
 
     if (fileIDs.length === 0) return
 
-    const urlMap = await imageOptimizer.batchResolve([...new Set(fileIDs)])
+    const urlMap = await imageOptimizer.batchResolve([...new Set(fileIDs)], thumbW)
     items.forEach(item => {
       if (item.coverUrl && urlMap[item.coverUrl]) {
         item.coverUrl = urlMap[item.coverUrl]
@@ -422,12 +489,13 @@ Page({
    * 分享给朋友
    * 首页分享：展示当前筛选省份，吸引特定地区的用户
    */
-  onShareAppMessage() {
+  async onShareAppMessage() {
     const cfg = this.data._shareConfig || {}
     const province = this.data.activeProvince
 
-    let title = cfg.indexTitle || '全国特产在这里，找到你想换的那份！'
+    let title = cfg.indexTitle || '朋友你愿意和我换家乡特产吗，没有金钱交易，只有真心款待！❤️'
     let path = '/pages/index/index'
+    let imageUrl = cfg.indexImage || '/images/share-default.png'
 
     // 如果用户正在看某个省的特产，分享时带上省份参数
     if (province) {
@@ -435,21 +503,78 @@ Page({
       const pName = pInfo ? pInfo.name : province
       title = cfg.indexProvinceTitle
         ? cfg.indexProvinceTitle.replace('{province}', pName)
-        : `${pName}的特产来了！快来看看有没有你喜欢的~`
+        : `朋友，想尝尝${pName}的特产吗？没有金钱交易，只有真心款待！❤️`
       path = `/pages/index/index?province=${province}`
+    }
+
+    // 尝试获取浏览最多的特产图片作为分享图
+    try {
+      const hotProduct = await this._getHotProductImage()
+      if (hotProduct) {
+        imageUrl = hotProduct
+      }
+    } catch (e) {
+      console.log('获取热门特产图片失败，使用默认图片', e)
     }
 
     return {
       title,
       path,
-      imageUrl: cfg.indexImage || '/images/share-default.png'
+      imageUrl
     }
+  },
+
+  /**
+   * 获取浏览最多的特产图片
+   */
+  async _getHotProductImage() {
+    try {
+      const res = await callCloud('productMgr', {
+        action: 'list',
+        page: 1,
+        pageSize: 1,
+        sortBy: 'viewCount',
+        sortOrder: 'desc',
+        status: 'active'
+      })
+      
+      if (res.success && res.list && res.list.length > 0) {
+        const product = res.list[0]
+        // 获取第一张图片
+        let imageUrl = null
+        if (product.images && product.images.length > 0) {
+          imageUrl = product.images[0]
+        } else if (product.coverUrl) {
+          imageUrl = product.coverUrl
+        }
+        
+        // 如果是 cloud:// 格式，转换为临时链接
+        if (imageUrl && imageUrl.startsWith('cloud://')) {
+          try {
+            const tempRes = await wx.cloud.getTempFileURL({
+              fileList: [imageUrl]
+            })
+            if (tempRes.fileList && tempRes.fileList[0] && tempRes.fileList[0].tempFileURL) {
+              return tempRes.fileList[0].tempFileURL
+            }
+          } catch (tempErr) {
+            console.error('转换图片临时链接失败:', tempErr)
+            return null
+          }
+        }
+        
+        return imageUrl
+      }
+    } catch (e) {
+      console.error('获取热门特产失败', e)
+    }
+    return null
   },
 
   /**
    * 分享到朋友圈
    */
-  onShareTimeline() {
+  async onShareTimeline() {
     const cfg = this.data._shareConfig || {}
     const province = this.data.activeProvince
     const pInfo = province
@@ -457,11 +582,23 @@ Page({
       : null
     const pName = pInfo ? pInfo.name : ''
 
+    // 尝试获取热门特产图片作为分享图
+    let imageUrl = cfg.indexImage || '/images/share-default.png'
+    try {
+      const hotProduct = await this._getHotProductImage()
+      if (hotProduct) {
+        imageUrl = hotProduct
+      }
+    } catch (e) {
+      console.log('获取热门特产图片失败，使用默认图片', e)
+    }
+
     return {
       title: pName
         ? `${pName}的特产，快来互换吧！`
         : (cfg.timelineTitle || '特产互换，让美食走遍全国 🌏'),
-      query: province ? `province=${province}` : ''
+      query: province ? `province=${province}` : '',
+      imageUrl
     }
   },
 

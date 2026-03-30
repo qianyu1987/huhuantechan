@@ -2,7 +2,7 @@
 const { PROVINCES, PRODUCT_CATEGORIES } = require('../../utils/constants')
 const { callCloud, getCreditLevel, getProvinceByCode, toast, processImageUrl, uploadImage, showLoading } = require('../../utils/util')
 
-// ===== AI 客服知识库 =====
+// AI 客服知识库
 const SERVICE_KB = [
   // 平台规则
   { id: 'p01', category: 'platform', keywords: ['平台', '是什么', '干什么', '做什么', '介绍', '特产分享'], question: '特产分享平台是什么？', answer: '特产分享是一个让全国各地用户分享家乡特产的平台。你可以发布自己的家乡特产，与其他省份的用户相互分享，体验不同地域的美食和文化。' },
@@ -102,6 +102,12 @@ Page({
     badgeExpanded: false,
     phoneNumber: '',
     phoneVerified: false,
+    daigouLevelName: '新人',
+    daigouLevelEmoji: '🌱',
+    daigouFeeRate: 8.0,
+    swapLevelName: '新人',
+    swapLevelEmoji: '🌱',
+    swapLevelIdx: 0,
     _phoneJustVerified: false, // 标记是否刚刚验证过手机号
     orderStats: {
       pending: 0,
@@ -254,6 +260,36 @@ Page({
         // 更新 UI
         const userInfo = userRes.userInfo
         const needGuide = !userInfo.nickName || userInfo.nickName === '微信用户' || !userInfo.avatarUrl || userInfo.avatarUrl.includes('default-avatar')
+
+        // 代购等级
+        const LEVEL_NAMES = { 0: '新人', 1: '初级', 2: '进阶', 3: '资深', 4: '金牌', 5: '钻石', 6: '官方认证' }
+        const LEVEL_RATES = { 0: 8.0, 1: 7.0, 2: 6.5, 3: 6.0, 4: 5.5, 5: 5.0, 6: 4.0 }
+        const LEVEL_EMOJIS = { 0: '🌱', 1: '⭐', 2: '🌟', 3: '💫', 4: '🥇', 5: '💎', 6: '👑' }
+        // 云函数返回的 daigouLevel 优先，其次读 userInfo 里携带的
+        const dlv = (userRes.userInfo && userRes.userInfo.daigouLevel !== undefined)
+          ? userRes.userInfo.daigouLevel
+          : (userInfo.daigouLevel !== undefined ? userInfo.daigouLevel : 0)
+
+        // 互换达人等级（基于互换次数）
+        const swapCnt = (statsRes && statsRes.swapCount) || 0
+        const SWAP_LEVELS = [
+          { min: 0,   name: '新鲜人',  emoji: '🌱', idx: 0 },
+          { min: 1,   name: '探索者',  emoji: '🗺️', idx: 1 },
+          { min: 5,   name: '互换达人', emoji: '⭐', idx: 2 },
+          { min: 15,  name: '特产行家', emoji: '🌟', idx: 3 },
+          { min: 30,  name: '互换专家', emoji: '💫', idx: 4 },
+          { min: 60,  name: '特产大师', emoji: '🏆', idx: 5 },
+          { min: 100, name: '传奇宗师', emoji: '👑', idx: 6 },
+        ]
+        let swapLevelObj = SWAP_LEVELS[0]
+        for (const lv of SWAP_LEVELS) {
+          if (swapCnt >= lv.min) swapLevelObj = lv
+        }
+
+        // 把代购字段合并到 userInfo，驱动 WXML deposit-balance-bar 显示
+        userInfo.daigouStats = (userRes.userInfo && userRes.userInfo.daigouStats) || userInfo.daigouStats || null
+        userInfo.daigouLevel = dlv
+        userInfo.isDaigouVerified = (userRes.userInfo && userRes.userInfo.isDaigouVerified) || userInfo.isDaigouVerified || false
         
         this.setData({
           userInfo,
@@ -265,7 +301,13 @@ Page({
           phoneVerified: userRes.phoneVerified || false,
           showProfileGuide: needGuide,
           guideAvatarUrl: needGuide ? (userInfo.avatarUrl || '') : '',
-          guideNickName: needGuide ? (userInfo.nickName === '微信用户' ? '' : (userInfo.nickName || '')) : ''
+          guideNickName: needGuide ? (userInfo.nickName === '微信用户' ? '' : (userInfo.nickName || '')) : '',
+          daigouLevelName: LEVEL_NAMES[dlv] || '新人',
+          daigouLevelEmoji: LEVEL_EMOJIS[dlv] || '🌱',
+          daigouFeeRate: LEVEL_RATES[dlv] || 8.0,
+          swapLevelName: swapLevelObj.name,
+          swapLevelEmoji: swapLevelObj.emoji,
+          swapLevelIdx: swapLevelObj.idx,
         })
       }
       
@@ -327,8 +369,17 @@ Page({
   // 加载我的特产预览（独立，不阻塞）
   async _loadMyProductsPreview() {
     try {
+      console.log('[mine] 开始加载我的特产预览')
       const res = await callCloud('productMgr', { action: 'myList', page: 1, pageSize: 5 })
+      console.log('[mine] 特产预览响应:', res)
+      
+      if (!res.success) {
+        console.error('[mine] 特产预览失败:', res.message)
+        return
+      }
+      
       const list = (res.list || []).map(item => {
+        console.log('[mine] 处理特产:', item._id, item.name)
         let statusLabel = '展示中', statusClass = 'status-active'
         if (item.status === 'in_swap') { statusLabel = '换中'; statusClass = 'status-in-swap' }
         if (item.status === 'swapped') { statusLabel = '已换出'; statusClass = 'status-swapped' }
@@ -363,6 +414,8 @@ Page({
         item.mysteryStyle = mysteryStyle
         return item
       })
+      
+      console.log('[mine] 特产预览列表:', list.length, '个')
       this.setData({ myProducts: list })
     } catch (e) {
       console.error('[mine] 加载特产预览失败:', e)
@@ -736,6 +789,18 @@ Page({
   goToDaigouOrders() {
     wx.navigateTo({ url: '/pages/daigou-order-list/index' })
   },
+
+  // 钱包
+  goToWallet() {
+    wx.navigateTo({ url: '/pages/wallet/index' })
+  },
+
+  // 押金管理（保留旧方法，作为备用）
+  goToDaigouDeposit() {
+    wx.navigateTo({ url: '/pages/daigou-deposit/index' })
+  },
+
+
 
 
 

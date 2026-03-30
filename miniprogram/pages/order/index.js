@@ -1,6 +1,7 @@
 // pages/order/index.js - 互换订单页
 const { ORDER_STATUS } = require('../../utils/constants')
 const { callCloud, formatTime, getCreditLevel, getProvinceByCode, toast, showLoading, hideLoading, processImageUrl } = require('../../utils/util')
+const imageOptimizer = require('../../utils/imageOptimizer')
 
 const MYSTERY_EMOJIS = ['🎁', '🎀', '🎉', '🎊', '🎄', '🎃', '🎈', '🎯', '🎲', '🎳']
 
@@ -206,18 +207,23 @@ Page({
 
     if (cloudItems.length === 0) return
 
-    // 去重
-    const uniqueIds = [...new Set(cloudItems.map(c => c.fileID))]
-    const tempUrlMap = {}
+    // 分组：产品封面图用 240px 缩略，头像用 120px 缩略
+    const productItems = cloudItems.filter(c => c.field.includes('coverUrl'))
+    const avatarItems  = cloudItems.filter(c => c.field.includes('avatarUrl'))
 
+    // 去重并分别获取缩略链接
+    const productIDs = [...new Set(productItems.map(c => c.fileID))]
+    const avatarIDs  = [...new Set(avatarItems.map(c => c.fileID))]
+
+    const tempUrlMap = {}
     try {
-      const BATCH_SIZE = 50
-      for (let i = 0; i < uniqueIds.length; i += BATCH_SIZE) {
-        const batch = uniqueIds.slice(i, i + BATCH_SIZE)
-        const res = await wx.cloud.getTempFileURL({ fileList: batch })
-        res.fileList.forEach(f => {
-          if (f.tempFileURL) tempUrlMap[f.fileID] = f.tempFileURL
-        })
+      if (productIDs.length > 0) {
+        const pMap = await imageOptimizer.batchResolve(productIDs, 240)
+        Object.assign(tempUrlMap, pMap)
+      }
+      if (avatarIDs.length > 0) {
+        const aMap = await imageOptimizer.batchResolve(avatarIDs, 120)
+        Object.assign(tempUrlMap, aMap)
       }
     } catch (e) {
       console.warn('[Order] resolveAllCloudUrls 失败:', e)

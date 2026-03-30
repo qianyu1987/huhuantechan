@@ -1,5 +1,6 @@
 // pages/user-profile/index.js
-const { PROVINCES, MYSTERY_EMOJIS, VALUE_RANGES_V2 } = require('../../utils/constants')
+const { PROVINCES, MYSTERY_EMOJIS, VALUE_RANGES } = require('../../utils/constants')
+const VALUE_RANGES_V2 = VALUE_RANGES
 const { callCloud, formatTime, formatValue, getCreditLevel, getProvinceByCode, getProvinceByName, toast, processImageUrl } = require('../../utils/util')
 
 const STATUS_MAP = {
@@ -27,7 +28,7 @@ Page({
   onLoad(options) {
     // 兼容 openid 和 _openid 两种参数名
     const openid = options.openid || options._openid
-    if (!openid) {
+    if (!openid || openid === 'undefined' || openid === 'null') {
       toast('参数错误')
       setTimeout(() => wx.navigateBack(), 1500)
       return
@@ -66,6 +67,26 @@ Page({
         const prov = getProvinceByCode(code)
         return prov ? { code, name: prov.name, color: prov.color } : null
       }).filter(Boolean)
+
+      // 计算互换等级
+      const swapScore = p.creditScore || 100
+      let swapLevelIdx = 0
+      let swapLevelName = '新人'
+      let swapLevelEmoji = '🌱'
+      
+      if (swapScore >= 200) { swapLevelIdx = 4; swapLevelName = '达人'; swapLevelEmoji = '🏆' }
+      else if (swapScore >= 150) { swapLevelIdx = 3; swapLevelName = '高手'; swapLevelEmoji = '⭐' }
+      else if (swapScore >= 120) { swapLevelIdx = 2; swapLevelName = '活跃'; swapLevelEmoji = '🔥' }
+      else if (swapScore >= 100) { swapLevelIdx = 1; swapLevelName = '普通'; swapLevelEmoji = '🌿' }
+
+      // 计算代购等级
+      let daigouLevelName = '新人'
+      let daigouLevelEmoji = '🌱'
+      if (p.daigouLevel === 1) { daigouLevelName = '初级代购'; daigouLevelEmoji = '🌱' }
+      else if (p.daigouLevel === 2) { daigouLevelName = '进阶代购'; daigouLevelEmoji = '🌿' }
+      else if (p.daigouLevel === 3) { daigouLevelName = '资深代购'; daigouLevelEmoji = '🔥' }
+      else if (p.daigouLevel === 4) { daigouLevelName = '金牌代购'; daigouLevelEmoji = '🥇' }
+      else if (p.daigouLevel === 5) { daigouLevelName = '钻石代购'; daigouLevelEmoji = '💎' }
 
       // 处理产品列表
       const products = (profileRes.products || []).map(item => {
@@ -138,7 +159,13 @@ Page({
         creditLevel: creditInfo.level,
         joinDays,
         badgeList,
-        badgeCount: badgeList.length
+        badgeCount: badgeList.length,
+        // 等级相关数据
+        swapLevelIdx,
+        swapLevelName,
+        swapLevelEmoji,
+        daigouLevelName,
+        daigouLevelEmoji
       })
 
       wx.setNavigationBarTitle({ title: p.nickName || '用户主页' })

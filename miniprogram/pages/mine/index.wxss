@@ -2,7 +2,7 @@
 
 .mine-page {
   min-height: 100vh;
-  background: var(--color-bg);
+  background: #000000;
 }
 
 /* ===== 顶部用户卡片 - iOS 27 液态玻璃 ===== */
@@ -55,10 +55,10 @@
   margin-bottom: 32rpx;
 }
 
-/* 头像 - 液态玻璃边框 */
+/* 头像 - 液态玻璃边框（增大尺寸） */
 .user-avatar {
-  width: 120rpx;
-  height: 120rpx;
+  width: 140rpx;
+  height: 140rpx;
   border-radius: 50%;
   border: 4rpx solid rgba(255, 255, 255, 0.25);
   box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.25), 
@@ -85,8 +85,8 @@
 
 /* 头像占位 - 液态玻璃 */
 .user-avatar-placeholder {
-  width: 120rpx;
-  height: 120rpx;
+  width: 140rpx;
+  height: 140rpx;
   border-radius: 50%;
   background: var(--liquid-surface);
   backdrop-filter: blur(16px);
@@ -159,6 +159,215 @@
   font-size: 26rpx;
   color: rgba(255, 255, 255, 0.8);
   font-weight: 500;
+  margin-bottom: 8rpx;
+}
+
+/* 省份 + 代购等级并排容器 */
+.user-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 10rpx;
+  flex-wrap: nowrap;
+}
+
+/* 城市胶囊 - iOS 27 液态玻璃 */
+.user-province-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 8rpx 20rpx 8rpx 14rpx;
+  margin-bottom: 0;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 999rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.14);
+  box-shadow: 
+    0 2rpx 12rpx rgba(0, 0, 0, 0.2),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.12);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s ease;
+  align-self: flex-start;
+}
+
+/* 胶囊内光泽 */
+.user-province-pill::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    transparent 100%);
+  pointer-events: none;
+}
+
+.user-province-pill:active {
+  background: rgba(255, 255, 255, 0.13);
+  transform: scale(0.96);
+}
+
+.province-pin {
+  font-size: 22rpx;
+  line-height: 1;
+  filter: drop-shadow(0 1rpx 2rpx rgba(0, 0, 0, 0.2));
+}
+
+.province-text {
+  font-size: 24rpx;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.75);
+  letter-spacing: 0.2rpx;
+  white-space: nowrap;
+}
+
+
+
+
+/* 等级横条 */
+.user-level-strip {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 10rpx;
+  flex-wrap: wrap;
+}
+
+/* 通用等级胶囊 */
+.level-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 6rpx 18rpx 6rpx 10rpx;
+  border-radius: 999rpx;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1rpx solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.18),
+              inset 0 1rpx 0 rgba(255, 255, 255, 0.12);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 光泽扫光 */
+.level-badge-pill::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -60%;
+  width: 50%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+  transform: skewX(-20deg);
+  animation: pill-shine 4s ease-in-out infinite;
+}
+
+@keyframes pill-shine {
+  0%, 100% { left: -60%; }
+  50% { left: 120%; }
+}
+
+.level-pill-icon {
+  font-size: 26rpx;
+  line-height: 1;
+  filter: drop-shadow(0 1rpx 3rpx rgba(0,0,0,0.2));
+}
+
+.level-pill-name {
+  font-size: 22rpx;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
+  letter-spacing: 0.2rpx;
+}
+
+.level-pill-divider {
+  width: 1rpx;
+  height: 20rpx;
+  background: rgba(255, 255, 255, 0.3);
+  margin: 0 4rpx;
+}
+
+.level-pill-tag {
+  font-size: 18rpx;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+}
+
+/* 代购等级颜色 */
+.daigou-pill.dlv-0 {
+  background: linear-gradient(120deg, rgba(142, 142, 147, 0.35) 0%, rgba(99, 99, 102, 0.25) 100%);
+  border-color: rgba(142, 142, 147, 0.4);
+}
+.daigou-pill.dlv-1 {
+  background: linear-gradient(120deg, rgba(52, 199, 89, 0.35) 0%, rgba(40, 160, 70, 0.25) 100%);
+  border-color: rgba(52, 199, 89, 0.45);
+  box-shadow: 0 2rpx 14rpx rgba(52, 199, 89, 0.2), inset 0 1rpx 0 rgba(255,255,255,0.12);
+}
+.daigou-pill.dlv-2 {
+  background: linear-gradient(120deg, rgba(0, 122, 255, 0.35) 0%, rgba(10, 100, 210, 0.25) 100%);
+  border-color: rgba(0, 122, 255, 0.45);
+  box-shadow: 0 2rpx 14rpx rgba(0, 122, 255, 0.2), inset 0 1rpx 0 rgba(255,255,255,0.12);
+}
+.daigou-pill.dlv-3 {
+  background: linear-gradient(120deg, rgba(88, 86, 214, 0.35) 0%, rgba(70, 68, 180, 0.25) 100%);
+  border-color: rgba(88, 86, 214, 0.45);
+  box-shadow: 0 2rpx 14rpx rgba(88, 86, 214, 0.2), inset 0 1rpx 0 rgba(255,255,255,0.12);
+}
+.daigou-pill.dlv-4 {
+  background: linear-gradient(120deg, rgba(255, 149, 0, 0.35) 0%, rgba(210, 120, 0, 0.25) 100%);
+  border-color: rgba(255, 149, 0, 0.45);
+  box-shadow: 0 2rpx 14rpx rgba(255, 149, 0, 0.2), inset 0 1rpx 0 rgba(255,255,255,0.12);
+}
+.daigou-pill.dlv-5 {
+  background: linear-gradient(120deg, rgba(255, 55, 95, 0.35) 0%, rgba(175, 82, 222, 0.3) 100%);
+  border-color: rgba(255, 55, 95, 0.4);
+  box-shadow: 0 2rpx 14rpx rgba(255, 55, 95, 0.2), inset 0 1rpx 0 rgba(255,255,255,0.12);
+}
+.daigou-pill.dlv-6 {
+  background: linear-gradient(120deg, rgba(255, 214, 10, 0.4) 0%, rgba(255, 159, 10, 0.35) 100%);
+  border-color: rgba(255, 214, 10, 0.55);
+  box-shadow: 0 2rpx 16rpx rgba(255, 214, 10, 0.3), inset 0 1rpx 0 rgba(255,255,255,0.2);
+}
+
+/* 互换等级颜色 */
+.swap-pill.slv-0 {
+  background: linear-gradient(120deg, rgba(142, 142, 147, 0.25) 0%, rgba(99, 99, 102, 0.18) 100%);
+  border-color: rgba(142, 142, 147, 0.3);
+}
+.swap-pill.slv-1 {
+  background: linear-gradient(120deg, rgba(100, 210, 255, 0.28) 0%, rgba(60, 180, 230, 0.2) 100%);
+  border-color: rgba(100, 210, 255, 0.35);
+  box-shadow: 0 2rpx 10rpx rgba(100, 210, 255, 0.15), inset 0 1rpx 0 rgba(255,255,255,0.1);
+}
+.swap-pill.slv-2 {
+  background: linear-gradient(120deg, rgba(52, 199, 89, 0.28) 0%, rgba(40, 160, 70, 0.2) 100%);
+  border-color: rgba(52, 199, 89, 0.38);
+  box-shadow: 0 2rpx 10rpx rgba(52, 199, 89, 0.15), inset 0 1rpx 0 rgba(255,255,255,0.1);
+}
+.swap-pill.slv-3 {
+  background: linear-gradient(120deg, rgba(0, 122, 255, 0.28) 0%, rgba(10, 100, 210, 0.2) 100%);
+  border-color: rgba(0, 122, 255, 0.38);
+  box-shadow: 0 2rpx 12rpx rgba(0, 122, 255, 0.18), inset 0 1rpx 0 rgba(255,255,255,0.1);
+}
+.swap-pill.slv-4 {
+  background: linear-gradient(120deg, rgba(88, 86, 214, 0.32) 0%, rgba(175, 82, 222, 0.25) 100%);
+  border-color: rgba(88, 86, 214, 0.4);
+  box-shadow: 0 2rpx 12rpx rgba(88, 86, 214, 0.18), inset 0 1rpx 0 rgba(255,255,255,0.1);
+}
+.swap-pill.slv-5 {
+  background: linear-gradient(120deg, rgba(255, 149, 0, 0.32) 0%, rgba(255, 214, 10, 0.28) 100%);
+  border-color: rgba(255, 149, 0, 0.42);
+  box-shadow: 0 2rpx 12rpx rgba(255, 149, 0, 0.2), inset 0 1rpx 0 rgba(255,255,255,0.12);
+}
+.swap-pill.slv-6 {
+  background: linear-gradient(120deg, rgba(255, 214, 10, 0.42) 0%, rgba(255, 55, 95, 0.3) 60%, rgba(175, 82, 222, 0.3) 100%);
+  border-color: rgba(255, 214, 10, 0.5);
+  box-shadow: 0 2rpx 16rpx rgba(255, 214, 10, 0.25), inset 0 1rpx 0 rgba(255,255,255,0.18);
 }
 
 /* 编辑按钮 - 液态玻璃圆形 */
@@ -198,6 +407,67 @@
   padding: 24rpx 0;
   border: 1rpx solid rgba(255, 255, 255, 0.08);
   box-shadow: var(--shadow-liquid);
+}
+
+/* 押金余额条 */
+.deposit-balance-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--liquid-surface);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-radius: var(--radius-xl);
+  padding: 20rpx 28rpx;
+  margin-top: 16rpx;
+  border: 1rpx solid rgba(255, 149, 0, 0.2);
+  box-shadow: 0 4rpx 20rpx rgba(255, 149, 0, 0.08);
+}
+
+.deposit-balance-left {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+}
+
+.deposit-icon {
+  font-size: 38rpx;
+}
+
+.deposit-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.deposit-label {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.deposit-level {
+  font-size: 22rpx;
+  color: #FF9500;
+}
+
+.deposit-right {
+  display: flex;
+  align-items: baseline;
+  gap: 2rpx;
+}
+
+.deposit-balance-amount {
+  font-size: 36rpx;
+  font-weight: 800;
+}
+
+.deposit-balance-ok { color: #34C759; }
+.deposit-balance-low { color: #FF3B30; }
+
+.deposit-balance-total {
+  font-size: 22rpx;
+  color: #8E8E93;
 }
 
 .stat-item {
@@ -428,6 +698,71 @@
   color: var(--color-text-tertiary);
   border-top: 1rpx solid var(--color-divider);
   margin-top: 16rpx;
+}
+
+/* ===== 代购订单独立行卡片 ===== */
+.daigou-order-card {
+  padding: 0 !important;
+  overflow: hidden;
+  border: 1rpx solid rgba(10, 132, 255, 0.15) !important;
+  box-shadow: 0 4rpx 20rpx rgba(10, 132, 255, 0.08), inset 0 1rpx 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+.daigou-order-card:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+.daigou-order-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28rpx 32rpx;
+}
+
+.daigou-order-left {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.daigou-order-icon-wrap {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 22rpx;
+  background: var(--glass-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 20rpx rgba(10, 132, 255, 0.2);
+  flex-shrink: 0;
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.daigou-order-emoji {
+  font-size: 38rpx;
+  line-height: 1;
+}
+
+.daigou-order-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.daigou-order-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: -0.2rpx;
+}
+
+.daigou-order-sub {
+  font-size: 24rpx;
+  color: var(--color-text-tertiary);
+  font-weight: 400;
 }
 
 /* ===== 我的特产预览 ===== */

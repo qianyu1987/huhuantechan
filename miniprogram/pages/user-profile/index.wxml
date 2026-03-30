@@ -16,14 +16,34 @@
         <view class="hero-info">
           <view class="hero-name-row">
             <text class="hero-name">{{profile.nickName || '特产达人'}}</text>
-            <view class="hero-gender {{profile.gender === 'male' ? 'gender-male' : (profile.gender === 'female' ? 'gender-female' : '')}}" wx:if="{{profile.gender}}">
-              {{profile.gender === 'male' ? '👨' : (profile.gender === 'female' ? '👩' : '')}}
+            <!-- 性别徽章 -->
+            <view class="gender-badge {{profile.gender === 'male' ? 'gender-male' : (profile.gender === 'female' ? 'gender-female' : 'gender-unknown')}}" wx:if="{{profile.gender}}">
+              <text class="gender-icon">{{profile.gender === 'male' ? '👨' : (profile.gender === 'female' ? '👩' : '👤')}}</text>
+              <text class="gender-text">{{profile.gender === 'male' ? '男生' : (profile.gender === 'female' ? '女生' : '未知')}}</text>
             </view>
           </view>
           <view class="hero-meta">
             <text class="hero-loc" wx:if="{{profile.provinceName}}">📍 {{profile.provinceName}}</text>
             <text class="hero-dot" wx:if="{{profile.provinceName}}">·</text>
             <text class="hero-join">加入 {{joinDays}} 天</text>
+          </view>
+          <!-- 等级和押金信息 -->
+          <view class="hero-level-row">
+            <!-- 互换等级 -->
+            <view class="level-badge swap-level-badge {{'slv-' + swapLevelIdx}}" wx:if="{{swapLevelName}}">
+              <text class="level-badge-icon">{{swapLevelEmoji}}</text>
+              <text class="level-badge-text">{{swapLevelName}}</text>
+            </view>
+            <!-- 代购等级 -->
+            <view class="level-badge daigou-level-badge {{'dlv-' + profile.daigouLevel}}" wx:if="{{profile.isDaigouVerified}}">
+              <text class="level-badge-icon">{{daigouLevelEmoji}}</text>
+              <text class="level-badge-text">{{daigouLevelName}}</text>
+            </view>
+            <!-- 押金金额 -->
+            <view class="deposit-badge" wx:if="{{profile.daigouStats && profile.daigouStats.depositPaid > 0}}">
+              <text class="deposit-badge-icon">💰</text>
+              <text class="deposit-badge-text">押金 ¥{{profile.daigouStats.depositBalance || 0}}/¥{{profile.daigouStats.depositPaid || 0}}</text>
+            </view>
           </view>
         </view>
       </view>

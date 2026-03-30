@@ -1,6 +1,7 @@
 // pages/review/index.js - 评价页面
 const { callCloud, toast, showLoading, hideLoading, processImageUrl } = require('../../utils/util')
 const { MYSTERY_EMOJIS } = require('../../utils/constants')
+const imageOptimizer = require('../../utils/imageOptimizer')
 
 Page({
   data: {
@@ -99,14 +100,11 @@ Page({
     if (cloudItems.length === 0) return
 
     try {
-      const res = await wx.cloud.getTempFileURL({
-        fileList: cloudItems.map(c => c.fileID)
-      })
-      res.fileList.forEach((f, i) => {
-        if (f.tempFileURL) {
-          this.setData({
-            [`order.${cloudItems[i].field}.coverUrl`]: f.tempFileURL
-          })
+      const fileIDs = cloudItems.map(c => c.fileID)
+      const urlMap = await imageOptimizer.batchResolve(fileIDs, 240)
+      cloudItems.forEach(({ fileID, field }) => {
+        if (urlMap[fileID]) {
+          this.setData({ [`order.${field}.coverUrl`]: urlMap[fileID] })
         }
       })
     } catch (e) {

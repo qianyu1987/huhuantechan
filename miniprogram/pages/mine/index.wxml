@@ -16,9 +16,28 @@
                 <text class="admin-badge-text">管理员</text>
               </view>
             </view>
-            <view class="user-province">
-              <view class="icon-location-w"></view>
-              <text>{{provinceName || '未设置省份'}}</text>
+            <!-- 省份 + 代购等级并排 -->
+            <view class="user-meta-row">
+              <view class="user-province-pill" bindtap="editProfile">
+                <text class="province-pin">📍</text>
+                <text class="province-text">{{provinceName || '点击设置城市'}}</text>
+
+
+              </view>
+              <!-- 代购等级（已认证代购者） -->
+              <view class="level-badge-pill daigou-pill {{'dlv-'+userInfo.daigouLevel}}" wx:if="{{userInfo && userInfo.isDaigouVerified}}">
+                <text class="level-pill-icon">{{daigouLevelEmoji}}</text>
+                <text class="level-pill-name">{{daigouLevelName}}</text>
+                <view class="level-pill-divider"/>
+                <text class="level-pill-tag">代购</text>
+              </view>
+            </view>
+            <!-- 互换达人等级（独立一行） -->
+            <view class="user-level-strip">
+              <view class="level-badge-pill swap-pill {{'slv-'+swapLevelIdx}}">
+                <text class="level-pill-icon">{{swapLevelEmoji}}</text>
+                <text class="level-pill-name">{{swapLevelName}}</text>
+              </view>
             </view>
           </view>
         </block>
@@ -33,9 +52,9 @@
           <view class="user-info-text">
             <input class="nickname-input" type="nickname" placeholder="点击设置昵称" placeholder-class="nickname-placeholder" value="{{userInfo.nickName || ''}}" bindinput="onNicknameInput" bindblur="saveUserProfile"/>
             <view class="nickname-tip" wx:if="{{!userInfo.nickName}}">点击头像和昵称完成设置</view>
-            <view class="user-province" wx:else>
-              <view class="icon-location-w"></view>
-              <text>{{provinceName || '未设置省份'}}</text>
+            <view class="user-province-pill" wx:else>
+              <text class="province-pin">📍</text>
+              <text class="province-text">{{provinceName || '点击设置城市'}}</text>
             </view>
           </view>
         </block>
@@ -70,6 +89,22 @@
         <view class="stat-item">
           <view class="stat-num">{{badgeCount}}</view>
           <view class="stat-label">集章数</view>
+        </view>
+      </view>
+
+      <!-- 代购押金余额（仅代购者显示） -->
+      <view class="deposit-balance-bar" wx:if="{{userInfo.daigouStats && userInfo.daigouStats.depositPaid > 0}}" bindtap="goToDaigouDeposit">
+        <view class="deposit-balance-left">
+          <text class="deposit-icon">💰</text>
+          <view class="deposit-text">
+            <text class="deposit-label">代购押金余额</text>
+            <text class="deposit-level">{{daigouLevelName}} · 费率 {{daigouFeeRate}}%</text>
+          </view>
+        </view>
+        <view class="deposit-right">
+          <text class="deposit-balance-amount deposit-balance-{{userInfo.daigouStats.depositBalance > 0 ? 'ok' : 'low'}}">¥{{userInfo.daigouStats.depositBalance || 0}}</text>
+          <text class="deposit-balance-total"> / ¥{{userInfo.daigouStats.depositPaid || 0}}</text>
+          <text style="color:#8E8E93;font-size:28rpx;margin-left:8rpx">›</text>
         </view>
       </view>
     </view>
@@ -115,6 +150,22 @@
       />
     </view>
 
+    <!-- 代购订单（独立一行） -->
+    <view class="section card glass-card mx-md mt-md daigou-order-card" bindtap="goToDaigouOrders">
+      <view class="daigou-order-row">
+        <view class="daigou-order-left">
+          <view class="daigou-order-icon-wrap">
+            <text class="daigou-order-emoji">🛒</text>
+          </view>
+          <view class="daigou-order-info">
+            <text class="daigou-order-title">代购订单</text>
+            <text class="daigou-order-sub">查看我的代购记录</text>
+          </view>
+        </view>
+        <view class="icon-arrow-r-sm"></view>
+      </view>
+    </view>
+
     <!-- 我的特产 -->
     <view wx:if="{{featureFlags.tab_publish !== false}}" class="section card glass-card mx-md mt-md">
       <view class="section-hd" bindtap="goToMyProducts">
@@ -156,6 +207,12 @@
         <text class="section-title">快捷服务</text>
       </view>
       <view class="quick-grid">
+        <view class="quick-grid-item" bindtap="goToWallet">
+          <view class="quick-grid-icon qg-green">
+            <text class="icon-emoji">💳</text>
+          </view>
+          <text class="quick-grid-label">我的钱包</text>
+        </view>
         <view wx:if="{{featureFlags.feature_swap !== false}}" class="quick-grid-item" bindtap="goToAddress">
           <view class="quick-grid-icon qg-teal">
             <text class="icon-emoji">📍</text>
@@ -191,13 +248,6 @@
             <text class="icon-emoji">⭐</text>
           </view>
           <text class="quick-grid-label">我的评价</text>
-        </view>
-        <!-- 代购订单入口 -->
-        <view class="quick-grid-item" bindtap="goToDaigouOrders">
-          <view class="quick-grid-icon qg-blue">
-            <text class="icon-emoji">🛒</text>
-          </view>
-          <text class="quick-grid-label">代购订单</text>
         </view>
       </view>
     </view>

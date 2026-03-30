@@ -101,7 +101,23 @@ Page({
     },
     region: [],
     isEditingAddress: false,  // 是否手动编辑地址
-    canShip: false  // 是否可以填写快递单号
+    canShip: false,  // 是否可以填写快递单号
+    // 纠纷处理
+    showDisputeModal: false,
+    showDisputeStatusModal: false,
+    disputeTypes: ['商品不符', '质量问题', '物流问题', '其他问题'],
+    disputeForm: {
+      typeIndex: -1,
+      description: '',
+      images: []
+    },
+    disputeInfo: {},
+    disputeStatusMap: {
+      pending: '待处理',
+      processing: '处理中',
+      resolved: '已解决',
+      rejected: '已驳回'
+    }
   },
 
   onLoad(options) {
@@ -135,9 +151,9 @@ Page({
   },
 
   // 分享给好友
-  onShareAppMessage() {
+  async onShareAppMessage() {
     const { order, myProduct, counterpart } = this.data
-    if (!order) return {}
+    if (!order || !myProduct) return {}
     
     let title = '我在风物之情与你互换特产'
     let imageUrl = ''
@@ -145,6 +161,23 @@ Page({
     // 如果有产品图片，用产品图片
     if (myProduct && myProduct.coverUrl) {
       imageUrl = myProduct.coverUrl
+      
+      // 如果是 cloud:// 格式，转换为临时链接
+      if (imageUrl.startsWith('cloud://')) {
+        try {
+          const tempRes = await wx.cloud.getTempFileURL({
+            fileList: [imageUrl]
+          })
+          if (tempRes.fileList && tempRes.fileList[0] && tempRes.fileList[0].tempFileURL) {
+            imageUrl = tempRes.fileList[0].tempFileURL
+          }
+        } catch (tempErr) {
+          console.error('转换图片临时链接失败:', tempErr)
+          imageUrl = '/images/share-default.png'
+        }
+      }
+    } else {
+      imageUrl = '/images/share-default.png'
     }
     
     // 如果是已完成订单，显示互换成功
@@ -156,15 +189,15 @@ Page({
     
     return {
       title,
-      path: `/pages/order-detail/index?id=${order._id}`,
+      path: `/pages/detail/index?id=${myProduct._id}`,
       imageUrl
     }
   },
 
   // 分享到朋友圈
-  onShareTimeline() {
+  async onShareTimeline() {
     const { order, myProduct, counterpart } = this.data
-    if (!order) return {}
+    if (!order || !myProduct) return {}
     
     let title = '我在风物之情互换特产'
     
@@ -175,15 +208,30 @@ Page({
     }
     
     // 朋友圈分享使用产品封面图
-    let imageUrl = ''
+    let imageUrl = '/images/share-default.png'
     if (myProduct && myProduct.coverUrl) {
       imageUrl = myProduct.coverUrl
+      
+      // 如果是 cloud:// 格式，转换为临时链接
+      if (imageUrl.startsWith('cloud://')) {
+        try {
+          const tempRes = await wx.cloud.getTempFileURL({
+            fileList: [imageUrl]
+          })
+          if (tempRes.fileList && tempRes.fileList[0] && tempRes.fileList[0].tempFileURL) {
+            imageUrl = tempRes.fileList[0].tempFileURL
+          }
+        } catch (tempErr) {
+          console.error('转换图片临时链接失败:', tempErr)
+          imageUrl = '/images/share-default.png'
+        }
+      }
     }
     
     return {
       title,
       imageUrl,
-      query: `id=${order._id}`
+      query: `id=${myProduct._id}`
     }
   },
 
@@ -919,7 +967,12 @@ Page({
   },
 
   contactCounterpart() {
-    toast('聊天功能开发中')
+    wx.showModal({
+      title: '联系对方',
+      content: '当前版本暂不支持站内聊天。\n\n如需联系，可通过订单页面查看对方信息，或在完成互换后通过微信联系。',
+      showCancel: false,
+      confirmText: '知道了'
+    })
   },
 
   contactService() {
@@ -976,5 +1029,165 @@ Page({
     if (openid) {
       wx.navigateTo({ url: `/pages/user-profile/index?openid=${openid}` })
     }
+  },
+
+  // 纠纷处理相关方法
+  showDisputeModal() {
+    this.setData({
+      showDisputeModal: true,
+      disputeForm: {
+        typeIndex: -1,
+        description: '',
+        images: []
+      }
+    })
+  },
+
+  hideDisputeModal() {
+    this.setData({ showDisputeModal: false })
+  },
+
+  onDisputeTypeChange(e) {
+    this.setData({ 'disputeForm.typeIndex': e.detail.value })
+  },
+
+  onDisputeInput(e) {
+    const field = e.currentTarget.dataset.field
+    this.setData({ [`disputeForm.${field}`]: e.detail.value })
+  },
+
+  async chooseDisputeImage() {
+    const { images } = this.data.disputeForm
+    if (images.length >= 3) {
+      toast('最多只能上传3张图片')
+      return
+    }
+
+    try {
+      const res = await wx.chooseMedia({
+        count: 3 - images.length,
+        mediaType: ['image'],
+        sizeType: ['compressed'],
+        sourceType: ['album', 'camera']
+      })
+
+      if (res.tempFiles) {
+        const newImages = [...images]
+        for (const file of res.tempFiles) {
+          newImages.push(file.tempFilePath)
+        }
+        this.setData({ 'disputeForm.images': newImages })
+      }
+    } catch (e) {
+      console.error('选择图片失败', e)
+    }
+  },
+
+  removeDisputeImage(e) {
+    const index = e.currentTarget.dataset.index
+    const { images } = this.data.disputeForm
+    images.splice(index, 1)
+    this.setData({ 'disputeForm.images': images })
+  },
+
+  async submitDispute() {
+    const { typeIndex, description, images } = this.data.disputeForm
+    const { orderId } = this.data
+
+    if (typeIndex < 0) {
+      toast('请选择纠纷类型')
+      return
+    }
+
+    if (!description.trim()) {
+      toast('请详细描述纠纷情况')
+      return
+    }
+
+    showLoading('提交中...')
+    try {
+      // 上传图片
+      let uploadedImages = []
+      if (images.length > 0) {
+        const uploadPromises = images.map(filePath => 
+          callCloud('uploadFile', { filePath, cloudPath: `disputes/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg` })
+        )
+        const uploadResults = await Promise.all(uploadPromises)
+        uploadedImages = uploadResults.filter(r => r.success).map(r => r.fileId)
+      }
+
+      // 提交纠纷申请
+      const result = await callCloud('orderMgr', {
+        action: 'createDispute',
+        orderId: orderId,
+        type: this.data.disputeTypes[typeIndex],
+        description: description.trim(),
+        images: uploadedImages
+      })
+
+      if (result.success) {
+        toast('纠纷申请已提交', 'success')
+        this.hideDisputeModal()
+        this.loadOrderDetail()
+      } else {
+        toast(result.message || '提交失败')
+      }
+    } catch (e) {
+      console.error('提交纠纷失败', e)
+      toast('网络错误')
+    } finally {
+      hideLoading()
+    }
+  },
+
+  async checkDisputeStatus() {
+    const { orderId } = this.data
+    showLoading('加载中...')
+    try {
+      const result = await callCloud('orderMgr', {
+        action: 'getDispute',
+        orderId: orderId
+      })
+
+      if (result.success && result.dispute) {
+        this.setData({
+          disputeInfo: result.dispute,
+          showDisputeStatusModal: true
+        })
+      } else {
+        toast(result.message || '获取纠纷信息失败')
+      }
+    } catch (e) {
+      console.error('获取纠纷信息失败', e)
+      toast('网络错误')
+    } finally {
+      hideLoading()
+    }
+  },
+
+  hideDisputeStatusModal() {
+    this.setData({ showDisputeStatusModal: false })
+  },
+
+  previewDisputeImage(e) {
+    const { url } = e.currentTarget.dataset
+    wx.previewImage({ urls: [url], current: url })
+  },
+
+  contactService() {
+    wx.showModal({
+      title: '联系客服',
+      content: '如有需要，请添加客服微信：xiaoqiange12315\n\n工作时间：9:00-18:00',
+      confirmText: '复制微信号',
+      cancelText: '知道了',
+      success: (res) => {
+        if (res.confirm) {
+          wx.setClipboardData({
+            data: 'xiaoqiange12315',
+            success: () => toast('已复制客服微信', 'success')
+          })
+        }
+      }
+    })
   }
 })

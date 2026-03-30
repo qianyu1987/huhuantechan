@@ -306,6 +306,7 @@
       <!-- 等待我确认收货 -->
       <block wx:if="{{(isInitiator && (order.status === 'received_b' || order.status === 'shipped')) || (!isInitiator && (order.status === 'received_a' || order.status === 'shipped'))}}">
         <button class="btn btn-primary" bindtap="confirmReceive">确认收货</button>
+        <button class="btn btn-default" bindtap="showDisputeModal">申请纠纷</button>
       </block>
 
       <!-- 已完成，待评价 -->
@@ -315,12 +316,14 @@
         </block>
         <block wx:else>
           <button class="btn btn-primary" bindtap="goToReview">去评价</button>
+          <button class="btn btn-default" bindtap="showDisputeModal">申请纠纷</button>
         </block>
       </block>
 
       <!-- 纠纷中 -->
       <block wx:if="{{order.status === 'disputed'}}">
         <button class="btn btn-primary" bindtap="contactService">联系客服</button>
+        <button class="btn btn-default" bindtap="checkDisputeStatus">查看纠纷状态</button>
       </block>
     </view>
   </block>
@@ -430,6 +433,94 @@
       <view class="modal-footer">
         <button class="btn btn-default" bindtap="hideShipModal">取消</button>
         <button class="btn btn-primary" bindtap="submitShip">确认发货</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 纠纷处理弹窗 -->
+  <view wx:if="{{showDisputeModal}}" class="modal-mask" bindtap="hideDisputeModal">
+    <view class="modal-content" catchtap="preventBubble">
+      <view class="modal-header">
+        <text class="modal-title">申请纠纷</text>
+        <text class="modal-close" bindtap="hideDisputeModal">×</text>
+      </view>
+      <view class="modal-body">
+        <view class="form-item">
+          <text class="form-label">纠纷类型</text>
+          <picker mode="selector" range="{{disputeTypes}}" value="{{disputeForm.typeIndex}}" bindchange="onDisputeTypeChange">
+            <view class="form-picker {{disputeForm.typeIndex >= 0 ? '' : 'placeholder'}}">
+              {{disputeForm.typeIndex >= 0 ? disputeTypes[disputeForm.typeIndex] : '请选择纠纷类型'}}
+            </view>
+          </picker>
+        </view>
+        <view class="form-item">
+          <text class="form-label">详细描述</text>
+          <textarea class="form-textarea" placeholder="请详细描述纠纷情况，包括问题发生的时间、原因和影响等" value="{{disputeForm.description}}" bindinput="onDisputeInput" data-field="description" maxlength="500"></textarea>
+        </view>
+        <view class="form-item">
+          <text class="form-label">上传凭证（选填）</text>
+          <view class="upload-area">
+            <view class="upload-btn" bindtap="chooseDisputeImage">
+              <text class="upload-icon">📷</text>
+              <text class="upload-text">添加图片</text>
+            </view>
+            <view wx:for="{{disputeForm.images}}" wx:key="index" class="uploaded-image">
+              <image src="{{item}}" mode="aspectFill"></image>
+              <view class="image-remove" bindtap="removeDisputeImage" data-index="{{index}}">×</view>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn btn-default" bindtap="hideDisputeModal">取消</button>
+        <button class="btn btn-primary" bindtap="submitDispute">提交申请</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 纠纷状态弹窗 -->
+  <view wx:if="{{showDisputeStatusModal}}" class="modal-mask" bindtap="hideDisputeStatusModal">
+    <view class="modal-content" catchtap="preventBubble">
+      <view class="modal-header">
+        <text class="modal-title">纠纷状态</text>
+        <text class="modal-close" bindtap="hideDisputeStatusModal">×</text>
+      </view>
+      <view class="modal-body">
+        <view class="dispute-status-card">
+          <view class="dispute-status-header">
+            <text class="dispute-status-icon">{{disputeInfo.status === 'pending' ? '⏳' : disputeInfo.status === 'processing' ? '🔄' : disputeInfo.status === 'resolved' ? '✅' : '❌'}}</text>
+            <text class="dispute-status-label">{{disputeStatusMap[disputeInfo.status] || '处理中'}}</text>
+          </view>
+          <view class="dispute-status-content">
+            <view class="dispute-info-row">
+              <text class="dispute-info-label">纠纷类型</text>
+              <text class="dispute-info-value">{{disputeInfo.type || '未设置'}}</text>
+            </view>
+            <view class="dispute-info-row">
+              <text class="dispute-info-label">申请时间</text>
+              <text class="dispute-info-value">{{disputeInfo.createTime || '未设置'}}</text>
+            </view>
+            <view class="dispute-info-row">
+              <text class="dispute-info-label">处理进度</text>
+              <text class="dispute-info-value">{{disputeInfo.progress || '待处理'}}</text>
+            </view>
+            <view class="dispute-description" wx:if="{{disputeInfo.description}}">
+              <text class="dispute-description-label">详细描述</text>
+              <text class="dispute-description-value">{{disputeInfo.description}}</text>
+            </view>
+            <view class="dispute-images" wx:if="{{disputeInfo.images && disputeInfo.images.length > 0}}">
+              <text class="dispute-images-label">凭证图片</text>
+              <view class="dispute-images-grid">
+                <view wx:for="{{disputeInfo.images}}" wx:key="index" class="dispute-image-item">
+                  <image src="{{item}}" mode="aspectFill" bindtap="previewDisputeImage" data-url="{{item}}"></image>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn btn-primary" bindtap="hideDisputeStatusModal">关闭</button>
       </view>
     </view>
   </view>

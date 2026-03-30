@@ -245,20 +245,29 @@
 /* 产品交换区 */
 .products-exchange {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 30rpx;
 }
 
 .product-item {
   flex: 1;
   text-align: center;
+  max-width: 200rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.product-image-container {
+  position: relative;
+  margin-bottom: 16rpx;
 }
 
 .product-img {
   width: 200rpx;
   height: 200rpx;
   border-radius: 16rpx;
-  margin-bottom: 16rpx;
 }
 
 /* 神秘特产卡片 - 我的 */
@@ -266,7 +275,8 @@
   width: 200rpx;
   height: 200rpx;
   border-radius: 20rpx;
-  margin: 0 auto 16rpx;
+  margin: 0 auto;
+  margin-bottom: 16rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -282,7 +292,8 @@
   width: 200rpx;
   height: 200rpx;
   border-radius: 20rpx;
-  margin: 0 auto 16rpx;
+  margin: 0 auto;
+  margin-bottom: 16rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -414,7 +425,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 20rpx;
+  margin-top: 60rpx;
+  flex-shrink: 0;
 }
 
 .exchange-icon .iconfont {
@@ -951,6 +963,186 @@
 .loading-text {
   font-size: 28rpx;
   color: #8E8E93;
+}
+
+/* 纠纷处理样式 */
+.form-textarea {
+  width: 100%;
+  min-height: 160rpx;
+  background: #F2F2F7;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  font-size: 28rpx;
+  color: #1C1C1E;
+  line-height: 1.5;
+  resize: none;
+}
+
+.form-textarea::placeholder {
+  color: #8E8E93;
+}
+
+.upload-area {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-top: 12rpx;
+}
+
+.upload-btn {
+  width: 120rpx;
+  height: 120rpx;
+  background: #F2F2F7;
+  border: 2rpx dashed #C7C7CC;
+  border-radius: 12rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.upload-icon {
+  font-size: 36rpx;
+  margin-bottom: 8rpx;
+}
+
+.upload-text {
+  font-size: 20rpx;
+  color: #8E8E93;
+}
+
+.uploaded-image {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 12rpx;
+  position: relative;
+  overflow: hidden;
+}
+
+.uploaded-image image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-remove {
+  position: absolute;
+  top: 4rpx;
+  right: 4rpx;
+  width: 36rpx;
+  height: 36rpx;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 24rpx;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* 纠纷状态卡片 */
+.dispute-status-card {
+  background: #F8F9FA;
+  border-radius: 16rpx;
+  padding: 24rpx;
+}
+
+.dispute-status-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24rpx;
+  padding-bottom: 20rpx;
+  border-bottom: 1rpx solid #E5E5EA;
+}
+
+.dispute-status-icon {
+  font-size: 40rpx;
+  margin-right: 16rpx;
+}
+
+.dispute-status-label {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1C1C1E;
+}
+
+.dispute-info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid #F2F2F7;
+}
+
+.dispute-info-row:last-child {
+  border-bottom: none;
+}
+
+.dispute-info-label {
+  font-size: 26rpx;
+  color: #8E8E93;
+}
+
+.dispute-info-value {
+  font-size: 26rpx;
+  color: #1C1C1E;
+  font-weight: 500;
+}
+
+.dispute-description {
+  margin-top: 20rpx;
+  padding: 16rpx;
+  background: #fff;
+  border-radius: 12rpx;
+  border: 1rpx solid #E5E5EA;
+}
+
+.dispute-description-label {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #1C1C1E;
+  margin-bottom: 8rpx;
+  display: block;
+}
+
+.dispute-description-value {
+  font-size: 24rpx;
+  color: #64748B;
+  line-height: 1.5;
+}
+
+.dispute-images {
+  margin-top: 20rpx;
+}
+
+.dispute-images-label {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #1C1C1E;
+  margin-bottom: 12rpx;
+  display: block;
+}
+
+.dispute-images-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.dispute-image-item {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 12rpx;
+  overflow: hidden;
+}
+
+.dispute-image-item image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: pointer;
 }
 
 /* 地址选择弹窗 */
