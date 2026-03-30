@@ -1,0 +1,97 @@
+<view class="container">
+  <!-- 押金状态卡片 -->
+  <view class="deposit-card">
+    <view class="deposit-status">
+      <view class="status-icon {{depositStatus === 'active' ? 'status-active' : 'status-inactive'}}">
+        {{depositStatus === 'active' ? '✅' : '❌'}}
+      </view>
+      <view class="status-info">
+        <view class="status-title">{{depositStatus === 'active' ? '押金已缴纳' : '押金未缴纳'}}</view>
+        <view class="status-desc">{{depositStatus === 'active' ? '您已完成押金缴纳，可以正常开展代购业务' : '请联系客服缴纳押金后再开展代购业务'}}</view>
+      </view>
+    </view>
+    
+    <view class="deposit-amount">
+      <view class="amount-label">当前押金</view>
+      <view class="amount-value">¥{{depositAmount || 0}}</view>
+    </view>
+  </view>
+
+  <!-- 联系客服 -->
+  <view class="contact-section">
+    <view class="section-title">充值押金</view>
+
+    <!-- 在线申请入口 -->
+    <view class="apply-btn-card" bindtap="goToApply">
+      <view class="apply-btn-icon">📋</view>
+      <view class="apply-btn-info">
+        <view class="apply-btn-title">在线申请押金</view>
+        <view class="apply-btn-desc">选择档位 → 填写信息 → 等待审核</view>
+      </view>
+      <text class="apply-btn-arrow">›</text>
+    </view>
+
+    <view class="contact-info">
+      <view class="contact-item">
+        <view class="contact-label">客服微信</view>
+        <view class="contact-value">xiaoqiange12315</view>
+        <button class="copy-btn" bindtap="copyWechat">复制</button>
+      </view>
+      <view class="contact-item">
+        <view class="contact-label">客服电话</view>
+        <view class="contact-value">400-123-4567</view>
+        <button class="call-btn" bindtap="makeCall">拨打</button>
+      </view>
+    </view>
+    <view class="contact-tips">
+      ⚠️ 请联系客服完成押金缴纳，缴纳后系统将自动更新押金状态
+    </view>
+  </view>
+
+  <!-- 押金说明 -->
+  <view class="info-section">
+    <view class="section-title">押金说明</view>
+    <view class="info-item">
+      <view class="info-icon">📋</view>
+      <view class="info-content">
+        <view class="info-title">押金金额</view>
+        <view class="info-desc">基础押金500元，不同等级可能需要不同金额</view>
+      </view>
+    </view>
+    <view class="info-item">
+      <view class="info-icon">🛡️</view>
+      <view class="info-content">
+        <view class="info-title">押金用途</view>
+        <view class="info-desc">用于交易保障、违规处罚和服务质量保证</view>
+      </view>
+    </view>
+    <view class="info-item">
+      <view class="info-icon">🔄</view>
+      <view class="info-content">
+        <view class="info-title">押金退还</view>
+        <view class="info-desc">停止代购业务后，无违规记录可申请退还押金</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 等级与押金关系 -->
+  <view class="level-section">
+    <view class="section-title">等级与押金</view>
+    <view class="level-item">
+      <view class="level-name">V1级别</view>
+      <view class="level-deposit">押金：¥500</view>
+    </view>
+    <view class="level-item">
+      <view class="level-name">V2级别</view>
+      <view class="level-deposit">押金：¥1000</view>
+    </view>
+    <view class="level-item">
+      <view class="level-name">V3级别</view>
+      <view class="level-deposit">押金：¥2000</view>
+    </view>
+    <view class="level-item">
+      <view class="level-name">V4级别</view>
+      <view class="level-deposit">押金：¥5000</view>
+    </view>
+  </view>
+</view>

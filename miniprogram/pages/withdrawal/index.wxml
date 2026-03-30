@@ -1,0 +1,164 @@
+<!-- pages/withdrawal/index.wxml - 提现页面 -->
+<view class="withdrawal-page">
+
+  <!-- 顶部安全区 -->
+  <view class="safe-top"></view>
+
+  <!-- 返回按钮 -->
+  <view class="back-header" bindtap="goBack">
+    <text class="back-icon">‹</text>
+    <text class="back-text">返回</text>
+  </view>
+
+  <!-- 提现概览 -->
+  <view class="withdrawal-hero">
+    <view class="withdrawal-hero-bg"></view>
+    <view class="withdrawal-hero-content">
+      <text class="withdrawal-hero-title">提现申请</text>
+      <text class="withdrawal-hero-desc">将钱包余额提现到您的收款账户</text>
+      
+      <view class="balance-display">
+        <text class="balance-label">可提现金额</text>
+        <text class="balance-amount">¥{{formatAmount(availableAmount)}}</text>
+        <text class="balance-total">钱包总额 ¥{{formatAmount(walletBalance)}}（最多提现50%）</text>
+      </view>
+
+      <view class="threshold-info" wx:if="{{withdrawalThreshold > 0}}">
+        <text class="threshold-icon">📊</text>
+        <text class="threshold-text">提现门槛：¥{{formatAmount(withdrawalThreshold)}}</text>
+      </view>
+    </view>
+  </view>
+
+  <scroll-view scroll-y class="withdrawal-scroll">
+
+    <!-- 提现表单 -->
+    <view class="section card glass-card mx-lg mt-lg">
+      <view class="section-hd">
+        <text class="section-emoji">💸</text>
+        <text class="section-title">提现金额</text>
+      </view>
+
+      <view class="withdrawal-form">
+        <!-- 金额输入 -->
+        <view class="form-group">
+          <text class="form-label">提现金额（元）</text>
+          <view class="amount-input-group">
+            <text class="amount-prefix">¥</text>
+            <input 
+              class="amount-input" 
+              type="digit" 
+              placeholder="请输入提现金额" 
+              value="{{amount}}" 
+              bindinput="onAmountInput"
+              maxlength="10"
+            />
+          </view>
+          <text class="form-hint" wx:if="{{amountError}}">{{amountError}}</text>
+          
+          <!-- 手续费和实际到账金额显示 -->
+          <view class="fee-display" wx:if="{{amount && !amountError && feeAmount > 0}}">
+            <view class="fee-row">
+              <text class="fee-label">手续费（5%）：</text>
+              <text class="fee-value">-¥{{formatAmount(feeAmount)}}</text>
+            </view>
+            <view class="fee-row">
+              <text class="fee-label">实际到账：</text>
+              <text class="fee-value actual-amount">¥{{formatAmount(actualAmount)}}</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 快捷金额 -->
+        <view class="quick-amounts">
+          <text class="quick-amounts-label">快捷金额</text>
+          <view class="quick-amounts-grid">
+            <view 
+              class="quick-amount-btn {{item == amount ? 'quick-amount-active' : ''}}" 
+              wx:for="{{quickAmountOptions}}" 
+              wx:key="index"
+              bindtap="selectQuickAmount"
+              data-amount="{{item}}"
+            >
+              <text>¥{{formatAmount(item)}}</text>
+            </view>
+            <view 
+              class="quick-amount-btn {{amount == availableAmount ? 'quick-amount-active' : ''}}" 
+              bindtap="selectAllAmount"
+              wx:if="{{availableAmount > 0}}"
+            >
+              <text>全部提现</text>
+            </view>
+          </view>
+          <text class="form-hint" wx:if="{{quickAmountOptions.length === 0}}">可提现金额不足，无法使用快捷金额</text>
+        </view>
+
+        <!-- 收款信息 -->
+        <view class="form-group">
+          <text class="form-label">收款账户信息</text>
+          <input 
+            class="form-input" 
+            placeholder="请输入支付宝/微信账号、银行卡号等" 
+            value="{{contactInfo}}" 
+            bindinput="onContactInfoInput"
+            maxlength="50"
+          />
+          <text class="form-hint">请确保账户信息准确，以免影响资金到账</text>
+        </view>
+
+        <!-- 备注 -->
+        <view class="form-group">
+          <text class="form-label">备注（选填）</text>
+          <input 
+            class="form-input" 
+            placeholder="例如：紧急用款" 
+            value="{{remark}}" 
+            bindinput="onRemarkInput"
+            maxlength="50"
+          />
+        </view>
+
+        <!-- 提现说明 -->
+        <view class="withdrawal-tips">
+          <text class="tips-title">📝 提现说明</text>
+          <view class="tips-list">
+            <text class="tips-item">1. 提现门槛：¥{{formatAmount(withdrawalThreshold)}}起提</text>
+            <text class="tips-item">2. 单次提现最多钱包余额的50%</text>
+            <text class="tips-item">3. 提现手续费：5%（从提现金额中扣除）</text>
+            <text class="tips-item">4. 提现申请提交后，资金将被冻结</text>
+            <text class="tips-item">5. 管理员将在1-3个工作日内审核处理</text>
+            <text class="tips-item">6. 审核通过后，资金将转入您提供的收款账户</text>
+            <text class="tips-item">7. 如审核被拒绝，资金将解冻返还到钱包</text>
+            <text class="tips-item">8. 提现过程中如有问题，请联系客服</text>
+          </view>
+        </view>
+
+        <!-- 提交按钮 -->
+        <view class="submit-btn-container">
+          <button 
+            class="submit-btn {{canSubmit ? 'submit-btn-active' : 'submit-btn-disabled'}}" 
+            bindtap="submitWithdrawal"
+            disabled="{{!canSubmit}}"
+          >
+            <text>提交提现申请</text>
+          </button>
+        </view>
+      </view>
+    </view>
+
+    <!-- 历史记录入口 -->
+    <view class="section card glass-card mx-lg mt-lg" bindtap="goToWithdrawalHistory">
+      <view class="section-hd">
+        <text class="section-emoji">📋</text>
+        <text class="section-title">提现记录</text>
+        <text class="section-arrow">›</text>
+      </view>
+      <text class="section-desc">查看历史提现申请记录</text>
+    </view>
+
+  </scroll-view>
+
+  <!-- 底部安全区 -->
+  <view class="safe-bottom"></view>
+
+</view>

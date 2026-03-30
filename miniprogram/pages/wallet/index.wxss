@@ -1,0 +1,497 @@
+/* pages/wallet/index.wxss */
+
+.wallet-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  position: relative;
+  color: #ffffff;
+}
+
+/* 顶部钱包概览 */
+.wallet-hero {
+  position: relative;
+  height: auto;
+  min-height: 380rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 0 0 30rpx 30rpx;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10rpx 30rpx rgba(0,0,0,0.2);
+  padding-bottom: 60rpx;
+}
+
+.wallet-hero-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,0 L100,0 L100,100 L0,100 Z" fill="rgba(255,255,255,0.1)"/></svg>');
+  background-size: cover;
+}
+
+.wallet-hero-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  color: #ffffff;
+  padding: 40rpx 40rpx 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.wallet-balance {
+  margin-bottom: 20rpx;
+}
+
+.wallet-balance-label {
+  font-size: 24rpx;
+  opacity: 0.9;
+  margin-bottom: 10rpx;
+  display: block;
+  color: #e0e0e0;
+}
+
+.wallet-balance-amount {
+  font-size: 56rpx;
+  font-weight: bold;
+  font-family: 'Arial', sans-serif;
+  text-shadow: 0 2rpx 10rpx rgba(0,0,0,0.3);
+}
+
+/* 待审核充值提示 */
+.pending-recharge-tip {
+  display: inline-block;
+  margin-top: 10rpx;
+  background: rgba(255,165,0,0.2);
+  border: 1rpx solid rgba(255,165,0,0.4);
+  border-radius: 20rpx;
+  padding: 6rpx 18rpx;
+}
+.pending-recharge-text {
+  font-size: 22rpx;
+  color: #FFA500;
+  font-weight: 600;
+}
+
+/* 立即充值按钮 */
+.recharge-quick-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 24rpx;
+  background: linear-gradient(135deg, rgba(255,165,0,0.25) 0%, rgba(255,140,0,0.15) 100%);
+  border: 1rpx solid rgba(255,165,0,0.4);
+  border-radius: 48rpx;
+  padding: 18rpx 40rpx;
+}
+.recharge-quick-icon { font-size: 32rpx; margin-right: 10rpx; }
+.recharge-quick-text { font-size: 28rpx; font-weight: 700; color: #FFA500; flex: 1; text-align: center; }
+.recharge-quick-arrow { font-size: 36rpx; color: #FFA500; margin-left: 6rpx; }
+
+/* 申请提现按钮 */
+.withdrawal-quick-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16rpx;
+  background: linear-gradient(135deg, rgba(0,199,190,0.25) 0%, rgba(0,168,168,0.15) 100%);
+  border: 1rpx solid rgba(0,199,190,0.4);
+  border-radius: 48rpx;
+  padding: 18rpx 40rpx;
+}
+.withdrawal-quick-icon { font-size: 32rpx; margin-right: 10rpx; }
+.withdrawal-quick-text { font-size: 28rpx; font-weight: 700; color: #00A8A8; flex: 1; text-align: center; }
+.withdrawal-quick-arrow { font-size: 36rpx; color: #00A8A8; margin-left: 6rpx; }
+
+.wallet-stats {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(255,255,255,0.15);
+  border-radius: 20rpx;
+  padding: 20rpx;
+  backdrop-filter: blur(10px);
+  border: 1rpx solid rgba(255,255,255,0.2);
+}
+
+.wallet-stat-item {
+  text-align: center;
+  padding: 0 30rpx;
+}
+
+.wallet-stat-label {
+  font-size: 20rpx;
+  opacity: 0.9;
+  display: block;
+  margin-bottom: 8rpx;
+  color: #e0e0e0;
+}
+
+.wallet-stat-amount {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.wallet-stat-divider {
+  width: 1rpx;
+  height: 40rpx;
+  background: rgba(255,255,255,0.3);
+  margin: 0 20rpx;
+}
+
+.deposit-ok {
+  color: #4CAF50;
+}
+
+.deposit-low {
+  color: #FF9800;
+}
+
+/* 滚动区域 */
+.wallet-scroll {
+  position: relative;
+  z-index: 2;
+  margin-top: 0;
+  min-height: calc(100vh - 380rpx);
+  padding: 20rpx;
+}
+
+/* 押金管理模块 */
+.deposit-management {
+  padding: 20rpx;
+  background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+  border-radius: 20rpx;
+  margin: 20rpx;
+  box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.15);
+}
+
+.deposit-info {
+  margin-bottom: 30rpx;
+}
+
+.deposit-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx;
+  border-bottom: 1rpx solid rgba(255,255,255,0.1);
+  transition: all 0.3s ease;
+}
+
+.deposit-info-row:hover {
+  background: rgba(255,255,255,0.05);
+  border-radius: 10rpx;
+}
+
+.deposit-info-row:last-child {
+  border-bottom: none;
+}
+
+.deposit-info-label {
+  font-size: 28rpx;
+  color: #e0e0e0;
+  font-weight: 500;
+}
+
+.deposit-info-value {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.status-ok {
+  color: #4CAF50;
+}
+
+.status-low {
+  color: #FF9800;
+}
+
+.deposit-actions {
+  display: flex;
+  gap: 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.deposit-action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20rpx;
+  border-radius: 15rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4rpx 10rpx rgba(0,0,0,0.1);
+}
+
+.deposit-action-btn.primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.deposit-action-btn.secondary {
+  background: linear-gradient(135deg, #e0e0e0 0%, #b0b0b0 100%);
+  color: #333;
+  border: 1rpx solid rgba(255,255,255,0.2);
+}
+
+.deposit-action-btn:hover {
+  transform: translateY(-2rpx);
+  box-shadow: 0 6rpx 16rpx rgba(0,0,0,0.2);
+}
+
+.deposit-action-icon {
+  margin-right: 10rpx;
+  font-size: 32rpx;
+}
+
+.deposit-note {
+  background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
+  border-left: 4rpx solid #667eea;
+  padding: 16rpx;
+  border-radius: 0 10rpx 10rpx 0;
+  margin-top: 20rpx;
+  border: 1rpx solid rgba(255,255,255,0.1);
+}
+
+.deposit-note-text {
+  font-size: 24rpx;
+  color: #e0e0e0;
+  line-height: 1.5;
+}
+
+/* 交易记录 */
+.transaction-list {
+  padding: 20rpx 0;
+  background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+  border-radius: 20rpx;
+  margin: 20rpx;
+  box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.15);
+}
+
+.transaction-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx;
+  border-bottom: 1rpx solid rgba(255,255,255,0.1);
+  transition: all 0.3s ease;
+}
+
+.transaction-item:hover {
+  background: rgba(255,255,255,0.05);
+  border-radius: 10rpx;
+}
+
+.transaction-item:last-child {
+  border-bottom: none;
+}
+
+.transaction-left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.transaction-emoji {
+  font-size: 40rpx;
+  margin-right: 20rpx;
+  width: 48rpx;
+  text-align: center;
+}
+
+.transaction-info {
+  flex: 1;
+}
+
+.transaction-title {
+  font-size: 28rpx;
+  color: #e0e0e0;
+  margin-bottom: 6rpx;
+  display: block;
+}
+
+.transaction-time {
+  font-size: 22rpx;
+  color: #a0a0a0;
+}
+
+.transaction-amount {
+  font-size: 30rpx;
+  font-weight: 500;
+  min-width: 120rpx;
+  text-align: right;
+  color: #ffffff;
+}
+
+.transaction-amount.income {
+  color: #4CAF50;
+}
+
+.transaction-amount.expense {
+  color: #ff4757;
+}
+
+/* 快捷功能 */
+.wallet-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20rpx;
+  padding: 20rpx;
+  background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+  border-radius: 20rpx;
+  margin: 20rpx;
+  box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.15);
+}
+
+.wallet-quick-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20rpx 0;
+  border-radius: 15rpx;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+  border: 1rpx solid rgba(255,255,255,0.1);
+}
+
+.wallet-quick-item:hover {
+  transform: translateY(-2rpx);
+  box-shadow: 0 6rpx 16rpx rgba(0,0,0,0.2);
+  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%);
+}
+
+.wallet-quick-icon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 4rpx 10rpx rgba(0,0,0,0.2);
+}
+
+.wallet-quick-icon .icon-emoji {
+  font-size: 40rpx;
+  color: white;
+}
+
+.wallet-quick-label {
+  font-size: 24rpx;
+  color: #e0e0e0;
+  text-align: center;
+}
+
+/* 客服联系 */
+.customer-service {
+  padding: 20rpx;
+  background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+  border-radius: 20rpx;
+  margin: 20rpx;
+  box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.15);
+}
+
+.service-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid rgba(255,255,255,0.1);
+  transition: all 0.3s ease;
+}
+
+.service-item:hover {
+  background: rgba(255,255,255,0.05);
+  border-radius: 10rpx;
+}
+
+.service-item:last-child {
+  border-bottom: none;
+}
+
+.service-icon {
+  font-size: 40rpx;
+  margin-right: 20rpx;
+  width: 48rpx;
+  text-align: center;
+  color: #667eea;
+}
+
+.service-info {
+  flex: 1;
+}
+
+.service-label {
+  font-size: 26rpx;
+  color: #e0e0e0;
+  margin-bottom: 4rpx;
+  display: block;
+}
+
+.service-value {
+  font-size: 24rpx;
+  color: #a0a0a0;
+}
+
+.service-action {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 10rpx 20rpx;
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 10rpx rgba(0,0,0,0.2);
+}
+
+.action-text {
+  font-size: 24rpx;
+  color: white;
+  font-weight: 500;
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 60rpx 20rpx;
+  color: #a0a0a0;
+  background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+  border-radius: 20rpx;
+  margin: 20rpx;
+  box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.15);
+}
+
+.empty-emoji {
+  font-size: 80rpx;
+  margin-bottom: 20rpx;
+  display: block;
+  color: #667eea;
+}
+
+.empty-label {
+  font-size: 28rpx;
+  color: #e0e0e0;
+}
+
+/* 工具类 - 间距 */
+.mx-lg { margin-left: 32rpx; margin-right: 32rpx; }
+.mt-lg { margin-top: 32rpx; }
+
+/* 交易记录 - 调整布局，将查看全部移到右边 */
+.section-hd {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx;
+}
+
+/* 响应式设计 */
+@media (max-width: 375px) {
+  .wallet-quick-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

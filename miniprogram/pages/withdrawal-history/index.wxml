@@ -1,0 +1,133 @@
+<!-- pages/withdrawal-history/index.wxml - 提现记录页面 -->
+<view class="withdrawal-history-page">
+
+  <!-- 顶部安全区 -->
+  <view class="safe-top"></view>
+
+  <!-- 返回按钮 -->
+  <view class="back-header" bindtap="goBack">
+    <text class="back-icon">‹</text>
+    <text class="back-text">返回</text>
+    <text class="page-title">提现记录</text>
+  </view>
+
+  <!-- 状态筛选 -->
+  <view class="status-filter">
+    <view 
+      class="filter-item {{filterStatus === '' ? 'filter-active' : ''}}" 
+      bindtap="changeFilter"
+      data-status=""
+    >
+      <text>全部</text>
+    </view>
+    <view 
+      class="filter-item {{filterStatus === 'pending' ? 'filter-active' : ''}}" 
+      bindtap="changeFilter"
+      data-status="pending"
+    >
+      <text>待审核</text>
+    </view>
+    <view 
+      class="filter-item {{filterStatus === 'approved' ? 'filter-active' : ''}}" 
+      bindtap="changeFilter"
+      data-status="approved"
+    >
+      <text>已通过</text>
+    </view>
+    <view 
+      class="filter-item {{filterStatus === 'rejected' ? 'filter-active' : ''}}" 
+      bindtap="changeFilter"
+      data-status="rejected"
+    >
+      <text>已拒绝</text>
+    </view>
+    <view 
+      class="filter-item {{filterStatus === 'cancelled' ? 'filter-active' : ''}}" 
+      bindtap="changeFilter"
+      data-status="cancelled"
+    >
+      <text>已取消</text>
+    </view>
+  </view>
+
+  <scroll-view 
+    scroll-y 
+    class="history-scroll" 
+    bindscrolltolower="loadMore"
+    lower-threshold="100"
+  >
+
+    <!-- 记录列表 -->
+    <view class="record-list">
+      <view 
+        class="record-item card glass-card mx-lg mt-sm" 
+        wx:for="{{recordList}}" 
+        wx:key="_id"
+      >
+        <view class="record-header">
+          <view class="record-title-row">
+            <text class="record-title">提现申请</text>
+            <text class="record-amount">¥{{item.amount.toFixed(2)}}</text>
+          </view>
+          <view class="record-status-row">
+            <text class="record-no">单号：{{item.applyNo}}</text>
+            <view class="record-status {{item.status}}">
+              <text>{{item.statusText}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="record-info">
+          <view class="info-row">
+            <text class="info-label">申请时间</text>
+            <text class="info-value">{{item.createTimeText}}</text>
+          </view>
+          <view class="info-row" wx:if="{{item.contactInfo}}">
+            <text class="info-label">收款账户</text>
+            <text class="info-value">{{item.contactInfo}}</text>
+          </view>
+          <view class="info-row" wx:if="{{item.remark}}">
+            <text class="info-label">备注</text>
+            <text class="info-value">{{item.remark}}</text>
+          </view>
+          <view class="info-row" wx:if="{{item.adminNote}}">
+            <text class="info-label">审核备注</text>
+            <text class="info-value">{{item.adminNote}}</text>
+          </view>
+          <view class="info-row" wx:if="{{item.updateTimeText && item.status !== 'pending'}}">
+            <text class="info-label">处理时间</text>
+            <text class="info-value">{{item.updateTimeText}}</text>
+          </view>
+        </view>
+
+        <!-- 操作按钮 -->
+        <view class="record-actions" wx:if="{{item.status === 'pending'}}">
+          <view class="action-btn action-cancel" bindtap="cancelWithdrawal" data-id="{{item._id}}">
+            <text>取消申请</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 空状态 -->
+      <view class="empty-state" wx:if="{{recordList.length === 0 && !loading}}">
+        <text class="empty-emoji">📋</text>
+        <text class="empty-text">暂无提现记录</text>
+        <text class="empty-hint" wx:if="{{filterStatus === ''}}">快去提交你的第一笔提现申请吧</text>
+        <text class="empty-hint" wx:else>暂无{{getStatusText(filterStatus)}}的提现记录</text>
+      </view>
+
+      <!-- 加载更多 -->
+      <view class="load-more" wx:if="{{loading}}">
+        <text class="loading-text">加载中...</text>
+      </view>
+      <view class="load-more" wx:if="{{noMore && recordList.length > 0}}">
+        <text class="no-more-text">没有更多记录了</text>
+      </view>
+    </view>
+
+  </scroll-view>
+
+  <!-- 底部安全区 -->
+  <view class="safe-bottom"></view>
+
+</view>

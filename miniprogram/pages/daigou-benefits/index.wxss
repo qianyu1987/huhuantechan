@@ -1,0 +1,293 @@
+.container {
+  padding: 20rpx;
+  background: #F5F5F5;
+  min-height: 100vh;
+}
+
+/* 头部 */
+.header-section {
+  text-align: center;
+  margin-bottom: 32rpx;
+}
+
+.header-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #1C1C1E;
+  margin-bottom: 8rpx;
+}
+
+.header-desc {
+  font-size: 24rpx;
+  color: #8E8E93;
+}
+
+/* 等级卡片 */
+.level-list {
+  margin-bottom: 32rpx;
+}
+
+.level-card {
+  background: #FFFFFF;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+}
+
+.level-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+  padding-bottom: 16rpx;
+  border-bottom: 1rpx solid #F2F2F7;
+}
+
+.level-badge {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-right: 16rpx;
+}
+
+.level-badge.v1 {
+  background: #34C759;
+}
+
+.level-badge.v2 {
+  background: #007AFF;
+}
+
+.level-badge.v3 {
+  background: #5856D6;
+}
+
+.level-badge.v4 {
+  background: #FF9500;
+}
+
+.level-info {
+  flex: 1;
+}
+
+.level-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1C1C1E;
+  margin-bottom: 4rpx;
+}
+
+.level-requirement {
+  font-size: 22rpx;
+  color: #8E8E93;
+}
+
+/* 权益列表 */
+.level-benefits {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16rpx;
+}
+
+.benefit-item {
+  display: flex;
+  align-items: center;
+  padding: 16rpx;
+  background: #F8F8F8;
+  border-radius: 12rpx;
+}
+
+.benefit-icon {
+  font-size: 32rpx;
+  margin-right: 12rpx;
+}
+
+.benefit-content {
+  flex: 1;
+}
+
+.benefit-title {
+  font-size: 24rpx;
+  font-weight: 500;
+  color: #1C1C1E;
+  margin-bottom: 2rpx;
+}
+
+.benefit-desc {
+  font-size: 20rpx;
+  color: #8E8E93;
+}
+
+/* 晋升说明 */
+.promotion-section {
+  background: #FFFFFF;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 32rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+}
+
+.section-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1C1C1E;
+  margin-bottom: 24rpx;
+  padding-bottom: 16rpx;
+  border-bottom: 1rpx solid #E5E5EA;
+}
+
+.promotion-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 20rpx;
+}
+
+.promotion-icon {
+  font-size: 32rpx;
+  margin-right: 16rpx;
+  margin-top: 4rpx;
+}
+
+.promotion-content {
+  flex: 1;
+}
+
+.promotion-title {
+  font-size: 26rpx;
+  font-weight: 500;
+  color: #1C1C1E;
+  margin-bottom: 4rpx;
+}
+
+.promotion-desc {
+  font-size: 24rpx;
+  color: #8E8E93;
+  line-height: 1.4;
+}
+
+/* 我的等级 */
+.my-level-section {
+  background: #FFFFFF;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+}
+
+.my-level-card {
+  display: flex;
+  align-items: center;
+  padding: 24rpx;
+  background: #F8F8F8;
+  border-radius: 12rpx;
+}
+
+.my-level-badge {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-right: 20rpx;
+}
+
+.my-level-badge.v1 {
+  background: #34C759;
+}
+
+.my-level-badge.v2 {
+  background: #007AFF;
+}
+
+.my-level-badge.v3 {
+  background: #5856D6;
+}
+
+.my-level-badge.v4 {
+  background: #FF9500;
+}
+
+.my-level-info {
+  flex: 1;
+}
+
+.my-level-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1C1C1E;
+  margin-bottom: 12rpx;
+}
+
+.my-level-progress {
+  width: 100%;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8rpx;
+  background: #E5E5EA;
+  border-radius: 4rpx;
+  overflow: hidden;
+  margin-bottom: 8rpx;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #34C759 0%, #007AFF 100%);
+  border-radius: 4rpx;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 20rpx;
+  color: #8E8E93;
+  text-align: right;
+}
+
+.my-level-empty {
+  text-align: center;
+  padding: 40rpx 0;
+  color: #8E8E93;
+}
+
+.empty-icon {
+  font-size: 64rpx;
+  margin-bottom: 16rpx;
+}
+
+.empty-text {
+  font-size: 24rpx;
+  font-weight: 500;
+  margin-bottom: 8rpx;
+}
+
+.empty-desc {
+  font-size: 20rpx;
+  color: #C7C7CC;
+}
+
+/* 响应式调整 */
+@media (max-width: 375px) {
+  .level-benefits {
+    grid-template-columns: 1fr;
+  }
+  
+  .benefit-item {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .benefit-icon {
+    margin-right: 0;
+    margin-bottom: 8rpx;
+  }
+}

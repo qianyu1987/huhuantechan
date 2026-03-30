@@ -1,0 +1,257 @@
+.container {
+  padding: 20rpx;
+  background: #F5F5F5;
+  min-height: 100vh;
+}
+
+/* 押金状态卡片 */
+.deposit-card {
+  background: #FFFFFF;
+  border-radius: 16rpx;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+}
+
+.deposit-status {
+  display: flex;
+  align-items: center;
+  margin-bottom: 32rpx;
+}
+
+.status-icon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40rpx;
+  margin-right: 24rpx;
+}
+
+.status-active {
+  background: #E8F5E9;
+  color: #388E3C;
+}
+
+.status-inactive {
+  background: #FFEBEE;
+  color: #C62828;
+}
+
+.status-info {
+  flex: 1;
+}
+
+.status-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1C1C1E;
+  margin-bottom: 8rpx;
+}
+
+.status-desc {
+  font-size: 24rpx;
+  color: #8E8E93;
+  line-height: 1.4;
+}
+
+.deposit-amount {
+  text-align: center;
+  padding-top: 24rpx;
+  border-top: 1rpx solid #E5E5EA;
+}
+
+.amount-label {
+  font-size: 24rpx;
+  color: #8E8E93;
+  margin-bottom: 8rpx;
+}
+
+.amount-value {
+  font-size: 48rpx;
+  font-weight: 700;
+  color: #FF9500;
+}
+
+/* 联系客服 */
+.contact-section {
+  background: #FFFFFF;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+}
+
+.section-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1C1C1E;
+  margin-bottom: 24rpx;
+  padding-bottom: 16rpx;
+  border-bottom: 1rpx solid #E5E5EA;
+}
+
+.contact-info {
+  margin-bottom: 20rpx;
+}
+
+/* 在线申请入口卡片 */
+.apply-btn-card {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(255,149,0,0.08), rgba(255,59,48,0.06));
+  border: 1.5rpx solid rgba(255,149,0,0.3);
+  border-radius: 12rpx;
+  padding: 24rpx 28rpx;
+  margin-bottom: 24rpx;
+}
+
+.apply-btn-icon {
+  font-size: 40rpx;
+  margin-right: 20rpx;
+}
+
+.apply-btn-info {
+  flex: 1;
+}
+
+.apply-btn-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #FF9500;
+  margin-bottom: 4rpx;
+}
+
+.apply-btn-desc {
+  font-size: 22rpx;
+  color: #8E8E93;
+}
+
+.apply-btn-arrow {
+  font-size: 36rpx;
+  color: #FF9500;
+  font-weight: 700;
+}
+
+.contact-info {
+  margin-bottom: 20rpx;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.contact-label {
+  width: 120rpx;
+  font-size: 24rpx;
+  color: #8E8E93;
+}
+
+.contact-value {
+  flex: 1;
+  font-size: 26rpx;
+  color: #1C1C1E;
+  font-weight: 500;
+}
+
+.copy-btn, .call-btn {
+  padding: 8rpx 20rpx;
+  font-size: 22rpx;
+  border-radius: 16rpx;
+  line-height: 1.2;
+}
+
+.copy-btn {
+  background: #E3F2FD;
+  color: #1976D2;
+  border: 1rpx solid #BBDEFB;
+}
+
+.call-btn {
+  background: #FFEBEE;
+  color: #C62828;
+  border: 1rpx solid #FFCDD2;
+}
+
+.contact-tips {
+  font-size: 22rpx;
+  color: #FF9500;
+  line-height: 1.4;
+  background: #FFF3E0;
+  padding: 16rpx;
+  border-radius: 8rpx;
+}
+
+/* 押金说明 */
+.info-section {
+  background: #FFFFFF;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+}
+
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 20rpx;
+}
+
+.info-icon {
+  font-size: 32rpx;
+  margin-right: 16rpx;
+  margin-top: 4rpx;
+}
+
+.info-content {
+  flex: 1;
+}
+
+.info-title {
+  font-size: 26rpx;
+  font-weight: 500;
+  color: #1C1C1E;
+  margin-bottom: 4rpx;
+}
+
+.info-desc {
+  font-size: 24rpx;
+  color: #8E8E93;
+  line-height: 1.4;
+}
+
+/* 等级与押金关系 */
+.level-section {
+  background: #FFFFFF;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+}
+
+.level-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #F2F2F7;
+}
+
+.level-item:last-child {
+  border-bottom: none;
+}
+
+.level-name {
+  font-size: 26rpx;
+  font-weight: 500;
+  color: #1C1C1E;
+}
+
+.level-deposit {
+  font-size: 24rpx;
+  color: #FF9500;
+  font-weight: 500;
+}

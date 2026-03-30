@@ -1,0 +1,268 @@
+<view class="container">
+  <!-- 等级权益说明 -->
+  <view class="header-section">
+    <view class="header-title">代购等级权益</view>
+    <view class="header-desc">不同等级享受不同的权益和服务</view>
+  </view>
+
+  <!-- 等级列表 -->
+  <view class="level-list">
+    <!-- V1 级别 -->
+    <view class="level-card level-v1">
+      <view class="level-header">
+        <view class="level-badge v1">V1</view>
+        <view class="level-info">
+          <view class="level-name">基础代购</view>
+          <view class="level-requirement">完成10笔订单</view>
+        </view>
+      </view>
+      <view class="level-benefits">
+        <view class="benefit-item">
+          <view class="benefit-icon">💰</view>
+          <view class="benefit-content">
+            <view class="benefit-title">交易限额</view>
+            <view class="benefit-desc">5000元/月</view>
+          </view>
+        </view>
+        <view class="benefit-item">
+          <view class="benefit-icon">🛡️</view>
+          <view class="benefit-content">
+            <view class="benefit-title">押金要求</view>
+            <view class="benefit-desc">500元</view>
+          </view>
+        </view>
+        <view class="benefit-item">
+          <view class="benefit-icon">🏆</view>
+          <view class="benefit-content">
+            <view class="benefit-title">积分奖励</view>
+            <view class="benefit-desc">基础积分奖励</view>
+          </view>
+        </view>
+        <view class="benefit-item">
+          <view class="benefit-icon">📞</view>
+          <view class="benefit-content">
+            <view class="benefit-title">客服支持</view>
+            <view class="benefit-desc">普通客服</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- V2 级别 -->
+    <view class="level-card level-v2">
+      <view class="level-header">
+        <view class="level-badge v2">V2</view>
+        <view class="level-info">
+          <view class="level-name">进阶代购</view>
+          <view class="level-requirement">完成50笔订单</view>
+        </view>
+      </view>
+      <view class="level-benefits">
+        <view class="benefit-item">
+          <view class="benefit-icon">💰</view>
+          <view class="benefit-content">
+            <view class="benefit-title">交易限额</view>
+            <view class="benefit-desc">10000元/月</view>
+          </view>
+        </view>
+        <view class="benefit-item">
+          <view class="benefit-icon">🛡️</view>
+          <view class="benefit-content">
+            <view class="benefit-title">押金要求</view>
+            <view class="benefit-desc">1000元</view>
+          </view>
+        </view>
+        <view class="benefit-item">
+          <view class="benefit-icon">🏆</view>
+          <view class="benefit-content">
+            <view class="benefit-title">积分奖励</view>
+            <view class="benefit-desc">1.2倍积分奖励</view>
+          </view>
+        </view>
+        <view class="benefit-item">
+          <view class="benefit-icon">📞</view>
+          <view class="benefit-content">
+            <view class="benefit-title">客服支持</view>
+            <view class="benefit-desc">优先客服</view>
+          </view>
+        </view>
+        <view class="benefit-item">
+          <view class="benefit-icon">⚡</view>
+          <view class="benefit-content">
+            <view class="benefit-title">审核优先级</view>
+            <view class="benefit-desc">优先审核</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- V3 级别 -->
+    <view class="level-card level-v3">
+      <view class="level-header">
+        <view class="level-badge v3">V3</view>
+        <view class="level-info">
+          <view class="level-name">专业代购</view>
+          <view class="level-requirement">完成200笔订单</view>
+        </view>
+      </view>
+      <view class="level-benefits">
+        <view class="benefit-item">
+          <view class="benefit-icon">💰</view>
+          <view class="benefit-content">
+            <view class="benefit-title">交易限额</view>
+            <view class="benefit-desc">20000元/月</view>
+          </view>
+        </view>
+        <view class="benefit-item">
+          <view class="benefit-icon">🛡️</view>
+          <view class="benefit-content">
+            <view class="benefit-title">押金要求</view>
+            <view class="benefit-desc">2000元</view>
+          </view>
+        </view>
+        <view class="benefit-item">
+          <view class="benefit-icon">🏆</view>
+          <view class="benefit-content">
+            <view class="benefit-title">积分奖励</view>
+            <view class="benefit-desc">1.5倍积分奖励</view>
+          </view>
+        </view>
+        <view class="benefit-item">
+          <view class="benefit-icon">📞</view>
+          <view class="benefit-content">
+            <view class="benefit-title">客服支持</view>
+            <view class="benefit-desc">专属客服</view>
+          </view>
+        </view>
+        <view class="benefit-item">
+          <view class="benefit-icon">⚡</view>
+          <view class="benefit-content">
+            <view class="benefit-title">审核优先级</view>
+            <view class="benefit-desc">快速审核</view>
+          </view>
+        </view>
+        <view class="benefit-item">
+          <view class="benefit-icon">🎁</view>
+          <view class="benefit-content">
+            <view class="benefit-title">专属活动</view>
+            <view class="benefit-desc">优先参与活动</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- V4 级别 -->
+    <view class="level-card level-v4">
+      <view class="level-header">
+        <view class="level-badge v4">V4</view>
+        <view class="level-info">
+          <view class="level-name">钻石代购</view>
+          <view class="level-requirement">完成500笔订单</view>
+        </view>
+      </view>
+      <view class="level-benefits">
+        <view class="benefit-item">
+          <view class="benefit-icon">💰</view>
+          <view class="benefit-content">
+            <view class="benefit-title">交易限额</view>
+            <view class="benefit-desc">50000元/月</view>
+          </view>
+        </view>
+        <view class="benefit-item">
+          <view class="benefit-icon">🛡️</view>
+          <view class="benefit-content">
+            <view class="benefit-title">押金要求</view>
+            <view class="benefit-desc">5000元</view>
+          </view>
+        </view>
+        <view class="benefit-item">
+          <view class="benefit-icon">🏆</view>
+          <view class="benefit-content">
+            <view class="benefit-title">积分奖励</view>
+            <view class="benefit-desc">2倍积分奖励</view>
+          </view>
+        </view>
+        <view class="benefit-item">
+          <view class="benefit-icon">📞</view>
+          <view class="benefit-content">
+            <view class="benefit-title">客服支持</view>
+            <view class="benefit-desc">24小时专属客服</view>
+          </view>
+        </view>
+        <view class="benefit-item">
+          <view class="benefit-icon">⚡</view>
+          <view class="benefit-content">
+            <view class="benefit-title">审核优先级</view>
+            <view class="benefit-desc">即时审核</view>
+          </view>
+        </view>
+        <view class="benefit-item">
+          <view class="benefit-icon">🎁</view>
+          <view class="benefit-content">
+            <view class="benefit-title">专属活动</view>
+            <view class="benefit-desc">专属活动邀请</view>
+          </view>
+        </view>
+        <view class="benefit-item">
+          <view class="benefit-icon">🌟</view>
+          <view class="benefit-content">
+            <view class="benefit-title">平台推荐</view>
+            <view class="benefit-desc">优先推荐展示</view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 等级晋升说明 -->
+  <view class="promotion-section">
+    <view class="section-title">等级晋升说明</view>
+    <view class="promotion-item">
+      <view class="promotion-icon">📈</view>
+      <view class="promotion-content">
+        <view class="promotion-title">晋升条件</view>
+        <view class="promotion-desc">基于完成订单数量、交易金额、用户评价和服务质量</view>
+      </view>
+    </view>
+    <view class="promotion-item">
+      <view class="promotion-icon">🔄</view>
+      <view class="promotion-content">
+        <view class="promotion-title">自动晋升</view>
+        <view class="promotion-desc">系统会根据您的业绩自动晋升等级</view>
+      </view>
+    </view>
+    <view class="promotion-item">
+      <view class="promotion-icon">⚠️</view>
+      <view class="promotion-content">
+        <view class="promotion-title">等级下降</view>
+        <view class="promotion-desc">违规行为或服务质量下降可能导致等级下降</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 我的等级信息 -->
+  <view class="my-level-section">
+    <view class="section-title">我的等级</view>
+    <view class="my-level-card" wx:if="{{myLevelInfo}}">
+      <view class="my-level-badge {{'v'+myLevelInfo.level}}">
+        V{{myLevelInfo.level}}
+      </view>
+      <view class="my-level-info">
+        <view class="my-level-name">{{myLevelInfo.name}}</view>
+        <view class="my-level-progress">
+          <view class="progress-bar">
+            <view class="progress-fill" style="width: {{myLevelInfo.progress}}%"></view>
+          </view>
+          <view class="progress-text">
+            距离下一等级还有 {{myLevelInfo.remaining}} 笔订单
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class="my-level-empty" wx:else>
+      <view class="empty-icon">📊</view>
+      <view class="empty-text">暂无等级信息</view>
+      <view class="empty-desc">完成更多订单提升等级</view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,9 @@
+{
+  "name": "paymentMgr",
+  "version": "1.0.0",
+  "description": "微信支付云函数：创建支付订单、处理支付回调",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

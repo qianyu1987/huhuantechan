@@ -1,0 +1,180 @@
+<!-- pages/wallet/index.wxml - 我的钱包 -->
+<view class="wallet-page">
+
+  <!-- 顶部钱包概览 -->
+  <view class="wallet-hero">
+    <view class="wallet-hero-bg"/>
+    <view class="wallet-hero-content">
+      <view class="wallet-balance">
+        <text class="wallet-balance-label">钱包余额</text>
+        <text class="wallet-balance-amount">¥{{walletBalance || 0}}</text>
+        <!-- 待审核充值提示 -->
+        <view wx:if="{{pendingRechargeAmount > 0}}" class="pending-recharge-tip">
+          <text class="pending-recharge-text">＋¥{{pendingRechargeAmount}} 待审核中</text>
+        </view>
+      </view>
+      <view class="wallet-stats">
+        <view class="wallet-stat-item">
+          <text class="wallet-stat-label">押金余额</text>
+          <text class="wallet-stat-amount {{depositStatus === 'ok' ? 'deposit-ok' : 'deposit-low'}}">¥{{depositBalance || 0}}</text>
+        </view>
+        <view class="wallet-stat-divider"/>
+        <view class="wallet-stat-item">
+          <text class="wallet-stat-label">可用积分</text>
+          <text class="wallet-stat-amount">{{points || 0}}</text>
+        </view>
+      </view>
+      <!-- 充值按钮 -->
+      <view class="recharge-quick-btn" bindtap="goToRecharge">
+        <text class="recharge-quick-icon">💳</text>
+        <text class="recharge-quick-text">立即充值</text>
+        <text class="recharge-quick-arrow">›</text>
+      </view>
+
+      <!-- 提现按钮 -->
+      <view class="withdrawal-quick-btn" bindtap="goToWithdrawal" wx:if="{{walletBalance > 0}}">
+        <text class="withdrawal-quick-icon">💸</text>
+        <text class="withdrawal-quick-text">申请提现</text>
+        <text class="withdrawal-quick-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <scroll-view scroll-y class="wallet-scroll">
+
+    <!-- 押金管理模块 -->
+    <view class="section card glass-card mx-lg mt-lg">
+      <view class="section-hd">
+        <text class="section-emoji">💰</text>
+        <text class="section-title">押金管理</text>
+      </view>
+      <view class="deposit-management">
+        <view class="deposit-info">
+          <view class="deposit-info-row">
+            <text class="deposit-info-label">押金状态</text>
+            <text class="deposit-info-value {{depositStatus === 'ok' ? 'status-ok' : 'status-low'}}">{{depositStatusText}}</text>
+          </view>
+          <view class="deposit-info-row">
+            <text class="deposit-info-label">已缴纳押金</text>
+            <text class="deposit-info-value">¥{{depositPaid || 0}}</text>
+          </view>
+          <view class="deposit-info-row">
+            <text class="deposit-info-label">押金余额</text>
+            <text class="deposit-info-value {{depositStatus === 'ok' ? 'status-ok' : 'status-low'}}">¥{{depositBalance || 0}}</text>
+          </view>
+          <view class="deposit-info-row">
+            <text class="deposit-info-label">冻结金额</text>
+            <text class="deposit-info-value">¥{{depositFrozen || 0}}</text>
+          </view>
+        </view>
+        <view class="deposit-actions">
+          <view class="deposit-action-btn primary" bindtap="goToDepositDetail">
+            <text class="deposit-action-icon">📋</text>
+            <text class="deposit-action-text">押金详情</text>
+          </view>
+          <view class="deposit-action-btn secondary" bindtap="contactCustomerService">
+            <text class="deposit-action-icon">💬</text>
+            <text class="deposit-action-text">联系客服</text>
+          </view>
+        </view>
+        <view class="deposit-note">
+          <text class="deposit-note-text">💡 押金说明：押金用于代购交易保障，服务费从钱包余额中扣除。</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 交易记录 -->
+    <view class="section card glass-card mx-lg mt-lg">
+      <view class="section-hd">
+        <text class="section-emoji">📊</text>
+        <text class="section-title">交易记录</text>
+        <view class="more-btn" bindtap="goToTransactionHistory">
+          <text class="text-light text-sm">查看全部</text>
+          <view class="icon-arrow-r-sm"></view>
+        </view>
+      </view>
+      <view class="transaction-list">
+        <view wx:if="{{transactions.length === 0}}" class="empty-state">
+          <text class="empty-emoji">📝</text>
+          <text class="empty-label">暂无交易记录</text>
+        </view>
+        <block wx:for="{{transactions}}" wx:key="id">
+          <view class="transaction-item">
+            <view class="transaction-left">
+              <text class="transaction-emoji">{{item.emoji}}</text>
+              <view class="transaction-info">
+                <text class="transaction-title">{{item.title}}</text>
+                <text class="transaction-time">{{item.time}}</text>
+              </view>
+            </view>
+            <text class="transaction-amount {{item.type === 'income' ? 'income' : 'expense'}}">{{item.type === 'income' ? '+' : '-'}}¥{{item.amount}}</text>
+          </view>
+        </block>
+      </view>
+    </view>
+
+    <!-- 快捷功能 -->
+    <view class="section card glass-card mx-lg mt-lg">
+      <view class="section-hd">
+        <text class="section-emoji">⚡</text>
+        <text class="section-title">快捷功能</text>
+      </view>
+      <view class="wallet-quick-grid">
+        <view class="wallet-quick-item" bindtap="goToPoints">
+          <view class="wallet-quick-icon qg-yellow">
+            <text class="icon-emoji">⭐</text>
+          </view>
+          <text class="wallet-quick-label">积分明细</text>
+        </view>
+        <view class="wallet-quick-item" bindtap="goToCredit">
+          <view class="wallet-quick-icon qg-blue">
+            <text class="icon-emoji">💎</text>
+          </view>
+          <text class="wallet-quick-label">信用中心</text>
+        </view>
+        <view class="wallet-quick-item" bindtap="goToWithdraw">
+          <view class="wallet-quick-icon qg-green">
+            <text class="icon-emoji">💸</text>
+          </view>
+          <text class="wallet-quick-label">提现</text>
+        </view>
+        <view class="wallet-quick-item" bindtap="goToRecharge">
+          <view class="wallet-quick-icon qg-orange">
+            <text class="icon-emoji">💳</text>
+          </view>
+          <text class="wallet-quick-label">充值</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 客服联系方式 -->
+    <view class="section card glass-card mx-lg mt-lg">
+      <view class="section-hd">
+        <text class="section-emoji">📞</text>
+        <text class="section-title">客服联系</text>
+      </view>
+      <view class="customer-service">
+        <view class="service-item">
+          <text class="service-icon">💬</text>
+          <view class="service-info">
+            <text class="service-label">客服微信</text>
+            <text class="service-value">xiaoqiange12315</text>
+          </view>
+          <view class="service-action" bindtap="copyWechat">
+            <text class="action-text">复制</text>
+          </view>
+        </view>
+        <view class="service-item">
+          <text class="service-icon">📱</text>
+          <view class="service-info">
+            <text class="service-label">服务时间</text>
+            <text class="service-value">9:00-21:00</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view style="height: calc(100rpx + env(safe-area-inset-bottom))"/>
+  </scroll-view>
+
+</view>

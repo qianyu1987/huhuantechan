@@ -1,0 +1,9 @@
+{
+  "name": "dailyTasks",
+  "version": "1.0.0",
+  "description": "定时任务云函数：代购订单超时处理、自动确认收货",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}
