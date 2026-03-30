@@ -35,15 +35,18 @@ async function resolveCloudUrl(url) {
 
 // 处理图片URL，将cloud://转换为临时链接
 // ✅ 优化：内存缓存临时链接（有效期1.5小时），减少重复调用 getTempFileURL
+// ✅ listMode=true：只解析封面（第一张图），大幅减少列表页 getTempFileURL 调用量
 // 注意：getTempFileURL 单次最多50个fileID，需分批处理
 const IMG_CACHE_TTL = 90 * 60 * 1000 // 1.5小时（临时链接2小时有效）
 
-async function processImages(products) {
-  // 收集所有需要转换的fileID（去重）
+async function processImages(products, listMode = false) {
+  // 收集需要转换的 fileID（去重）
+  // listMode=true 时只取第一张图（封面），减少约 70% 的请求量
   const fileIDSet = new Set()
   products.forEach(p => {
     if (p.images && Array.isArray(p.images)) {
-      p.images.forEach(img => {
+      const imgs = listMode ? p.images.slice(0, 1) : p.images
+      imgs.forEach(img => {
         if (img && img.startsWith('cloud://')) {
           fileIDSet.add(img)
         }
@@ -88,12 +91,21 @@ async function processImages(products) {
   // 替换图片URL
   return products.map(p => {
     if (p.images && Array.isArray(p.images)) {
-      p.images = p.images.map(img => {
-        if (img && img.startsWith('cloud://')) {
-          return tempUrlMap[img] || img
-        }
-        return img
-      })
+      if (listMode) {
+        // 列表模式：只替换第一张，其余保留原 cloud:// （详情页再解析）
+        const cover = p.images[0]
+        p.images = [
+          (cover && cover.startsWith('cloud://') ? (tempUrlMap[cover] || cover) : cover),
+          ...p.images.slice(1)
+        ]
+      } else {
+        p.images = p.images.map(img => {
+          if (img && img.startsWith('cloud://')) {
+            return tempUrlMap[img] || img
+          }
+          return img
+        })
+      }
     }
     return p
   })
@@ -547,10 +559,10 @@ async function checkImage(fileId) {
         return displayData
       })
 
-      // 处理图片URL（非神秘的才处理）
+      // 处理图片URL（非神秘的才处理）- listMode:只解析封面，节省流量
       const normalList = list.filter(p => !p.isMystery)
       if (normalList.length > 0) {
-        const processed = await processImages(normalList)
+        const processed = await processImages(normalList, true)
         let processedIndex = 0
         list = list.map(p => {
           if (!p.isMystery) {
@@ -590,9 +602,10 @@ async function checkImage(fileId) {
         isMystery: p.isMystery || false
       }))
       
+      // listMode:只解析封面，减少 getTempFileURL 调用量
       const normalList = list.filter(p => !p.isMystery)
       if (normalList.length > 0) {
-        const processed = await processImages(normalList)
+        const processed = await processImages(normalList, true)
         let processedIndex = 0
         list = list.map(p => {
           if (!p.isMystery) {
@@ -798,7 +811,7 @@ async function checkImage(fileId) {
       // 处理图片URL（只处理非神秘的）
       const normalList = list.filter(p => !p.isMystery)
       if (normalList.length > 0) {
-        const processed = await processImages(normalList)
+        const processed = await processImages(normalList, true)
         let processedIndex = 0
         list = list.map(p => {
           if (!p.isMystery && p.images) {
@@ -836,11 +849,11 @@ async function checkImage(fileId) {
       let userRes
       let publisher
 
-      // 尝试用 _openid 查询
+      // 尝试用 _openid 查询（同时投影 openid 自定义字段，避免 publisher.openid 为空）
       if (publisherOpenid) {
         userRes = await db.collection('users')
           .where({ _openid: publisherOpenid })
-          .field({ _openid: true, nickName: true, avatarUrl: true, creditScore: true, swapCount: true, provincesBadges: true, gender: true })
+          .field({ _openid: true, openid: true, nickName: true, avatarUrl: true, creditScore: true, swapCount: true, provincesBadges: true, gender: true })
           .limit(1)
           .get()
         publisher = userRes.data[0]
@@ -850,7 +863,7 @@ async function checkImage(fileId) {
       if (!publisher && product.data.openid) {
         userRes = await db.collection('users')
           .where({ openid: product.data.openid })
-          .field({ _openid: true, nickName: true, avatarUrl: true, creditScore: true, swapCount: true, provincesBadges: true, gender: true })
+          .field({ _openid: true, openid: true, nickName: true, avatarUrl: true, creditScore: true, swapCount: true, provincesBadges: true, gender: true })
           .limit(1)
           .get()
         publisher = userRes.data[0]
@@ -884,7 +897,8 @@ async function checkImage(fileId) {
       if (publisher) {
         publisher.avatarUrl = await resolveCloudUrl(publisher.avatarUrl)
         // 统一用 openid 字段供前端跳转使用
-        publisher.openid = publisher._openid || product.data.openid || publisherOpenid
+        // publisherOpenid 来自 product.data（最可靠），优先用它；其次用 users 表中查到的值
+        publisher.openid = publisherOpenid || publisher.openid || publisher._openid || product.data.openid
       } else {
         // 如果没找到用户，创建空对象避免报错
         publisher = {
@@ -1150,9 +1164,9 @@ async function checkImage(fileId) {
         .map(f => productMap[f.productId])
         .filter(Boolean)
 
-      // 处理图片URL
+      // 处理图片URL（列表模式：只解析封面）
       if (list.length > 0) {
-        list = await processImages(list)
+        list = await processImages(list, true)
       }
 
       return { success: true, list }
@@ -1252,10 +1266,10 @@ async function checkImage(fileId) {
         }
       })
 
-      // 处理图片
+      // 处理图片（列表模式：只解析封面）
       const normalList = list.filter(p => !p.isMystery)
       if (normalList.length > 0) {
-        const processed = await processImages(normalList)
+        const processed = await processImages(normalList, true)
         let idx = 0
         list = list.map(p => {
           if (!p.isMystery) {

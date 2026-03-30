@@ -606,6 +606,18 @@ exports.main = async (event, context) => {
 
         // ====== 邀请好友首次互换奖励（双方各得20积分）======
         const FIRST_SWAP_REWARD = 20
+        // 获取首次互换现金奖励配置
+        let FIRST_SWAP_CASH_REWARD = 10.00
+        try {
+          const configRes = await db.collection('system_config').where({
+            configKey: 'first_swap_cash_reward'
+          }).get()
+          if (configRes.data && configRes.data.length > 0) {
+            FIRST_SWAP_CASH_REWARD = parseFloat(configRes.data[0].configValue) || 10.00
+          }
+        } catch (e) {
+          console.log('获取首次互换现金奖励配置失败，使用默认值:', e.message)
+        }
         try {
           // 检查发起方是否是被邀请用户且首次完成互换（使用递增前的 swapCount）
           if (initiatorIsFirstSwap && initiatorBefore.invitedBy) {
@@ -635,6 +647,18 @@ exports.main = async (event, context) => {
                 amount: FIRST_SWAP_REWARD,
                 desc: '好友首次互换奖励',
                 relatedUser: o.initiatorOpenid,
+                orderId: event.orderId,
+                createTime: db.serverDate()
+              }
+            })
+            // 记录到 invite_rewards 集合
+            await db.collection('invite_rewards').add({
+              data: {
+                inviterOpenid: inviterOpenid,
+                invitedOpenid: o.initiatorOpenid,
+                type: 'first_swap',
+                amount: FIRST_SWAP_REWARD,
+                cashAmount: FIRST_SWAP_CASH_REWARD,
                 orderId: event.orderId,
                 createTime: db.serverDate()
               }
@@ -669,6 +693,18 @@ exports.main = async (event, context) => {
                 amount: FIRST_SWAP_REWARD,
                 desc: '好友首次互换奖励',
                 relatedUser: o.receiverOpenid,
+                orderId: event.orderId,
+                createTime: db.serverDate()
+              }
+            })
+            // 记录到 invite_rewards 集合
+            await db.collection('invite_rewards').add({
+              data: {
+                inviterOpenid: inviterOpenid,
+                invitedOpenid: o.receiverOpenid,
+                type: 'first_swap',
+                amount: FIRST_SWAP_REWARD,
+                cashAmount: FIRST_SWAP_CASH_REWARD,
                 orderId: event.orderId,
                 createTime: db.serverDate()
               }

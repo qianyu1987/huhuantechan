@@ -102,6 +102,39 @@ async function ensureAddressesCollection() {
   }
 }
 
+// 确保 invite_rewards 集合存在
+async function ensureInviteRewardsCollection() {
+  try {
+    // 尝试获取集合信息，如果不存在会报错
+    await db.collection('invite_rewards').count()
+  } catch (e) {
+    // 集合不存在，尝试创建一个空文档来创建集合
+    if (e.message && e.message.includes('collection not exist')) {
+      try {
+        await db.collection('invite_rewards').add({
+          data: {
+            inviterOpenid: 'system_init',
+            invitedOpenid: '_init_',
+            type: 'signup',
+            amount: 0,
+            createTime: db.serverDate()
+          }
+        })
+        // 删除这条初始化记录
+        const initRes = await db.collection('invite_rewards').where({
+          invitedOpenid: '_init_'
+        }).get()
+        if (initRes.data && initRes.data.length > 0) {
+          await db.collection('invite_rewards').doc(initRes.data[0]._id).remove()
+        }
+        console.log('invite_rewards 集合创建成功')
+      } catch (addErr) {
+        console.log('创建 invite_rewards 集合失败:', addErr)
+      }
+    }
+  }
+}
+
 // 确保 phone_verify_temp 集合存在
 async function ensurePhoneVerifyCollection() {
   try {
@@ -272,7 +305,11 @@ exports.main = async (event, context) => {
         openid,
         userInfo: {
           nickName: returnNickName,
-          avatarUrl: returnAvatarUrl
+          avatarUrl: returnAvatarUrl,
+          // 代购相关字段（供 mine 页面展示押金余额）
+          daigouStats: userData.daigouStats || null,
+          daigouLevel: userData.daigouLevel !== undefined ? userData.daigouLevel : 0,
+          isDaigouVerified: userData.isDaigouVerified || false
         },
         creditScore: userData.creditScore || 100,
         province: userData.province || '',
@@ -566,7 +603,12 @@ exports.main = async (event, context) => {
       const { targetOpenid } = actualEvent
       if (!targetOpenid) return { success: false, message: '缺少参数' }
 
-      const userFields = { nickName: true, avatarUrl: true, province: true, creditScore: true, publishCount: true, swapCount: true, provincesBadges: true, createTime: true, gender: true, _openid: true, openid: true }
+      const userFields = { 
+        nickName: true, avatarUrl: true, province: true, creditScore: true, 
+        publishCount: true, swapCount: true, provincesBadges: true, createTime: true, 
+        gender: true, _openid: true, openid: true,
+        daigouStats: true, daigouLevel: true, isDaigouVerified: true 
+      }
 
       // 先用 _openid 查询
       let userRes = await db.collection('users').where({ _openid: targetOpenid })
@@ -635,6 +677,18 @@ exports.main = async (event, context) => {
         })
       }
 
+      // 获取代购相关数据
+      const daigouStats = user.daigouStats || {
+        depositPaid: 0,
+        depositBalance: 0,
+        totalSales: 0,
+        completedOrders: 0,
+        avgRating: 0
+      }
+      
+      const daigouLevel = user.daigouLevel || 0
+      const isDaigouVerified = user.isDaigouVerified || false
+
       return {
         success: true,
         profile: {
@@ -642,7 +696,11 @@ exports.main = async (event, context) => {
           province: user.province || '', creditScore: user.creditScore || 100,
           publishCount: user.publishCount || 0, swapCount: user.swapCount || 0,
           provincesBadges: user.provincesBadges || [], createTime: user.createTime,
-          gender: user.gender || ''
+          gender: user.gender || '',
+          // 代购相关字段
+          daigouStats,
+          daigouLevel,
+          isDaigouVerified
         },
         products
       }
@@ -866,7 +924,7 @@ exports.main = async (event, context) => {
       }).limit(100).get()
       console.log('[getInviteData] 查询结果数量:', inviteRes.data ? inviteRes.data.length : 0)
 
-      // 获取邀请详情（包含首次互换状态）
+      // 获取邀请详情（包含首次互换状态和奖励信息）
       const inviteList = await Promise.all((inviteRes.data || []).map(async invitedUser => {
         // 转换 cloud:// 头像为 https 临时链接
         const avatarUrl = await resolveCloudUrl(invitedUser.avatarUrl || '')
@@ -876,23 +934,99 @@ exports.main = async (event, context) => {
           const d = new Date(invitedUser.inviteTime)
           inviteTime = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
         }
+        
+        // 查询该好友带来的具体奖励记录
+        const invitedOpenid = invitedUser.openid || invitedUser._openid
+        const rewardRes = await db.collection('invite_rewards').where({
+          inviterOpenid: openid,
+          invitedOpenid: invitedOpenid
+        }).get()
+        
+        let signupCashReward = 0
+        let signupPointsReward = 0
+        let swapCashReward = 0
+        let swapPointsReward = 0
+        
+        if (rewardRes.data && rewardRes.data.length > 0) {
+          rewardRes.data.forEach(reward => {
+            if (reward.type === 'signup') {
+              signupCashReward = parseFloat(reward.cashAmount || 0)
+              signupPointsReward = parseFloat(reward.amount || 0)
+            } else if (reward.type === 'first_swap') {
+              swapCashReward = parseFloat(reward.cashAmount || 0)
+              swapPointsReward = parseFloat(reward.amount || 0)
+            }
+          })
+        }
+        
         return {
           _id: invitedUser._id,
-          openid: invitedUser.openid || invitedUser._openid,
+          openid: invitedOpenid,
           nickName: invitedUser.nickName || '好友',
           avatarUrl,
           inviteTime,
           swapCount: invitedUser.swapCount || 0,
-          hasFirstSwap: (invitedUser.swapCount || 0) >= 1
+          hasFirstSwap: (invitedUser.swapCount || 0) >= 1,
+          // 奖励信息
+          signupCashReward,
+          signupPointsReward,
+          swapCashReward,
+          swapPointsReward,
+          totalCashReward: signupCashReward + swapCashReward,
+          totalPointsReward: signupPointsReward + swapPointsReward
         }
       }))
 
-      // 计算累计奖励积分
-      const INVITE_REWARD = 10
-      const FIRST_SWAP_REWARD = 20
-      const signupRewards = inviteList.length * INVITE_REWARD
+      // 获取邀请配置
+      const configRes = await db.collection('system_config').where({
+        configKey: _.in(['invite_reward_inviter', 'invite_reward_invitee', 'invite_cash_reward_inviter', 'invite_cash_reward_invitee', 'first_swap_cash_reward'])
+      }).get()
+      
+      const configs = {}
+      configRes.data.forEach(item => {
+        configs[item.configKey] = item.configValue
+      })
+      
+      // 设置默认值（积分奖励）
+      const INVITER_REWARD = configs['invite_reward_inviter'] || 10  // 邀请人获得10积分
+      const INVITEE_REWARD = configs['invite_reward_invitee'] || 5   // 被邀请人获得5积分
+      
+      // 设置默认值（现金奖励）
+      const INVITER_CASH_REWARD = parseFloat(configs['invite_cash_reward_inviter']) || 5.00  // 邀请人获得5元现金
+      const INVITEE_CASH_REWARD = parseFloat(configs['invite_cash_reward_invitee']) || 2.00  // 被邀请人获得2元现金
+      const FIRST_SWAP_CASH_REWARD = parseFloat(configs['first_swap_cash_reward']) || 10.00  // 首次互换奖励10元现金
+
+      // 查询实际的邀请奖励记录（现金奖励）
+      const inviteRewardsRes = await db.collection('invite_rewards').where({
+        inviterOpenid: openid
+      }).get()
+      
+      // 计算累计现金奖励
+      let cashSignupRewards = 0
+      let cashSwapRewards = 0
+      let cashTotalRewards = 0
+      
+      if (inviteRewardsRes.data && inviteRewardsRes.data.length > 0) {
+        inviteRewardsRes.data.forEach(reward => {
+          if (reward.type === 'signup') {
+            cashSignupRewards += parseFloat(reward.cashAmount || 0)
+          } else if (reward.type === 'first_swap') {
+            cashSwapRewards += parseFloat(reward.cashAmount || 0)
+          }
+        })
+        cashTotalRewards = cashSignupRewards + cashSwapRewards
+      } else {
+        // 如果没有记录，使用默认值计算
+        cashSignupRewards = inviteList.length * INVITER_CASH_REWARD
+        const firstSwapCount = inviteList.filter(f => f.hasFirstSwap).length
+        cashSwapRewards = firstSwapCount * FIRST_SWAP_CASH_REWARD
+        cashTotalRewards = cashSignupRewards + cashSwapRewards
+      }
+
+      // 计算累计积分奖励
+      const signupRewards = inviteList.length * INVITER_REWARD
       const firstSwapCount = inviteList.filter(f => f.hasFirstSwap).length
-      const swapRewards = firstSwapCount * FIRST_SWAP_REWARD
+      const swapRewards = firstSwapCount * 20  // 首次互换奖励20积分（与orderMgr保持一致）
       const totalRewards = signupRewards + swapRewards
 
       return {
@@ -900,12 +1034,22 @@ exports.main = async (event, context) => {
         inviteCode,
         inviteCount: inviteList.length,
         inviteList,
+        myWalletBalance: user ? (user.walletBalance || 0) : 0,
         myPoints: user ? (user.points || 0) : 0,
         rewardSummary: {
           signupRewards,
           swapRewards,
           totalRewards,
-          firstSwapCount
+          firstSwapCount,
+          inviterReward: INVITER_REWARD,
+          inviteeReward: INVITEE_REWARD,
+          // 现金奖励
+          cashSignupRewards,
+          cashSwapRewards,
+          cashTotalRewards,
+          inviterCashReward: INVITER_CASH_REWARD,
+          inviteeCashReward: INVITEE_CASH_REWARD,
+          firstSwapCashReward: FIRST_SWAP_CASH_REWARD
         }
       }
     } catch (e) {
@@ -955,6 +1099,26 @@ exports.main = async (event, context) => {
         return { success: false, error: '不能邀请自己' }
       }
 
+      // ====== 防作弊检查 ======
+      // 1. 检查邀请人今日邀请次数是否超过限制（默认10次）
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const todayInvitesRes = await db.collection('invite_rewards').where({
+        inviterOpenid: inviter._openid,
+        type: 'signup',
+        createTime: _.gte(today)
+      }).count()
+      
+      const MAX_DAILY_INVITES = 10
+      if (todayInvitesRes.total >= MAX_DAILY_INVITES) {
+        return { success: false, error: '今日邀请次数已达上限' }
+      }
+
+      // 2. 检查被邀请人是否已绑定过其他邀请关系
+      if (currentUser.invitedBy) {
+        return { success: false, error: '已绑定过邀请关系' }
+      }
+
       // 绑定邀请关系（用 _id 精准更新）
       await db.collection('users').doc(currentUser._id).update({
         data: {
@@ -963,46 +1127,83 @@ exports.main = async (event, context) => {
         }
       })
 
+      // 获取邀请配置
+      const configRes = await db.collection('system_config').where({
+        configKey: _.in(['invite_reward_inviter', 'invite_reward_invitee', 'invite_cash_reward_inviter', 'invite_cash_reward_invitee'])
+      }).get()
+      
+      const configs = {}
+      configRes.data.forEach(item => {
+        configs[item.configKey] = item.configValue
+      })
+      
+      // 设置默认值（积分奖励）
+      const INVITER_REWARD = configs['invite_reward_inviter'] || 10  // 邀请人获得10积分
+      const INVITEE_REWARD = configs['invite_reward_invitee'] || 5   // 被邀请人获得5积分
+      
+      // 设置默认值（现金奖励）
+      const INVITER_CASH_REWARD = parseFloat(configs['invite_cash_reward_inviter']) || 5.00  // 邀请人获得5元现金
+      const INVITEE_CASH_REWARD = parseFloat(configs['invite_cash_reward_invitee']) || 2.00  // 被邀请人获得2元现金
+
       // 给邀请人增加积分奖励（用 _id 精准更新）
-      const INVITE_REWARD = 10
       await db.collection('users').doc(inviter._id).update({
         data: {
-          points: _.inc(INVITE_REWARD),
-          inviteCount: _.inc(1)
+          points: _.inc(INVITER_REWARD),
+          inviteCount: _.inc(1),
+          updateTime: db.serverDate()
         }
       })
 
       // 记录邀请人积分变动
       await db.collection('points_log').add({
         data: {
-          _openid: inviter._openid,
-          type: 'invite',
-          amount: INVITE_REWARD,
-          desc: '邀请好友奖励',
+          openid: inviter._openid,
+          type: 'invite_signup',
+          amount: INVITER_REWARD,
+          desc: '邀请好友注册奖励',
+          relatedUser: openid,
           createTime: db.serverDate()
         }
       })
 
-      // 记录被邀请用户的积分（用 _id 精准更新）
-      await db.collection('users').doc(currentUser._id).update({
+      // 记录到 invite_rewards 集合
+      await db.collection('invite_rewards').add({
         data: {
-          points: _.inc(INVITE_REWARD)
+          inviterOpenid: inviter._openid,
+          invitedOpenid: openid,
+          type: 'signup',
+          amount: INVITER_REWARD,
+          cashAmount: INVITER_CASH_REWARD,
+          createTime: db.serverDate()
         }
       })
 
+      // 给被邀请人增加积分奖励（用 _id 精准更新）
+      await db.collection('users').doc(currentUser._id).update({
+        data: {
+          points: _.inc(INVITEE_REWARD),
+          updateTime: db.serverDate()
+        }
+      })
+
+      // 记录被邀请人积分变动
       await db.collection('points_log').add({
         data: {
-          _openid: openid,
-          type: 'invited',
-          amount: INVITE_REWARD,
+          openid: openid,
+          type: 'be_invited',
+          amount: INVITEE_REWARD,
           desc: '被邀请注册奖励',
+          relatedUser: inviter._openid,
           createTime: db.serverDate()
         }
       })
 
       return {
         success: true,
-        reward: INVITE_REWARD
+        reward: {
+          inviter: INVITER_REWARD,
+          invitee: INVITEE_REWARD
+        }
       }
     } catch (e) {
       return { success: false, error: e.message }

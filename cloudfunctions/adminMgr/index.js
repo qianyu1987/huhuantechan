@@ -5,6 +5,17 @@ const db = cloud.database()
 const _ = db.command
 const $ = db.command.aggregate
 
+// 辅助：根据押金金额推算代购等级
+function _calcLevelFromDeposit(amount) {
+  if (amount >= 1000) return 5
+  if (amount >= 500) return 4
+  if (amount >= 200) return 3
+  if (amount >= 100) return 2
+  if (amount >= 50) return 1
+  return 0
+}
+
+
 // 简单的内存缓存
 const _cacheStore = new Map()
 const simpleCache = {
@@ -39,6 +50,7 @@ async function verifySuperAdmin(wxContext) {
 exports.main = async (event, context) => {
   const { action } = event
   const wxContext = cloud.getWXContext()
+  const adminOpenid = wxContext.OPENID
   
   // 检查是否是超级管理员（用于敏感操作）
   const isSuperAdmin = await verifySuperAdmin(wxContext)
@@ -1487,6 +1499,370 @@ exports.main = async (event, context) => {
         }
       }
 
+      // ──────────────────────────────────────────────────
+      // 押金审批：获取押金申请列表
+      // ──────────────────────────────────────────────────
+      case 'getDepositApplyList': {
+        if (!isSuperAdmin) return { success: false, error: '无权限' }
+        try {
+          const { page = 1, pageSize = 20, filter = 'pending' } = event
+          const skip = (page - 1) * pageSize
+
+          // 查 daigouDepositApply 集合
+          let query = db.collection('daigouDepositApply')
+          if (filter !== 'all') {
+            query = query.where({ status: filter })
+          }
+
+          let total = 0
+          try {
+            const countRes = await query.count()
+            total = countRes.total
+          } catch (e) {
+            if (e.errCode === -502005) return { success: true, list: [], total: 0 }
+            throw e
+          }
+
+          const listRes = await query
+            .orderBy('createTime', 'desc')
+            .skip(skip)
+            .limit(pageSize)
+            .get()
+
+          const list = listRes.data || []
+
+          // 统计各状态数量
+          let stats = { pending: 0, approved: 0, rejected: 0 }
+          try {
+            const allRes = await db.collection('daigouDepositApply')
+              .field({ status: true })
+              .limit(500)
+              .get()
+            ;(allRes.data || []).forEach(r => {
+              if (r.status === 'pending') stats.pending++
+              else if (r.status === 'approved') stats.approved++
+              else if (r.status === 'rejected') stats.rejected++
+            })
+          } catch (e) { /* 忽略统计失败 */ }
+
+          // 格式化时间
+          const formatTime = (t) => {
+            if (!t) return ''
+            try {
+              return new Date(typeof t === 'object' && t.$date ? t.$date : t).toLocaleString('zh-CN')
+            } catch (_) { return '' }
+          }
+          const formatted = list.map(r => ({
+            ...r,
+            createTimeText: formatTime(r.createTime),
+            handleTimeText: formatTime(r.handleTime),
+            // 兼容旧版没有以下字段的记录
+            realName: r.realName || '',
+            phone: r.phone || '',
+            wechatId: r.wechatId || '',
+            transferProof: r.transferProof || '',
+            targetLevel: r.targetLevel || _calcLevelFromDeposit(r.depositAmount || 0),
+            remark: r.remark || ''
+          }))
+
+          return { success: true, list: formatted, total, stats }
+        } catch (e) {
+          console.error('[getDepositApplyList]', e)
+          return { success: false, error: e.message }
+        }
+      }
+
+      // ──────────────────────────────────────────────────
+      // 押金审批：通过 - 自动升级代购等级 + 更新余额
+      // ──────────────────────────────────────────────────
+      case 'approveDeposit': {
+        if (!isSuperAdmin) return { success: false, error: '无权限' }
+        try {
+          const { applyId, userOpenid, depositAmount } = event
+          if (!applyId || !userOpenid) return { success: false, error: '参数不完整' }
+
+          // 读取申请记录，获取 targetLevel
+          let applyDoc = null
+          try {
+            const applyRes = await db.collection('daigouDepositApply').doc(applyId).get()
+            applyDoc = applyRes.data
+          } catch (e) { /* 忽略读取失败 */ }
+
+          const amount = Number(depositAmount || (applyDoc && applyDoc.depositAmount)) || 0
+          const targetLevel = (applyDoc && applyDoc.targetLevel) || _calcLevelFromDeposit(amount)
+
+          // 等级对应费率表
+          const FEE_RATES = { 0: 8.0, 1: 7.0, 2: 6.5, 3: 6.0, 4: 5.5, 5: 5.0, 6: 4.0 }
+
+          // 更新申请记录状态
+          await db.collection('daigouDepositApply').doc(applyId).update({
+            data: {
+              status: 'approved',
+              handleTime: db.serverDate(),
+              handleBy: 'admin',
+              updateTime: db.serverDate()
+            }
+          })
+
+          // 更新用户：depositPaid累加 + 余额同步 + 等级升级 + isDaigouVerified
+          if (amount > 0) {
+            await db.collection('users').where({ _openid: userOpenid }).update({
+              data: {
+                'daigouStats.depositPaid': _.inc(amount),
+                'daigouStats.depositBalance': _.inc(amount),
+                daigouLevel: targetLevel,
+                isDaigouVerified: true,
+                'daigouStats.feeRate': FEE_RATES[targetLevel] || 7.0,
+                updateTime: db.serverDate()
+              }
+            })
+          }
+
+          console.log(`[approveDeposit] 审批通过 applyId=${applyId} level=${targetLevel} amount=${amount}`)
+          return {
+            success: true,
+            message: `押金审批通过，用户已升级为LV${targetLevel}代购`,
+            targetLevel,
+            amount
+          }
+        } catch (e) {
+          console.error('[approveDeposit]', e)
+          return { success: false, error: e.message }
+        }
+      }
+
+      // ──────────────────────────────────────────────────
+      // 押金审批：拒绝
+      // ──────────────────────────────────────────────────
+      case 'rejectDeposit': {
+        if (!isSuperAdmin) return { success: false, error: '无权限' }
+        try {
+          const { applyId, userOpenid, reason = '审核未通过' } = event
+          if (!applyId) return { success: false, error: '缺少申请ID' }
+
+          await db.collection('daigouDepositApply').doc(applyId).update({
+            data: {
+              status: 'rejected',
+              rejectReason: reason,
+              handleTime: db.serverDate(),
+              handleBy: 'admin',
+              updateTime: db.serverDate()
+            }
+          })
+
+          return { success: true, message: '已拒绝押金申请' }
+        } catch (e) {
+          console.error('[rejectDeposit]', e)
+          return { success: false, error: e.message }
+        }
+      }
+
+      // ──────────────────────────────────────────────────
+      // 代购等级管理：获取代购等级用户列表
+      // ──────────────────────────────────────────────────
+      case 'getDaigouLevelUsers': {
+        if (!isSuperAdmin) return { success: false, error: '无权限' }
+        try {
+          const { page = 1, pageSize = 20, keyword = '', filter = 'all' } = event
+          const skip = (page - 1) * pageSize
+
+          // 查询有 daigouStats 字段的用户（代购者）
+          let allRes
+          if (keyword) {
+            allRes = await db.collection('users')
+              .where({
+                nickName: db.RegExp({ regexp: keyword, options: 'i' })
+              })
+              .field({
+                _openid: true, openid: true, nickName: true, avatarUrl: true,
+                phoneNumber: true, phone: true, creditScore: true, points: true,
+                daigouStats: true, daigouLevel: true, isDaigouVerified: true
+              })
+              .limit(500)
+              .get()
+          } else {
+            allRes = await db.collection('users')
+              .field({
+                _openid: true, openid: true, nickName: true, avatarUrl: true,
+                phoneNumber: true, phone: true, creditScore: true, points: true,
+                daigouStats: true, daigouLevel: true, isDaigouVerified: true
+              })
+              .limit(500)
+              .get()
+          }
+
+          let users = (allRes.data || [])
+          // 筛选：只看已认证代购者
+          if (filter === 'verified') {
+            users = users.filter(u => u.isDaigouVerified === true)
+          } else if (filter === 'has_deposit') {
+            users = users.filter(u => u.daigouStats && u.daigouStats.depositPaid > 0)
+          } else if (filter === 'no_deposit') {
+            users = users.filter(u => !u.daigouStats || !u.daigouStats.depositPaid || u.daigouStats.depositPaid === 0)
+          }
+
+          const total = users.length
+          const paged = users.slice(skip, skip + pageSize)
+
+          // 等级费率表
+          const LEVEL_RATE = { 0: 8.0, 1: 7.0, 2: 6.5, 3: 6.0, 4: 5.5, 5: 5.0, 6: 4.0 }
+          const LEVEL_NAMES = { 0: '新人', 1: '初级', 2: '进阶', 3: '资深', 4: '金牌', 5: '钻石', 6: '官方认证' }
+
+          const list = paged.map(u => {
+            const stats = u.daigouStats || {}
+            const level = u.daigouLevel !== undefined ? u.daigouLevel : 0
+            return {
+              _id: u._id,
+              openid: u._openid || u.openid,
+              nickName: u.nickName || '未知用户',
+              avatarUrl: u.avatarUrl || '',
+              creditScore: u.creditScore || 100,
+              points: u.points || 0,
+              daigouLevel: level,
+              daigouLevelName: LEVEL_NAMES[level] || '新人',
+              feeRate: LEVEL_RATE[level] || 8.0,
+              isDaigouVerified: u.isDaigouVerified || false,
+              depositPaid: stats.depositPaid || 0,
+              depositBalance: stats.depositBalance !== undefined ? stats.depositBalance : (stats.depositPaid || 0),
+              totalOrders: stats.totalOrders || 0,
+              completedOrders: stats.completedOrders || 0,
+              positiveRate: stats.positiveRate || 0,
+              phone: u.phoneNumber || u.phone || ''
+            }
+          })
+
+          return { success: true, list, total, page, pageSize }
+        } catch (e) {
+          console.error('[getDaigouLevelUsers]', e)
+          return { success: false, error: e.message }
+        }
+      }
+
+      // ──────────────────────────────────────────────────
+      // 代购等级管理：调整用户代购等级
+      // ──────────────────────────────────────────────────
+      case 'adjustDaigouLevel': {
+        if (!isSuperAdmin) return { success: false, error: '无权限' }
+        try {
+          const { userOpenid, level, reason = '管理员调整等级' } = event
+          if (!userOpenid || level === undefined) return { success: false, error: '参数不完整' }
+          if (level < 0 || level > 6) return { success: false, error: '等级范围0-6' }
+
+          // 查用户
+          const userRes = await db.collection('users').where({ _openid: userOpenid }).get()
+          if (!userRes.data || userRes.data.length === 0) return { success: false, error: '用户不存在' }
+          const user = userRes.data[0]
+          const oldLevel = user.daigouLevel || 0
+
+          await db.collection('users').doc(user._id).update({
+            data: {
+              daigouLevel: level,
+              daigouLevelUpdatedAt: db.serverDate(),
+              daigouLevelUpdatedBy: 'admin'
+            }
+          })
+
+          // 记录日志
+          await db.collection('admin_logs').add({
+            data: {
+              _openid: wxContext.OPENID,
+              type: 'adjust_daigou_level',
+              targetId: userOpenid,
+              action: `等级 LV${oldLevel} → LV${level}`,
+              detail: { oldLevel, newLevel: level, reason },
+              createTime: db.serverDate()
+            }
+          })
+
+          return { success: true, message: `代购等级已调整为 LV${level}` }
+        } catch (e) {
+          console.error('[adjustDaigouLevel]', e)
+          return { success: false, error: e.message }
+        }
+      }
+
+      // ──────────────────────────────────────────────────
+      // 押金管理：管理员直接录入/修改用户押金
+      // ──────────────────────────────────────────────────
+      case 'setUserDeposit': {
+        if (!isSuperAdmin) return { success: false, error: '无权限' }
+        try {
+          const { userOpenid, depositAmount, note = '管理员录入' } = event
+          if (!userOpenid || depositAmount === undefined) return { success: false, error: '参数不完整' }
+          const amount = Number(depositAmount)
+          if (isNaN(amount) || amount < 0) return { success: false, error: '押金金额无效' }
+
+          const userRes = await db.collection('users').where({ _openid: userOpenid }).get()
+          if (!userRes.data || userRes.data.length === 0) return { success: false, error: '用户不存在' }
+          const user = userRes.data[0]
+          const oldStats = user.daigouStats || {}
+          const oldDeposit = oldStats.depositPaid || 0
+          const oldBalance = oldStats.depositBalance !== undefined ? oldStats.depositBalance : oldDeposit
+          // 计算新余额：余额按比例调整（如果是增加，余额对应增加）
+          const delta = amount - oldDeposit
+          const newBalance = Math.max(0, oldBalance + delta)
+
+          await db.collection('users').doc(user._id).update({
+            data: {
+              'daigouStats.depositPaid': amount,
+              'daigouStats.depositBalance': newBalance,
+              updateTime: db.serverDate()
+            }
+          })
+
+          // 记录押金变动日志
+          await db.collection('deposit_logs').add({
+            data: {
+              userOpenid,
+              type: 'admin_set',
+              oldAmount: oldDeposit,
+              newAmount: amount,
+              delta,
+              note,
+              operatorOpenid: wxContext.OPENID,
+              createTime: db.serverDate()
+            }
+          })
+
+          return { success: true, message: `押金已更新为 ¥${amount}，余额 ¥${newBalance}` }
+        } catch (e) {
+          console.error('[setUserDeposit]', e)
+          return { success: false, error: e.message }
+        }
+      }
+
+      // ──────────────────────────────────────────────────
+      // 押金管理：获取用户押金变动日志
+      // ──────────────────────────────────────────────────
+      case 'getDepositLogs': {
+        if (!isSuperAdmin) return { success: false, error: '无权限' }
+        try {
+          const { userOpenid, page = 1, pageSize = 20 } = event
+          let query = db.collection('deposit_logs')
+          if (userOpenid) {
+            query = query.where({ userOpenid })
+          }
+          const res = await query
+            .orderBy('createTime', 'desc')
+            .skip((page - 1) * pageSize)
+            .limit(pageSize)
+            .get()
+          const list = (res.data || []).map(r => ({
+            ...r,
+            createTimeText: r.createTime
+              ? new Date(
+                  typeof r.createTime === 'object' && r.createTime.$date
+                    ? r.createTime.$date
+                    : r.createTime
+                ).toLocaleString('zh-CN')
+              : ''
+          }))
+          return { success: true, list }
+        } catch (e) {
+          return { success: false, error: e.message }
+        }
+      }
+
       // 初始化集合检测（管理员专用）
       case 'initCollections': {
         if (!isSuperAdmin) return { success: false, error: '无权限' }
@@ -1510,6 +1886,397 @@ exports.main = async (event, context) => {
           collections: result,
           missing,
           tip: missing.length > 0 ? `请在微信云开发控制台手动创建以下集合：${missing.join(', ')}` : '所有集合正常'
+        }
+      }
+
+      // ══════════════════════════════════════════
+      // 钱包充值审批
+      // ══════════════════════════════════════════
+
+      // 获取充值申请列表
+      case 'getRechargeApplies': {
+        if (!isSuperAdmin) return { success: false, error: '无管理员权限' }
+        try {
+          const { page = 1, pageSize = 20, status = '' } = event
+          const skip = (page - 1) * pageSize
+
+          let whereClause = {}
+          if (status) whereClause.status = status
+
+          const [listRes, countRes] = await Promise.all([
+            db.collection('recharge_apply')
+              .where(whereClause)
+              .orderBy('createTime', 'desc')
+              .skip(skip)
+              .limit(pageSize)
+              .get(),
+            db.collection('recharge_apply')
+              .where(whereClause)
+              .count()
+          ])
+
+          // 批量获取用户余额信息
+          const openids = [...new Set((listRes.data || []).map(r => r._openid))]
+          let userMap = {}
+          if (openids.length > 0) {
+            const usersRes = await db.collection('users')
+              .where({ _openid: _.in(openids) })
+              .field({ _openid: true, nickName: true, avatarUrl: true, walletBalance: true })
+              .get()
+            for (const u of (usersRes.data || [])) {
+              userMap[u._openid] = u
+            }
+          }
+
+          const statusTextMap = { pending: '待审核', approved: '已通过', rejected: '已拒绝', cancelled: '已取消' }
+
+          return {
+            success: true,
+            list: (listRes.data || []).map(item => ({
+              id: item._id,
+              applyNo: item.applyNo || '',
+              amount: item.amount || 0,
+              status: item.status,
+              statusText: statusTextMap[item.status] || item.status,
+              remark: item.remark || '',
+              adminNote: item.adminNote || '',
+              transferProof: item.transferProof || '',
+              userInfo: userMap[item._openid] || item.userInfo || {},
+              currentWalletBalance: (userMap[item._openid] && userMap[item._openid].walletBalance) || 0,
+              createTime: item.createTime,
+              updateTime: item.updateTime
+            })),
+            total: countRes.total || 0
+          }
+        } catch (e) {
+          return { success: false, error: e.message }
+        }
+      }
+
+      // 审批通过充值申请
+      case 'approveRecharge': {
+        if (!isSuperAdmin) return { success: false, error: '无管理员权限' }
+        try {
+          const { applyId, adminNote = '审批通过' } = event
+          if (!applyId) return { success: false, error: '缺少申请ID' }
+
+          const applyRes = await db.collection('recharge_apply').doc(applyId).get()
+          const apply = applyRes.data
+          if (!apply) return { success: false, error: '申请不存在' }
+
+          const statusTextMap = { pending: '待审核', approved: '已通过', rejected: '已拒绝', cancelled: '已取消' }
+          if (apply.status !== 'pending') {
+            return { success: false, error: `该申请已是"${statusTextMap[apply.status] || apply.status}"状态` }
+          }
+
+          const amount = apply.amount || 0
+
+          // 获取用户
+          const userRes = await db.collection('users')
+            .where({ _openid: apply._openid })
+            .limit(1)
+            .get()
+          if (!userRes.data || userRes.data.length === 0) {
+            return { success: false, error: '申请用户不存在' }
+          }
+          const user = userRes.data[0]
+          const oldBalance = user.walletBalance || 0
+          const newBalance = Math.round((oldBalance + amount) * 100) / 100
+
+          // 更新申请状态
+          await db.collection('recharge_apply').doc(applyId).update({
+            data: {
+              status: 'approved',
+              adminNote,
+              approvedBy: adminOpenid,
+              approvedAt: db.serverDate(),
+              updateTime: db.serverDate()
+            }
+          })
+
+          // 增加钱包余额
+          await db.collection('users').doc(user._id).update({
+            data: {
+              walletBalance: newBalance,
+              updateTime: db.serverDate()
+            }
+          })
+
+          // 写钱包流水
+          await db.collection('wallet_logs').add({
+            data: {
+              _openid: apply._openid,
+              type: 'recharge',
+              flow: 'income',
+              title: '钱包充值',
+              amount,
+              balanceBefore: oldBalance,
+              balanceAfter: newBalance,
+              relatedId: applyId,
+              applyNo: apply.applyNo || '',
+              remark: adminNote,
+              status: 'done',
+              createTime: db.serverDate()
+            }
+          })
+
+          // 记录管理日志
+          await db.collection('admin_logs').add({
+            data: {
+              _openid: adminOpenid,
+              type: 'recharge_approve',
+              targetId: applyId,
+              detail: { applyNo: apply.applyNo, amount, userOpenid: apply._openid, newBalance },
+              createTime: db.serverDate()
+            }
+          })
+
+          return {
+            success: true,
+            amount,
+            newBalance,
+            message: `已通过充值申请，充值 ¥${amount.toFixed(2)}，用户余额更新为 ¥${newBalance.toFixed(2)}`
+          }
+        } catch (e) {
+          return { success: false, error: e.message }
+        }
+      }
+
+      // 拒绝充值申请
+      case 'rejectRecharge': {
+        if (!isSuperAdmin) return { success: false, error: '无管理员权限' }
+        try {
+          const { applyId, adminNote = '申请被拒绝' } = event
+          if (!applyId) return { success: false, error: '缺少申请ID' }
+
+          const applyRes = await db.collection('recharge_apply').doc(applyId).get()
+          const apply = applyRes.data
+          if (!apply) return { success: false, error: '申请不存在' }
+          if (apply.status !== 'pending') return { success: false, error: '该申请已处理' }
+
+          await db.collection('recharge_apply').doc(applyId).update({
+            data: {
+              status: 'rejected',
+              adminNote,
+              rejectedBy: adminOpenid,
+              rejectedAt: db.serverDate(),
+              updateTime: db.serverDate()
+            }
+          })
+
+          return { success: true, message: '已拒绝该充值申请' }
+        } catch (e) {
+          return { success: false, error: e.message }
+        }
+      }
+
+      // 管理员直接调整钱包余额
+      case 'adjustWalletBalance': {
+        if (!isSuperAdmin) return { success: false, error: '无管理员权限' }
+        try {
+          const { targetOpenid, amount, remark = '管理员调整' } = event
+          if (!targetOpenid || amount === undefined) return { success: false, error: '参数不完整' }
+
+          const userRes = await db.collection('users')
+            .where({ _openid: targetOpenid })
+            .limit(1)
+            .get()
+          if (!userRes.data || userRes.data.length === 0) {
+            return { success: false, error: '用户不存在' }
+          }
+          const user = userRes.data[0]
+          const oldBalance = user.walletBalance || 0
+          const adj = parseFloat(amount)
+          const newBalance = Math.max(0, Math.round((oldBalance + adj) * 100) / 100)
+
+          await db.collection('users').doc(user._id).update({
+            data: { walletBalance: newBalance, updateTime: db.serverDate() }
+          })
+
+          await db.collection('wallet_logs').add({
+            data: {
+              _openid: targetOpenid,
+              type: 'admin_adjust',
+              flow: adj >= 0 ? 'income' : 'expense',
+              title: adj >= 0 ? '管理员充值' : '管理员扣款',
+              amount: Math.abs(adj),
+              balanceBefore: oldBalance,
+              balanceAfter: newBalance,
+              remark,
+              status: 'done',
+              createTime: db.serverDate()
+            }
+          })
+
+          return { success: true, oldBalance, newBalance, message: `余额调整成功` }
+        } catch (e) {
+          return { success: false, error: e.message }
+        }
+      }
+
+      // ========== 系统配置管理 ==========
+      case 'getSystemConfig': {
+        if (!isSuperAdmin) return { success: false, error: '无管理员权限' }
+        try {
+          const { configKey } = event
+          let query = db.collection('system_config')
+          if (configKey) {
+            query = query.where({ configKey })
+          }
+          const res = await query.get()
+          const configs = {}
+          res.data.forEach(item => {
+            configs[item.configKey] = item.configValue
+          })
+          return { success: true, configs }
+        } catch (e) {
+          return { success: false, error: e.message }
+        }
+      }
+
+      case 'updateSystemConfig': {
+        if (!isSuperAdmin) return { success: false, error: '无管理员权限' }
+        try {
+          const { configKey, configValue } = event
+          if (!configKey || configValue === undefined) {
+            return { success: false, error: '参数不完整' }
+          }
+
+          // 检查配置是否存在
+          const existRes = await db.collection('system_config').where({ configKey }).get()
+          
+          if (existRes.data && existRes.data.length > 0) {
+            // 更新现有配置
+            await db.collection('system_config').doc(existRes.data[0]._id).update({
+              data: {
+                configValue,
+                updateTime: db.serverDate()
+              }
+            })
+          } else {
+            // 创建新配置
+            await db.collection('system_config').add({
+              data: {
+                configKey,
+                configValue,
+                createTime: db.serverDate(),
+                updateTime: db.serverDate()
+              }
+            })
+          }
+
+          // 清除缓存
+          simpleCache.delete('system_config')
+
+          return { success: true, message: '配置已更新' }
+        } catch (e) {
+          return { success: false, error: e.message }
+        }
+      }
+
+      // ========== 邀请裂变配置管理 ==========
+      case 'getInviteConfig': {
+        try {
+          // 获取或初始化邀请裂变配置
+          const configKeys = [
+            'invite_reward_inviter',
+            'invite_reward_invitee',
+            'withdrawal_threshold'
+          ]
+          
+          const configs = {}
+          for (const key of configKeys) {
+            const res = await db.collection('system_config').where({ configKey: key }).get()
+            if (res.data && res.data.length > 0) {
+              configs[key] = res.data[0].configValue
+            } else {
+              // 设置默认值
+              let defaultValue
+              switch (key) {
+                case 'invite_reward_inviter': defaultValue = 0.3; break
+                case 'invite_reward_invitee': defaultValue = 0.1; break
+                case 'withdrawal_threshold': defaultValue = 30; break
+                default: defaultValue = 0
+              }
+              configs[key] = defaultValue
+              
+              // 保存默认值到数据库
+              await db.collection('system_config').add({
+                data: {
+                  configKey: key,
+                  configValue: defaultValue,
+                  createTime: db.serverDate(),
+                  updateTime: db.serverDate()
+                }
+              })
+            }
+          }
+
+          return {
+            success: true,
+            configs,
+            message: '获取邀请配置成功'
+          }
+        } catch (e) {
+          return { success: false, error: e.message }
+        }
+      }
+
+      case 'updateInviteConfig': {
+        if (!isSuperAdmin) return { success: false, error: '无管理员权限' }
+        try {
+          const { inviteRewardInviter, inviteRewardInvitee, withdrawalThreshold } = event
+          
+          const updates = []
+          if (inviteRewardInviter !== undefined) {
+            updates.push({
+              key: 'invite_reward_inviter',
+              value: parseFloat(inviteRewardInviter)
+            })
+          }
+          if (inviteRewardInvitee !== undefined) {
+            updates.push({
+              key: 'invite_reward_invitee',
+              value: parseFloat(inviteRewardInvitee)
+            })
+          }
+          if (withdrawalThreshold !== undefined) {
+            updates.push({
+              key: 'withdrawal_threshold',
+              value: parseFloat(withdrawalThreshold)
+            })
+          }
+
+          for (const update of updates) {
+            const existRes = await db.collection('system_config').where({ configKey: update.key }).get()
+            if (existRes.data && existRes.data.length > 0) {
+              await db.collection('system_config').doc(existRes.data[0]._id).update({
+                data: {
+                  configValue: update.value,
+                  updateTime: db.serverDate()
+                }
+              })
+            } else {
+              await db.collection('system_config').add({
+                data: {
+                  configKey: update.key,
+                  configValue: update.value,
+                  createTime: db.serverDate(),
+                  updateTime: db.serverDate()
+                }
+              })
+            }
+          }
+
+          // 清除缓存
+          simpleCache.delete('system_config')
+
+          return {
+            success: true,
+            message: '邀请配置已更新'
+          }
+        } catch (e) {
+          return { success: false, error: e.message }
         }
       }
 

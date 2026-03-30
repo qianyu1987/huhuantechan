@@ -816,7 +816,6 @@ exports.main = async (event, context) => {
       const sellerLevel = calcDaigouLevel(sellerStats)
 
       // ── 卖家等级限制校验 ──
-      const price = product.daigou.price
       if (price > sellerLevel.maxOrderAmount) {
         return {
           success: false,
@@ -1172,12 +1171,28 @@ exports.main = async (event, context) => {
         })
       }
 
+      // 等级对应服务费率（%）—— 下标与代购等级1-7对应
+      // level 1=新手8%, 2=见习7%, 3=普通6.5%, 4=资深6%, 5=金牌5.5%, 6=钻石5%, 7=传奇4%
+      const LEVEL_FEE_RATES = { 1: 8.0, 2: 7.0, 3: 6.5, 4: 6.0, 5: 5.5, 6: 5.0, 7: 4.0 }
+
       const sellerUser = await findUser(order.sellerOpenid)
       if (sellerUser) {
+        // 先算出完成后的新订单数，重新计算代购等级
+        const newCompletedOrders = ((sellerUser.daigouStats && sellerUser.daigouStats.completedOrders) || 0) + 1
+        const newSellerStats = {
+          completedOrders: newCompletedOrders,
+          creditScore: sellerUser.creditScore || 60,
+          depositPaid: (sellerUser.daigouStats && sellerUser.daigouStats.depositPaid) || 0,
+          isCertified: (sellerUser.daigouStats && sellerUser.daigouStats.isCertified) || false
+        }
+        const newLevelInfo = calcDaigouLevel(newSellerStats)
+
         await db.collection('users').doc(sellerUser._id).update({
           data: {
             points: _.inc(SELLER_REWARD_POINTS),
             'daigouStats.completedOrders': _.inc(1),
+            'daigouStats.level': newLevelInfo.level,    // 同步写入等级数字
+            daigouLevel: newLevelInfo.level,             // 兼容旧字段
             updateTime: db.serverDate()
           }
         })
@@ -1191,6 +1206,56 @@ exports.main = async (event, context) => {
             createTime: db.serverDate()
           }
         })
+
+        // ── 从钱包余额扣取平台服务费 ──
+        // daigouStats.level 存的是1-7等级数字，若无则默认1
+        const sellerLevelNum = (sellerUser.daigouStats && sellerUser.daigouStats.level) || sellerUser.daigouLevel || 1
+        const feeRate = (LEVEL_FEE_RATES[sellerLevelNum] || 8.0) / 100
+        const orderAmount = order.price || actualPrice || 0
+        const serviceFee = Math.round(orderAmount * feeRate * 100) / 100   // 保留2位小数
+        const oldWalletBalance = sellerUser.walletBalance || 0
+        const newWalletBalance = Math.max(0, Math.round((oldWalletBalance - serviceFee) * 100) / 100)
+
+        if (serviceFee > 0) {
+          try {
+            // 从钱包余额扣除服务费
+            await db.collection('users').doc(sellerUser._id).update({
+              data: {
+                walletBalance: newWalletBalance,
+                updateTime: db.serverDate()
+              }
+            })
+            // 记录钱包流水（wallet_logs）
+            await db.collection('wallet_logs').add({
+              data: {
+                _openid: order.sellerOpenid,
+                type: 'service_fee',
+                flow: 'expense',
+                title: '代购平台服务费',
+                amount: serviceFee,
+                balanceBefore: oldWalletBalance,
+                balanceAfter: newWalletBalance,
+                relatedId: orderId,
+                feeRate: feeRate * 100,   // 存储为百分比，例如 7.0
+                sellerLevel: sellerLevelNum,
+                orderAmount,
+                remark: `订单 ${orderId} 服务费（LV${sellerLevelNum} ${feeRate * 100}%）`,
+                status: 'done',
+                createTime: db.serverDate()
+              }
+            })
+            // 把服务费写回订单记录
+            await db.collection('daigouOrders').doc(orderId).update({
+              data: {
+                serviceFeeDeducted: serviceFee,
+                walletBalanceAfter: newWalletBalance
+              }
+            })
+          } catch (feeErr) {
+            // 扣费失败不影响确认收货流程，仅记录错误
+            console.error('[confirmReceived] 钱包扣费失败:', feeErr)
+          }
+        }
       }
 
       return {
@@ -1260,6 +1325,36 @@ exports.main = async (event, context) => {
         console.warn('[daigouMgr/cancelOrder] restore stock failed:', e.message)
       }
 
+      // ── 退还买家已扣积分 ──
+      const refundPoints = order.pointsUsed || 0
+      if (refundPoints > 0) {
+        try {
+          // 找买家用户文档 ID
+          const buyerRes = await db.collection('users')
+            .where({ _openid: order.buyerOpenid })
+            .limit(1)
+            .get()
+          if (buyerRes.data && buyerRes.data[0]) {
+            const buyerDocId = buyerRes.data[0]._id
+            await db.collection('users').doc(buyerDocId).update({
+              data: { points: _.inc(refundPoints), updateTime: db.serverDate() }
+            })
+            await db.collection('points_log').add({
+              data: {
+                _openid: order.buyerOpenid,
+                type: 'daigou_cancel_refund',
+                amount: refundPoints,
+                desc: `代购订单取消退还积分：${order.productName || '特产'}（单号 ${order.orderNo || orderId}）`,
+                orderId,
+                createTime: db.serverDate()
+              }
+            })
+          }
+        } catch (e) {
+          console.warn('[daigouMgr/cancelOrder] refund points failed:', e.message)
+        }
+      }
+
       return { success: true, message: '订单已取消' }
     } catch (e) {
       console.error('[daigouMgr/cancelOrder]', e)
@@ -1291,6 +1386,7 @@ exports.main = async (event, context) => {
       await db.collection('daigouOrders').doc(orderId).update({
         data: {
           status: 'refunding',
+          preRefundStatus: order.status,    // 记录退款前状态，供拒绝时恢复
           refundStatus: 'pending',
           refundReason: reason,
           refundApplyTime: db.serverDate(),
@@ -1351,11 +1447,43 @@ exports.main = async (event, context) => {
         } catch (e) {
           console.warn('[daigouMgr/handleRefund] restore stock failed:', e.message)
         }
+
+        // ── 退还买家已扣积分 ──
+        const refundPoints = order.pointsUsed || 0
+        if (refundPoints > 0) {
+          try {
+            const buyerRes = await db.collection('users')
+              .where({ _openid: order.buyerOpenid })
+              .limit(1)
+              .get()
+            if (buyerRes.data && buyerRes.data[0]) {
+              const buyerDocId = buyerRes.data[0]._id
+              await db.collection('users').doc(buyerDocId).update({
+                data: { points: _.inc(refundPoints), updateTime: db.serverDate() }
+              })
+              await db.collection('points_log').add({
+                data: {
+                  _openid: order.buyerOpenid,
+                  type: 'daigou_refund_points',
+                  amount: refundPoints,
+                  desc: `代购退款退还积分：${order.productName || '特产'}（单号 ${order.orderNo || orderId}）`,
+                  orderId,
+                  createTime: db.serverDate()
+                }
+              })
+            }
+          } catch (e) {
+            console.warn('[daigouMgr/handleRefund] refund points failed:', e.message)
+          }
+        }
+
         return { success: true, message: '已同意退款' }
       } else {
+        // 恢复为申请退款前的状态（shipped 或 completed）
+        const prevStatus = order.preRefundStatus || 'shipped'
         await db.collection('daigouOrders').doc(orderId).update({
           data: {
-            status: 'shipped',
+            status: prevStatus,
             refundStatus: 'rejected',
             refundRejectReason: rejectReason,
             updateTime: db.serverDate()
@@ -1406,7 +1534,7 @@ exports.main = async (event, context) => {
   }
 
   // ──────────────────────────────────────────────────
-  // updateDeposit: 更新押金缴纳记录（管理员操作完成后前端同步状态用）
+  // updateDeposit: 更新押金缴纳记录（向后兼容旧接口）
   // ──────────────────────────────────────────────────
   if (action === 'updateDeposit') {
     try {
@@ -1416,8 +1544,6 @@ exports.main = async (event, context) => {
       }
       const user = await findUser(openid)
       if (!user) return { success: false, message: '用户不存在' }
-      // 前端只能申请押金记录（实际审核由管理员操作）
-      // 此处创建押金申请记录，供管理员审批
       try {
         await db.collection('daigouDepositApply').add({
           data: {
@@ -1425,19 +1551,193 @@ exports.main = async (event, context) => {
             userId: user._id,
             nickName: user.nickName || '',
             depositAmount: Number(depositAmount),
-            status: 'pending',   // pending / approved / rejected
+            status: 'pending',
             createTime: db.serverDate(),
             updateTime: db.serverDate()
           }
         })
       } catch (e) {
-        // 集合不存在时静默处理
         console.warn('[daigouMgr/updateDeposit] collection not exist:', e.message)
       }
       return { success: true, message: '押金申请已提交，等待管理员审核' }
     } catch (e) {
       console.error('[daigouMgr/updateDeposit]', e)
       return { success: false, message: e.message || '提交失败' }
+    }
+  }
+
+  // ──────────────────────────────────────────────────
+  // applyDeposit: 用户自助申请押金（正式表单版）
+  // 字段：depositAmount, targetLevel, realName, phone, wechatId, remark, transferProof(可选)
+  // ──────────────────────────────────────────────────
+  if (action === 'applyDeposit') {
+    try {
+      const { depositAmount, targetLevel, realName, phone, wechatId, remark = '', transferProof = '' } = event
+
+      // 参数校验
+      if (!depositAmount || depositAmount <= 0) return { success: false, message: '押金金额无效' }
+      if (!realName || !realName.trim()) return { success: false, message: '请填写真实姓名' }
+      if (!phone || !/^1[3-9]\d{9}$/.test(phone.trim())) return { success: false, message: '请填写正确的手机号' }
+      if (!wechatId || !wechatId.trim()) return { success: false, message: '请填写微信号' }
+
+      const user = await findUser(openid)
+      if (!user) return { success: false, message: '用户不存在，请先登录' }
+
+      // 防重复申请：检查是否存在 pending 或 approved 状态的申请
+      let existingRes
+      try {
+        existingRes = await db.collection('daigouDepositApply')
+          .where({ userOpenid: openid })
+          .orderBy('createTime', 'desc')
+          .limit(1)
+          .get()
+      } catch (e) {
+        existingRes = { data: [] }
+      }
+
+      const existing = existingRes.data && existingRes.data[0]
+      if (existing && (existing.status === 'pending' || existing.status === 'approved')) {
+        return {
+          success: false,
+          code: 'DUPLICATE',
+          message: existing.status === 'pending'
+            ? '您已有一条待审核的押金申请，请等待审核结果'
+            : '您的押金申请已通过审核，无需重复申请',
+          apply: {
+            _id: existing._id,
+            status: existing.status,
+            depositAmount: existing.depositAmount,
+            targetLevel: existing.targetLevel,
+            createTimeText: existing.createTime
+              ? new Date(typeof existing.createTime === 'object' && existing.createTime.$date
+                  ? existing.createTime.$date
+                  : existing.createTime).toLocaleString('zh-CN')
+              : ''
+          }
+        }
+      }
+
+      // 创建申请记录
+      let addRes
+      try {
+        addRes = await db.collection('daigouDepositApply').add({
+          data: {
+            userOpenid: openid,
+            userId: user._id,
+            nickName: user.nickName || '',
+            avatarUrl: user.avatarUrl || '',
+            depositAmount: Number(depositAmount),
+            targetLevel: Number(targetLevel) || 1,
+            realName: realName.trim(),
+            phone: phone.trim(),
+            wechatId: wechatId.trim(),
+            remark: remark.trim(),
+            transferProof: transferProof || '',
+            status: 'pending', // pending / approved / rejected
+            createTime: db.serverDate(),
+            updateTime: db.serverDate(),
+            handleTime: null,
+            handleBy: '',
+            rejectReason: ''
+          }
+        })
+      } catch (dbErr) {
+        console.error('[applyDeposit] db.add error:', dbErr)
+        // 集合不存在(-502005)或权限问题，给出友好提示
+        if (dbErr.errCode === -502005 || (dbErr.message && dbErr.message.includes('collection not exist'))) {
+          return { success: false, message: '数据库集合尚未初始化，请联系管理员创建 daigouDepositApply 集合后重试' }
+        }
+        return { success: false, message: '提交失败：' + (dbErr.message || '数据库写入异常，请重试') }
+      }
+
+      console.log('[applyDeposit] 押金申请已提交, _id:', addRes._id)
+      return {
+        success: true,
+        applyId: addRes._id,
+        message: '押金申请已提交！请添加客服微信完成转账，审核通过后权益自动开通。'
+      }
+    } catch (e) {
+      console.error('[daigouMgr/applyDeposit]', e)
+      return { success: false, message: e.message || '提交失败，请重试' }
+    }
+  }
+
+  // ──────────────────────────────────────────────────
+  // getMyDepositApply: 查询我的押金申请记录（最新一条）
+  // ──────────────────────────────────────────────────
+  if (action === 'getMyDepositApply') {
+    try {
+      let res
+      try {
+        res = await db.collection('daigouDepositApply')
+          .where({ userOpenid: openid })
+          .orderBy('createTime', 'desc')
+          .limit(1)
+          .get()
+      } catch (e) {
+        return { success: true, apply: null }
+      }
+
+      if (!res.data || res.data.length === 0) {
+        return { success: true, apply: null }
+      }
+
+      const apply = res.data[0]
+      const formatTime = (t) => {
+        if (!t) return ''
+        try {
+          const d = new Date(typeof t === 'object' && t.$date ? t.$date : t)
+          return d.toLocaleString('zh-CN')
+        } catch (_) { return '' }
+      }
+
+      return {
+        success: true,
+        apply: {
+          _id: apply._id,
+          status: apply.status,
+          depositAmount: apply.depositAmount,
+          targetLevel: apply.targetLevel || 1,
+          realName: apply.realName || '',
+          phone: apply.phone || '',
+          wechatId: apply.wechatId || '',
+          remark: apply.remark || '',
+          transferProof: apply.transferProof || '',
+          rejectReason: apply.rejectReason || '',
+          createTimeText: formatTime(apply.createTime),
+          handleTimeText: formatTime(apply.handleTime)
+        }
+      }
+    } catch (e) {
+      console.error('[daigouMgr/getMyDepositApply]', e)
+      return { success: false, message: e.message }
+    }
+  }
+
+  // ──────────────────────────────────────────────────
+  // getDepositStatus: 查询当前用户押金状态（押金余额页使用）
+  // ──────────────────────────────────────────────────
+  if (action === 'getDepositStatus') {
+    try {
+      const userRes = await db.collection('users').where({ _openid: openid }).limit(1).get()
+      if (!userRes.data || userRes.data.length === 0) {
+        return { success: true, status: 'inactive', amount: 0, balance: 0 }
+      }
+      const user = userRes.data[0]
+      const ds = user.daigouStats || {}
+      const depositPaid = ds.depositPaid || 0
+      const depositBalance = ds.depositBalance || 0
+      return {
+        success: true,
+        status: depositPaid > 0 ? 'active' : 'inactive',
+        amount: depositPaid,
+        balance: depositBalance,
+        level: user.daigouLevel || 0,
+        isDaigouVerified: user.isDaigouVerified || false
+      }
+    } catch (e) {
+      console.error('[daigouMgr/getDepositStatus]', e)
+      return { success: false, message: e.message }
     }
   }
 
