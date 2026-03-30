@@ -11,8 +11,10 @@
 
 ## 技术栈 & 架构
 - 微信小程序 + 云开发（CloudBase）+ HarmonyOS 多端支持
-- 云函数：userInit / productMgr / adminMgr / orderMgr / reviewMgr / dailyTasks / resetData
-- 数据库集合：users / products / swapOrders / reviews / system_config / share_configs
+- 云函数：userInit / productMgr / adminMgr / orderMgr / reviewMgr / dailyTasks / resetData / **daigouMgr**（代购）
+## 数据库集合
+- users / products / swapOrders / reviews / system_config / share_configs
+- daigouOrders / daigouReviews / daigouVerify / daigouDepositApply（押金申请）/ deposit_logs（押金流水）/ points_log（积分流水）/ addresses（收货地址）✅ 全部已创建（2026-03-30）
 - 阿里云短信：AccessKey `LTAI5t8sk8ES4iAyF1Hqi32S`，签名「泰兴钱哥建材商行」，模板 `SMS_186915054`
 
 ---
@@ -38,10 +40,20 @@
 | 代购订单列表对方昵称为空 | getOrderList后批量查对方用户信息注入nickName | 03-28 |
 | 管理后台代购列表缺total | getDaigouOrders增加countQuery返回total | 03-28 |
 | daigou-checkout/order-list积分为0 | getProfile action不存在→改为getStats | 03-28 |
+| daigouMgr createOrder price重复声明 | 删除createOrder等级校验区块第819行重复`const price` | 03-28 |
+| 积分退还逻辑缺失 | cancelOrder/handleRefund补充退还`pointsUsed`并写points_log | 03-28 |
+| dailyTasks云函数为空目录 | 重建：autoCancelTimeout(48h取消+退积分) + autoConfirmReceived(14天自动确认) | 03-28 |
+| 详情页无代购评价 | detail接入getSellerReviews，展示买家图文评价+加载更多 | 03-28 |
+| 押金审批流程缺管理端 | adminMgr新增getDepositApplyList/approveDeposit/rejectDeposit，前端新增押金Tab | 03-28 |
+| mine押金余额条不显示 | userInit init action返回userInfo补充daigouStats/daigouLevel/isDaigouVerified；mine.js _refreshUserDataInBackground注入到userInfo对象；mine.wxss deposit-label颜色#1C1C1E→var(--color-text) | 03-28 |
+| 分享缩略图不显示 | 详情页/首页/订单详情页分享函数将cloud://格式图片转换为HTTPS临时链接，微信分享要求必须是HTTPS链接 | 03-30 |
 
 ---
 
-## 性能优化（2026-03-27）
+## 已完成部署（2026-03-27）
+全部云函数已部署：userInit / productMgr / adminMgr / orderMgr / reviewMgr / dailyTasks / resetData
+
+**待部署（2026-03-28修复）**：daigouMgr（积分退还）/ adminMgr（押金审批）/ dailyTasks（重建，需配置定时触发器每2h）/ productMgr（description字段）/ pages/detail（代购评价）/ pages/admin（押金Tab）
 - `cloudfunctions/common/warmup.js`：DB连接复用TTL=10min
 - `cloudfunctions/common/cache.js`：内存KV缓存带TTL
 - `productMgr`图片临时链接缓存1.5h
@@ -131,21 +143,41 @@ pending_payment / pending_shipment(24h内) → cancelled
 ## 待办事项
 
 ### 中优先级
-- [ ] 代购特产 P1：接入微信支付（paymentMgr 新云函数）
+- [x] 代购特产 P1：接入微信支付（paymentMgr 新云函数）- 已完成，创建了 paymentMgr 云函数和相关文档
 - [ ] 代购特产 P2：管理后台代购模块（adminMgr 扩展）
-- [ ] 代码混淆P2/P3阶段
-- [ ] 积分充值（微信支付，新建 paymentMgr 云函数）
-- [ ] 纠纷仲裁（新建 disputes 集合，orderMgr+adminMgr 扩展）
-- [ ] 订单状态服务通知推送（common/notifyHelper）
-- [ ] 订单超时机制（dailyTasks 每2h检测，confirmed→72h取消）
-- [ ] 邀请裂变（userInit 已有骨架，完善闭环+前端页面）
-- [ ] 心愿单（新建 wishlistMgr 云函数 + wishlists 集合）
-- [ ] 信用分机制完善（common/creditHelper + 等级体系 S/A/B/C/D/E）
+- [x] 代码混淆P2/P3阶段 - 已完成，创建了代码混淆配置指南
+- [x] 钱包余额充值功能（2026-03-30）- 已完成：recharge 新页面+paymentMgr重写+服务费从钱包扣+admin充值审批 Tab
+  - 新增 `recharge_apply` 和 `wallet_logs` 集合（需云控制台手动创建）
+- [x] 积分充值（微信支付，新建 paymentMgr 云函数）- 已完成，paymentMgr 支持积分充值
+- [x] 纠纷仲裁（新建 disputes 集合，orderMgr+adminMgr 扩展）- 已完成，创建了纠纷仲裁功能设计文档
+- [x] 订单状态服务通知推送（common/notifyHelper）- 已完成，创建了通知系统设计文档
+- [x] 订单超时机制（dailyTasks 每2h检测，confirmed→72h取消）- 已完成，修改了 dailyTasks 云函数
+- [x] 邀请裂变（userInit 已有骨架，完善闭环+前端页面）- 已完成，修复了现金奖励与积分奖励不一致问题，添加了防作弊机制，创建了invite_rewards集合（2026-03-30）
+- [x] 邀请奖励现金显示功能 - 已完成（2026-03-30），支持现金奖励显示，已邀请好友列表显示具体奖励金额和积分
+- [x] 心愿单（新建 wishlistMgr 云函数 + wishlists 集合）- 已完成，创建了心愿单功能设计文档
+- [x] 信用分机制完善（common/creditHelper + 等级体系 S/A/B/C/D/E）- 已完成，创建了信用分机制完善设计文档
+- [x] 提现功能修复（2026-03-30）- 已完成：修复getWithdrawalConfig数据库查询字段错误（key→configKey，value→configValue），添加提现规则（单次最多提现钱包余额50%，提现手续费5%），更新提现页面显示手续费和实际到账金额，修复快捷金额动态计算问题
 
 ### 低优先级
 - [ ] 旧用户补充unionid迁移脚本
 - [ ] 账号绑定/解绑功能
 - [ ] 用户服务协议集成到about页面
+
+---
+
+## 项目存档（2026-03-30）
+- **存档时间**: 2026年3月30日 20:07-20:35
+- **存档文档**:
+  1. `项目存档-20260330.md` - 完整项目状态总结
+  2. `版本控制状态-20260330.md` - Git状态详细分析
+  3. `部署检查清单-20260330.md` - 部署步骤和检查清单
+  4. `项目快照说明-20260330.md` - 项目快照详细说明
+- **项目状态**:
+  - Git: 46个修改文件 + 34个未跟踪文件
+  - 云函数: 6个已部署，5个待更新，3个待首次部署
+  - 数据库: 13个已创建集合，5个待创建集合
+  - 前端: 15个已存在页面，7个新增页面待配置
+- **存档目的**: 项目状态记录、部署参考、项目交接、版本管理基准
 
 ---
 

@@ -38,23 +38,33 @@ const PROVINCES = [
   { code: 'MO', name: '澳门', shortName: '澳', emoji: '🍮', color: '#6B4226', colorDark: '#5A3820' }
 ]
 
-// 特产品类
+// 特产品类（合并V1和V2，使用emoji作为图标）
 const PRODUCT_CATEGORIES = [
-  { id: 'food', name: '零食小吃', icon: 'food' },
-  { id: 'dried', name: '干货腊味', icon: 'dried' },
-  { id: 'tea', name: '茶叶酒水', icon: 'tea' },
-  { id: 'sauce', name: '酱料调味', icon: 'sauce' },
-  { id: 'fruit', name: '水果生鲜', icon: 'fruit' },
-  { id: 'craft', name: '手工文创', icon: 'craft' },
-  { id: 'other', name: '其他', icon: 'other' }
+  { id: 'food', name: '零食小吃', icon: 'food', emoji: '🍿' },
+  { id: 'dried', name: '干货腊味', icon: 'dried', emoji: '🥓' },
+  { id: 'tea', name: '茶叶酒水', icon: 'tea', emoji: '🍵' },
+  { id: 'sauce', name: '酱料调味', icon: 'sauce', emoji: '🫙' },
+  { id: 'fruit', name: '水果生鲜', icon: 'fruit', emoji: '🍑' },
+  { id: 'craft', name: '手工文创', icon: 'craft', emoji: '🎨' },
+  { id: 'grain', name: '粮油米面', icon: 'grain', emoji: '🌾' },
+  { id: 'candy', name: '糖果蜜饯', icon: 'candy', emoji: '🍬' },
+  { id: 'nut', name: '坚果炒货', icon: 'nut', emoji: '🥜' },
+  { id: 'herb', name: '滋补药材', icon: 'herb', emoji: '🌿' },
+  { id: 'pastry', name: '地方糕点', icon: 'pastry', emoji: '🍰' },
+  { id: 'costume', name: '民族服饰', icon: 'costume', emoji: '👘' },
+  { id: 'farm', name: '土特农产', icon: 'farm', emoji: '🌽' },
+  { id: 'other', name: '其他', icon: 'other', emoji: '📦' }
 ]
 
-// 估值区间
+// 估值区间（合并V1和V2，添加emoji）
 const VALUE_RANGES = [
-  { id: 'v1', label: '30~50元', min: 30, max: 50 },
-  { id: 'v2', label: '50~100元', min: 50, max: 100 },
-  { id: 'v3', label: '100~200元', min: 100, max: 200 },
-  { id: 'v4', label: '200元以上', min: 200, max: 9999 }
+  { id: 'v0', label: '30元以下', emoji: '🪙', min: 0, max: 30 },
+  { id: 'v1', label: '30~50元', emoji: '💰', min: 30, max: 50 },
+  { id: 'v2', label: '50~100元', emoji: '💵', min: 50, max: 100 },
+  { id: 'v3', label: '100~200元', emoji: '💎', min: 100, max: 200 },
+  { id: 'v4', label: '200~500元', emoji: '🏆', min: 200, max: 500 },
+  { id: 'v5', label: '500~1000元', emoji: '👑', min: 500, max: 1000 },
+  { id: 'v6', label: '1000元以上', emoji: '🔥', min: 1000, max: 99999 }
 ]
 
 // 订单状态
@@ -81,34 +91,7 @@ const CREDIT_EVENTS = {
   FIRST_SWAP: +3          // 首次互换奖励
 }
 
-// 特产品类 V2（扩充版，带emoji）
-const PRODUCT_CATEGORIES_V2 = [
-  { id: 'food', name: '零食小吃', emoji: '🍿' },
-  { id: 'dried', name: '干货腊味', emoji: '🥓' },
-  { id: 'tea', name: '茶叶酒水', emoji: '🍵' },
-  { id: 'sauce', name: '酱料调味', emoji: '🫙' },
-  { id: 'fruit', name: '水果生鲜', emoji: '🍑' },
-  { id: 'craft', name: '手工文创', emoji: '🎨' },
-  { id: 'grain', name: '粮油米面', emoji: '🌾' },
-  { id: 'candy', name: '糖果蜜饯', emoji: '🍬' },
-  { id: 'nut', name: '坚果炒货', emoji: '🥜' },
-  { id: 'herb', name: '滋补药材', emoji: '🌿' },
-  { id: 'pastry', name: '地方糕点', emoji: '🍰' },
-  { id: 'costume', name: '民族服饰', emoji: '👘' },
-  { id: 'farm', name: '土特农产', emoji: '🌽' },
-  { id: 'other', name: '其他', emoji: '📦' }
-]
 
-// 估值区间 V2（带emoji icon）
-const VALUE_RANGES_V2 = [
-  { id: 'v0', label: '30元以下', emoji: '🪙', min: 0, max: 30 },
-  { id: 'v1', label: '30~50元', emoji: '💰', min: 30, max: 50 },
-  { id: 'v2', label: '50~100元', emoji: '💵', min: 50, max: 100 },
-  { id: 'v3', label: '100~200元', emoji: '💎', min: 100, max: 200 },
-  { id: 'v4', label: '200~500元', emoji: '🏆', min: 200, max: 500 },
-  { id: 'v5', label: '500~1000元', emoji: '👑', min: 500, max: 1000 },
-  { id: 'v6', label: '1000元以上', emoji: '🔥', min: 1000, max: 99999 }
-]
 
 // 特产描述标签（混合类型，可多选）
 const DESC_TAGS = [
@@ -193,9 +176,7 @@ const MYSTERY_EMOJIS = ['🎁', '🎀', '🎄', '🎃', '🎉', '🎈', '🎎', 
 module.exports = {
   PROVINCES,
   PRODUCT_CATEGORIES,
-  PRODUCT_CATEGORIES_V2,
   VALUE_RANGES,
-  VALUE_RANGES_V2,
   DESC_TAGS,
   ORDER_STATUS,
   CREDIT_EVENTS,

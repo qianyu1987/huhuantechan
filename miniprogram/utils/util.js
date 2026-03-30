@@ -4,18 +4,25 @@ const { PROVINCES, CREDIT_TIERS } = require('./constants')
 
 /**
  * 格式化时间
+ * @param {Date|string|number} date - 日期对象、日期字符串或时间戳
+ * @param {boolean} [relative=true] - 是否显示相对时间
+ * @returns {string} 格式化后的时间字符串
  */
-function formatTime(date) {
+function formatTime(date, relative = true) {
   if (!date) return ''
   if (typeof date === 'string') date = new Date(date)
   if (typeof date === 'number') date = new Date(date)
+  
   const now = Date.now()
   const diff = now - date.getTime()
   
-  if (diff < 60000) return '刚刚'
-  if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前'
-  if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前'
-  if (diff < 7 * 86400000) return Math.floor(diff / 86400000) + '天前'
+  if (relative) {
+    if (diff < 60000) return '刚刚'
+    if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前'
+    if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前'
+    if (diff < 7 * 86400000) return Math.floor(diff / 86400000) + '天前'
+    if (diff < 30 * 86400000) return Math.floor(diff / (7 * 86400000)) + '周前'
+  }
   
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')
@@ -51,28 +58,7 @@ function getProvinceByName(name) {
   return PROVINCES.find(p => p.name === name || p.name.includes(name) || name.includes(p.name)) || null
 }
 
-/**
- * 格式化时间（相对时间）
- */
-function formatTimeAgo(date) {
-  if (!date) return ''
-  if (typeof date === 'string') date = new Date(date)
-  if (typeof date === 'number') date = new Date(date)
-  
-  const now = Date.now()
-  const diff = now - date.getTime()
-  
-  if (diff < 60000) return '刚刚'
-  if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前'
-  if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前'
-  if (diff < 7 * 86400000) return Math.floor(diff / 86400000) + '天前'
-  if (diff < 30 * 86400000) return Math.floor(diff / (7 * 86400000)) + '周前'
-  
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
+
 
 /**
  * 信用分等级 - 返回完整等级信息
@@ -380,7 +366,6 @@ async function getCurrentOpenid() {
 module.exports = {
   formatTime,
   formatDateTime,
-  formatTimeAgo,
   getProvinceByCode,
   getProvinceByName,
   getCreditLevel,
