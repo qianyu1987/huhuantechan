@@ -86,3 +86,18 @@ page { background: #000; color: #fff; }
 .ce-tag.neutral { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.6); }
 .ce-tag.bad { background: rgba(255,59,48,0.12); color: #FF453A; }
 .ce-desc { font-size: 24rpx; color: rgba(255,255,255,0.7); }
+
+/* 申请押金卡片 */
+.apply-deposit-card {
+  display: flex;
+  align-items: center;
+  padding: 28rpx 32rpx;
+  margin-top: 24rpx;
+  border: 1.5rpx solid rgba(255,149,0,0.35);
+  background: rgba(255,149,0,0.08) !important;
+}
+.adc-icon { font-size: 44rpx; margin-right: 20rpx; }
+.adc-info { flex: 1; }
+.adc-title { font-size: 28rpx; font-weight: 600; color: #FF9F0A; margin-bottom: 4rpx; display: block; }
+.adc-desc { font-size: 22rpx; color: rgba(255,255,255,0.5); display: block; }
+.adc-arrow { font-size: 36rpx; color: #FF9F0A; font-weight: 700; }

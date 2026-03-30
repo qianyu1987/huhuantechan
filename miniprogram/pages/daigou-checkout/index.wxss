@@ -572,3 +572,73 @@ page {
   box-shadow: none;
   color: rgba(255,255,255,0.7);
 }
+
+/* ─────────── 卖家信息样式 ─────────── */
+.seller-info {
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #F2F2F7;
+}
+
+.seller-level {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8rpx;
+}
+
+.level-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rpx 12rpx;
+  border-radius: 16rpx;
+  font-size: 20rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-right: 12rpx;
+}
+
+.level-badge.v1 {
+  background: #34C759;
+}
+
+.level-badge.v2 {
+  background: #007AFF;
+}
+
+.level-badge.v3 {
+  background: #5856D6;
+}
+
+.level-badge.v4 {
+  background: #FF9500;
+}
+
+.level-name {
+  font-size: 22rpx;
+  color: #1C1C1E;
+  font-weight: 500;
+}
+
+.seller-deposit {
+  margin-top: 8rpx;
+}
+
+.deposit-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4rpx 12rpx;
+  border-radius: 16rpx;
+  font-size: 20rpx;
+  font-weight: 500;
+}
+
+.deposit-active {
+  background: #E8F5E9;
+  color: #388E3C;
+}
+
+.deposit-inactive {
+  background: #FFEBEE;
+  color: #C62828;
+}

@@ -17,7 +17,7 @@
       <swiper class="img-swiper" indicator-dots indicator-active-color="#0A84FF" circular autoplay>
         <block wx:for="{{product.images}}" wx:key="index">
           <swiper-item>
-            <image class="swiper-img" src="{{item}}" mode="aspectFill" bindtap="previewImages" data-index="{{index}}"/>
+            <image class="swiper-img" src="{{item}}" mode="aspectFill" bindtap="previewImages" data-index="{{index}}" binderror="onImageError" data-img-index="{{index}}"/>
           </swiper-item>
         </block>
       </swiper>
@@ -97,16 +97,55 @@
         <text class="daigou-tip-item">📦 48h内发货</text>
         <text class="daigou-tip-item">🔒 平台担保</text>
       </view>
+
+      <!-- 代购买家评价 -->
+      <view wx:if="{{daigouReviewCount > 0 || daigouReviewsLoading}}" class="daigou-reviews-section">
+        <view class="daigou-reviews-header">
+          <text class="daigou-reviews-title">🌟 买家评价</text>
+          <text class="daigou-reviews-count" wx:if="{{daigouReviewCount > 0}}">{{daigouReviewCount}}条</text>
+        </view>
+        <view wx:if="{{daigouReviewsLoading && daigouReviews.length === 0}}" class="daigou-reviews-loading">
+          <text>加载评价中...</text>
+        </view>
+        <view class="daigou-reviews-list" wx:elif="{{daigouReviews.length > 0}}">
+          <view class="daigou-review-item" wx:for="{{daigouReviews}}" wx:key="_id">
+            <view class="dr-top">
+              <image class="dr-avatar" src="{{item.reviewerAvatar || '/images/default-avatar.png'}}" mode="aspectFill"/>
+              <view class="dr-meta">
+                <text class="dr-name">{{item.reviewerName || '用户***'}}</text>
+                <text class="dr-time">{{item.timeText}}</text>
+              </view>
+              <view class="dr-badge {{item.ratingClass}}">{{item.ratingLabel}}</view>
+            </view>
+            <text class="dr-content" wx:if="{{item.content}}">{{item.content}}</text>
+            <view class="dr-images" wx:if="{{item.images && item.images.length > 0}}">
+              <image
+                class="dr-img"
+                wx:for="{{item.images}}"
+                wx:for-item="img"
+                wx:key="index"
+                src="{{img}}"
+                mode="aspectFill"
+              />
+            </view>
+          </view>
+          <!-- 加载更多 -->
+          <view wx:if="{{daigouReviewsHasMore}}" class="dr-load-more" bindtap="loadMoreDaigouReviews">
+            <text wx:if="{{!daigouReviewsLoading}}">查看更多评价 ›</text>
+            <text wx:else>加载中...</text>
+          </view>
+        </view>
+      </view>
     </view>
 
     <!-- 发布者卡片 -->
-    <view class="glass-card publisher-card" bindtap="goToUserProfile" data-openid="{{publisher.openid || publisher._openid}}">
+    <view class="glass-card publisher-card" bindtap="goToUserProfile" data-openid="{{publisher.openid || publisher._openid || product.openid || product._openid}}">
       <image class="pub-avatar" src="{{publisher.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"/>
       <view class="pub-info">
         <view class="pub-name-row">
           <text class="pub-name">{{publisher.nickName || '特产达人'}}</text>
-          <view class="gender-badge {{product.gender === 'male' ? 'gender-male' : (product.gender === 'female' ? 'gender-female' : '')}}" wx:if="{{product.gender}}">
-            {{product.gender === 'male' ? '👨' : (product.gender === 'female' ? '👩' : '')}}
+          <view class="gender-badge {{publisher.gender === 'male' ? 'gender-male' : (publisher.gender === 'female' ? 'gender-female' : '')}}" wx:if="{{publisher.gender}}">
+            {{publisher.gender === 'male' ? '👨' : (publisher.gender === 'female' ? '👩' : '')}}
           </view>
         </view>
         <view class="pub-meta">

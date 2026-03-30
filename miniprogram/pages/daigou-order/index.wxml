@@ -118,6 +118,47 @@
       </view>
     </view>
 
+    <!-- ══ 付款说明（待付款状态下买家提示） ══ -->
+    <view class="payment-tip-card glass payment-tip-urgent" wx:if="{{order.status === 'pending_payment' && isBuyer}}">
+      <view class="ptip-hd">
+        <text class="ptip-icon">💸</text>
+        <text class="ptip-title">请完成付款</text>
+      </view>
+      <view class="ptip-body">
+        <view class="ptip-step-row">
+          <text class="ptip-step-num">1</text>
+          <text class="ptip-step-text">通过微信直接向卖家转账 <text class="ptip-price">¥{{order.actualPrice || order.price || 0}}</text></text>
+        </view>
+        <view class="ptip-step-row">
+          <text class="ptip-step-num">2</text>
+          <text class="ptip-step-text">转账时备注「代购订单 {{order.orderNo}}」</text>
+        </view>
+        <view class="ptip-step-row">
+          <text class="ptip-step-num">3</text>
+          <text class="ptip-step-text">卖家确认收款后订单将自动进入备货状态</text>
+        </view>
+      </view>
+      <view class="ptip-warning">
+        <text class="ptip-warn-icon">⚠️</text>
+        <text class="ptip-warn-text">请勿通过任何第三方平台付款，仅支持微信直接转账给卖家本人</text>
+      </view>
+      <!-- 联系卖家入口 -->
+      <view class="ptip-contact-row" bindtap="goSellerProfile">
+        <view class="ptip-seller-info">
+          <image
+            class="ptip-seller-avatar"
+            src="{{(order.sellerInfo && order.sellerInfo.avatarUrl) || '/images/default-avatar.png'}}"
+            mode="aspectFill"
+          />
+          <view class="ptip-seller-meta">
+            <text class="ptip-seller-name">{{(order.sellerInfo && order.sellerInfo.nickName) || '卖家'}}</text>
+            <text class="ptip-seller-level">{{(order.sellerInfo && order.sellerInfo.levelIcon) || ''}} {{(order.sellerInfo && order.sellerInfo.levelName) || '代购者'}}</text>
+          </view>
+        </view>
+        <view class="ptip-contact-btn">查看主页 →</view>
+      </view>
+    </view>
+
     <!-- ══ 支付说明（待发货状态下买家提示） ══ -->
     <view class="payment-tip-card glass" wx:if="{{order.status === 'pending_shipment' && isBuyer}}">
       <view class="ptip-hd">
@@ -244,6 +285,26 @@
       <view class="info-row">
         <text class="info-key">代购者ID</text>
         <text class="info-val mono uid-text">{{order.sellerOpenid}}</text>
+      </view>
+      <!-- 卖家等级信息 -->
+      <view class="info-row" wx:if="{{sellerInfo}}">
+        <text class="info-key">代购等级</text>
+        <view class="info-val">
+          <view class="level-badge {{'v'+sellerInfo.level}}">
+            V{{sellerInfo.level}}
+          </view>
+          <text class="level-name">{{sellerInfo.levelName || '基础代购'}}</text>
+        </view>
+      </view>
+      <!-- 卖家押金状态 -->
+      <view class="info-row" wx:if="{{sellerInfo && sellerInfo.depositStatus}}">
+        <text class="info-key">押金状态</text>
+        <view class="info-val">
+          <view class="deposit-status {{sellerInfo.depositStatus === 'active' ? 'deposit-active' : 'deposit-inactive'}}">
+            {{sellerInfo.depositStatus === 'active' ? '已缴纳' : '未缴纳'}}
+          </view>
+          <text class="deposit-amount" wx:if="{{sellerInfo.depositAmount}}">¥{{sellerInfo.depositAmount}}</text>
+        </view>
       </view>
     </view>
 

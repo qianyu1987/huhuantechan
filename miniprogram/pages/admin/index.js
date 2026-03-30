@@ -101,6 +101,7 @@ Page({
     daigouOrderPage: 1,
     daigouOrderLoading: false,
     daigouOrderNoMore: false,
+    daigouOrderTotal: 0,
     daigouOrderFilter: 'all',
     daigouOrderKeyword: '',
     daigouStats: {
@@ -118,6 +119,14 @@ Page({
     daigouVerifyNoMore: false,
     daigouVerifyFilter: 'all',
     daigouVerifyStats: { pending: 0, approved: 0, rejected: 0 },
+    // 押金审批队列
+    depositApplyList: [],
+    depositApplyPage: 1,
+    depositApplyLoading: false,
+    depositApplyNoMore: false,
+    depositApplyFilter: 'pending',
+    depositApplyStats: { pending: 0, approved: 0, rejected: 0 },
+    depositApplyTotal: 0,
     // 功能开关
     featureFlags: {},
     flagsLoading: false,
@@ -128,7 +137,44 @@ Page({
       { key: 'feature_mystery', label: '神秘特产', desc: '首页是否显示神秘特产筛选' },
       { key: 'feature_value_display', label: '估值显示', desc: '是否显示特产估值标签' },
       { key: 'feature_swap', label: '分享功能', desc: '详情页是否显示分享按钮' }
-    ]
+    ],
+    // ===== 等级管理 =====
+    levelUsers: [],
+    levelUserPage: 1,
+    levelUserLoading: false,
+    levelUserNoMore: false,
+    levelUserFilter: 'all',
+    levelUserKeyword: '',
+    // 调整等级弹窗
+    levelModalVisible: false,
+    // ===== 邀请裂变配置 =====
+    inviteConfig: {
+      inviterReward: 0.3,
+      inviteeReward: 0.1,
+      withdrawalThreshold: 30
+    },
+    levelModalUser: null,
+    levelOptions: ['LV0 新人（待认证）', 'LV1 初级代购', 'LV2 进阶代购', 'LV3 资深代购', 'LV4 金牌代购', 'LV5 钻石代购', 'LV6 官方认证代购'],
+    levelPickerIndex: 0,
+    levelReason: '',
+    // 录入押金弹窗
+    depositInputModalVisible: false,
+    depositInputUser: null,
+    depositInputAmount: '',
+    depositInputNote: '',
+    // ===== 充值审批 =====
+    rechargeList: [],
+    rechargePage: 1,
+    rechargeLoading: false,
+    rechargeNoMore: false,
+    rechargeFilter: 'pending',   // pending / approved / rejected / all
+    rechargeTotal: 0,
+    rechargeStats: { pending: 0, approved: 0, rejected: 0 },
+    // 审批弹窗
+    rechargeModalVisible: false,
+    rechargeModalItem: null,
+    rechargeModalAction: 'approve',  // approve / reject
+    rechargeAdminNote: ''
   },
 
   onLoad() {
@@ -142,6 +188,87 @@ Page({
     if (this._searchTimer) clearTimeout(this._searchTimer)
     if (this._pointsSearchTimer) clearTimeout(this._pointsSearchTimer)
     if (this._creditSearchTimer) clearTimeout(this._creditSearchTimer)
+  },
+
+  // 阻止事件冒泡
+  stopPropagation() {
+    // 空方法，用于阻止事件冒泡
+  },
+
+  // ========== 邀请裂变配置 ==========
+  // 加载邀请配置
+  async loadInviteConfig() {
+    try {
+      const res = await callCloud('adminMgr', { action: 'getInviteConfig' })
+      if (res && res.success) {
+        this.setData({
+          inviteConfig: {
+            inviterReward: res.configs.invite_reward_inviter || 0.3,
+            inviteeReward: res.configs.invite_reward_invitee || 0.1,
+            withdrawalThreshold: res.configs.withdrawal_threshold || 30
+          }
+        })
+      }
+    } catch (e) {
+      console.error('加载邀请配置失败', e)
+    }
+  },
+
+  // 输入框事件处理
+  onInviterRewardInput(e) {
+    const value = parseFloat(e.detail.value) || 0
+    this.setData({
+      'inviteConfig.inviterReward': value
+    })
+  },
+
+  onInviteeRewardInput(e) {
+    const value = parseFloat(e.detail.value) || 0
+    this.setData({
+      'inviteConfig.inviteeReward': value
+    })
+  },
+
+  onWithdrawalThresholdInput(e) {
+    const value = parseFloat(e.detail.value) || 0
+    this.setData({
+      'inviteConfig.withdrawalThreshold': value
+    })
+  },
+
+  // 保存邀请配置
+  async saveInviteConfig() {
+    const { inviterReward, inviteeReward, withdrawalThreshold } = this.data.inviteConfig
+    
+    if (inviterReward < 0 || inviteeReward < 0 || withdrawalThreshold < 0) {
+      toast('金额不能为负数', 'error')
+      return
+    }
+
+    wx.showLoading({ title: '保存中...' })
+    
+    try {
+      const res = await callCloud('adminMgr', {
+        action: 'updateInviteConfig',
+        inviteRewardInviter: inviterReward,
+        inviteRewardInvitee: inviteeReward,
+        withdrawalThreshold: withdrawalThreshold
+      })
+      
+      wx.hideLoading()
+      
+      if (res && res.success) {
+        toast('配置保存成功', 'success')
+        // 重新加载配置
+        this.loadInviteConfig()
+      } else {
+        toast(res.error || '保存失败', 'error')
+      }
+    } catch (e) {
+      wx.hideLoading()
+      console.error('保存邀请配置失败', e)
+      toast('保存失败，请重试', 'error')
+    }
   },
 
   // ========== 数据维护工具 ==========
@@ -203,10 +330,10 @@ Page({
       this.setData({ isSuperAdmin: res.isSuperAdmin })
       
       // 如果是超级管理员，添加实名审核Tab、神秘特产Tab、代购管理Tab和开关Tab
-      // Tab顺序：概览(0) 用户(1) 特产(2) 订单(3) 审核(4) 实名(5) 积分(6) 信用(7) 神秘特产(8) 代购(9) 开关(10)
+      // Tab顺序：概览(0) 用户(1) 特产(2) 订单(3) 审核(4) 实名(5) 积分(6) 信用(7) 神秘特产(8) 代购(9) 押金(10) 开关(11) 等级管理(12)
       if (res.isSuperAdmin) {
         this.setData({
-          tabs: ['概览', '用户', '特产', '订单', '审核', '实名', '积分', '信用', '神秘特产', '代购', '开关'],
+          tabs: ['概览', '用户', '特产', '订单', '审核', '实名', '积分', '信用', '神秘特产', '代购', '押金', '充值', '开关', '等级管理'],
           verifyTabIndex: 5
         })
         // 权限确认后再加载实名审核统计
@@ -228,7 +355,7 @@ Page({
         wx.showToast({ title: '已设为超级管理员', icon: 'success' })
         this.setData({
           isSuperAdmin: true,
-          tabs: ['概览', '用户', '特产', '订单', '审核', '实名', '积分', '信用', '神秘特产', '代购', '开关'],
+          tabs: ['概览', '用户', '特产', '订单', '审核', '实名', '积分', '信用', '神秘特产', '代购', '押金', '充值', '开关', '等级管理'],
           verifyTabIndex: 5
         })
       } else {
@@ -244,6 +371,44 @@ Page({
   // 跳转到数据看板
   goDashboard() {
     wx.navigateTo({ url: '/pages/dashboard/index' })
+  },
+
+  // goModule - 供卡片网格和返回按钮使用（data-tab）
+  goModule(e) {
+    const index = Number(e.currentTarget.dataset.tab)
+    this.setData({ currentTab: index })
+
+    if (index === 1 && this.data.users.length === 0) {
+      this.loadUsers()
+    } else if (index === 2 && this.data.products.length === 0) {
+      this.loadProducts()
+    } else if (index === 3 && this.data.orders.length === 0) {
+      this.loadOrders()
+    } else if (index === 4 && this.data.pendingProducts.length === 0) {
+      this.loadPendingProducts()
+    } else if (index === 5) {
+      if (this.data.daigouVerifyList.length === 0) this.loadDaigouVerifyList()
+    } else if (index === 6 && this.data.pointsUsers.length === 0) {
+      this.loadPointsUsers()
+    } else if (index === 7 && this.data.creditUsers.length === 0) {
+      this.loadCreditUsers()
+    } else if (index === 8 && this.data.mysteryProducts.length === 0) {
+      this.loadMysteryProducts()
+    } else if (index === 9) {
+      if (this.data.daigouOrders.length === 0) this.loadDaigouOrders()
+      this.loadDaigouStats()
+    } else if (index === 10) {
+      if (this.data.depositApplyList.length === 0) this.loadDepositApplyList()
+    } else if (index === 11) {
+      // 充值审批
+      if (this.data.rechargeList.length === 0) this.loadRechargeList(true)
+    } else if (index === 12) {
+      this.loadFeatureFlags()
+    } else if (index === 13) {
+      if (this.data.levelUsers.length === 0) this.loadLevelUsers()
+    } else if (index === 14) {
+      this.loadInviteConfig()
+    }
   },
 
   // 切换Tab
@@ -276,7 +441,16 @@ Page({
       if (this.data.daigouOrders.length === 0) this.loadDaigouOrders()
       this.loadDaigouStats()
     } else if (index === 10) {
+      // 押金审批
+      if (this.data.depositApplyList.length === 0) this.loadDepositApplyList()
+    } else if (index === 11) {
+      // 充值审批
+      if (this.data.rechargeList.length === 0) this.loadRechargeList(true)
+    } else if (index === 12) {
       this.loadFeatureFlags()
+    } else if (index === 13) {
+      // 等级管理
+      if (this.data.levelUsers.length === 0) this.loadLevelUsers()
     }
   },
 
@@ -1062,6 +1236,13 @@ Page({
     this.setData({ editingMystery: updated })
   },
 
+  // 更新神秘特产状态（picker 回调）
+  updateMysteryStatus(e) {
+    const idx = Number(e.detail.value)
+    const status = idx === 0 ? 'active' : 'removed'
+    this.setData({ 'editingMystery.status': status })
+  },
+
   // 保存神秘特产
   async saveMystery() {
     const { editingMystery } = this.data
@@ -1210,7 +1391,15 @@ Page({
       this.loadDaigouOrders()
       this.loadDaigouVerifyList()
     }
-    else if (tab === 10) this.loadFeatureFlags()
+    else if (tab === 10) {
+      this.setData({ depositApplyList: [], depositApplyPage: 1, depositApplyNoMore: false })
+      this.loadDepositApplyList()
+    }
+    else if (tab === 11) {
+      this.setData({ rechargeList: [], rechargePage: 1, rechargeNoMore: false })
+      this.loadRechargeList(true)
+    }
+    else if (tab === 12) this.loadFeatureFlags()
     wx.stopPullDownRefresh()
   },
 
@@ -1228,17 +1417,36 @@ Page({
       if (this.data.daigouSubTab === 0) this.loadDaigouOrders()
       else this.loadDaigouVerifyList()
     }
+    else if (tab === 10) {
+      if (!this.data.depositApplyLoading && !this.data.depositApplyNoMore) this.loadDepositApplyList()
+    }
+    else if (tab === 11) {
+      if (!this.data.rechargeLoading && !this.data.rechargeNoMore) this.loadRechargeList(false)
+    }
   },
 
   // ========== 编辑用户 ==========
   openUserEdit(e) {
+    console.log('点击编辑按钮:', e)
     const user = e.currentTarget.dataset.user
-    const provinceIndex = PROVINCES.findIndex(p => p.code === user.province)
-    this.setData({
-      editingUser: { ...user },
-      userEditModalVisible: true,
-      provinceIndex: provinceIndex >= 0 ? provinceIndex : -1
-    })
+    if (!user) {
+      wx.showToast({ title: '用户数据获取失败', icon: 'none' })
+      return
+    }
+    try {
+      console.log('用户数据:', user)
+      const provinceIndex = PROVINCES.findIndex(p => p.code === user.province)
+      console.log('省份索引:', provinceIndex)
+      this.setData({
+        editingUser: { ...user },
+        userEditModalVisible: true,
+        provinceIndex: provinceIndex >= 0 ? provinceIndex : -1
+      })
+      console.log('弹窗已打开')
+    } catch (err) {
+      console.error('打开用户编辑弹窗失败:', err)
+      wx.showToast({ title: '打开编辑弹窗失败', icon: 'none' })
+    }
   },
 
   // 清除所有非管理员用户
@@ -1478,6 +1686,11 @@ Page({
 
   // ========== 代购管理 ==========
 
+  // 跳转代购订单详情
+  goToDaigouOrderDetail(e) {
+    const id = e.currentTarget.dataset.id
+    wx.navigateTo({ url: `/pages/daigou-order/index?orderId=${id}` })
+  },
 
   // 加载代购统计
   async loadDaigouStats() {
@@ -1546,7 +1759,8 @@ Page({
         this.setData({
           daigouOrders: [...this.data.daigouOrders, ...list],
           daigouOrderPage: this.data.daigouOrderPage + 1,
-          daigouOrderNoMore: list.length < 20
+          daigouOrderNoMore: list.length < 20,
+          daigouOrderTotal: res.total || (this.data.daigouOrders.length + list.length)
         })
       }
     } catch (e) {
@@ -1554,6 +1768,11 @@ Page({
     } finally {
       this.setData({ daigouOrderLoading: false })
     }
+  },
+
+  // 加载更多代购订单
+  loadMoreDaigouOrders() {
+    this.loadDaigouOrders()
   },
 
   // 切换代购订单展开/折叠
@@ -1647,7 +1866,7 @@ Page({
           try {
             wx.showLoading({ title: '操作中...' })
             const result = await callCloud('adminMgr', {
-              action: 'adminHandleDaigouRefund',
+              action: 'handleDaigouRefund',
               orderId: id,
               approve,
               rejectReason: approve ? '' : (res.content || '管理员拒绝退款')
@@ -1834,6 +2053,117 @@ Page({
     }
   },
 
+  // ──────────────────────────────────────────────
+  // ---- 押金审批 ----
+  // ──────────────────────────────────────────────
+
+  async loadDepositApplyList() {
+    if (this.data.depositApplyLoading || this.data.depositApplyNoMore) return
+    this.setData({ depositApplyLoading: true })
+    try {
+      const res = await callCloud('adminMgr', {
+        action: 'getDepositApplyList',
+        page: this.data.depositApplyPage,
+        pageSize: 20,
+        filter: this.data.depositApplyFilter
+      })
+      if (res.success) {
+        this.setData({
+          depositApplyList: [...this.data.depositApplyList, ...(res.list || [])],
+          depositApplyPage: this.data.depositApplyPage + 1,
+          depositApplyNoMore: (res.list || []).length < 20,
+          depositApplyStats: res.stats || { pending: 0, approved: 0, rejected: 0 },
+          depositApplyTotal: res.total || 0
+        })
+      }
+    } catch (e) {
+      toast('加载押金列表失败')
+    } finally {
+      this.setData({ depositApplyLoading: false })
+    }
+  },
+
+  changeDepositFilter(e) {
+    const filter = e.currentTarget.dataset.filter
+    this.setData({
+      depositApplyFilter: filter,
+      depositApplyList: [],
+      depositApplyPage: 1,
+      depositApplyNoMore: false
+    })
+    this.loadDepositApplyList()
+  },
+
+  async approveDeposit(e) {
+    const { id, openid, amount } = e.currentTarget.dataset
+    wx.showModal({
+      title: '确认通过',
+      content: `确认通过该押金申请（¥${amount}）？审批通过后将更新用户押金状态。`,
+      success: async (res) => {
+        if (!res.confirm) return
+        wx.showLoading({ title: '操作中...' })
+        try {
+          const result = await callCloud('adminMgr', {
+            action: 'approveDeposit',
+            applyId: id,
+            userOpenid: openid,
+            depositAmount: amount
+          })
+          wx.hideLoading()
+          if (result.success) {
+            wx.showToast({ title: '已通过', icon: 'success' })
+            this.setData({ depositApplyList: [], depositApplyPage: 1, depositApplyNoMore: false })
+            this.loadDepositApplyList()
+          } else {
+            wx.showToast({ title: result.error || '操作失败', icon: 'none' })
+          }
+        } catch (err) {
+          wx.hideLoading()
+          wx.showToast({ title: '操作失败', icon: 'none' })
+        }
+      }
+    })
+  },
+
+  async rejectDeposit(e) {
+    const { id, openid } = e.currentTarget.dataset
+    const res = await new Promise(resolve => {
+      wx.showModal({
+        title: '拒绝押金申请',
+        content: '请输入拒绝原因（将通知用户）',
+        editable: true,
+        placeholderText: '例如：转账金额有误',
+        success: resolve,
+        fail: () => resolve({ confirm: false })
+      })
+    })
+    if (!res.confirm) return
+    if (!res.content || !res.content.trim()) {
+      toast('请填写拒绝原因')
+      return
+    }
+    wx.showLoading({ title: '操作中...' })
+    try {
+      const result = await callCloud('adminMgr', {
+        action: 'rejectDeposit',
+        applyId: id,
+        userOpenid: openid,
+        reason: res.content.trim()
+      })
+      wx.hideLoading()
+      if (result.success) {
+        wx.showToast({ title: '已拒绝', icon: 'success' })
+        this.setData({ depositApplyList: [], depositApplyPage: 1, depositApplyNoMore: false })
+        this.loadDepositApplyList()
+      } else {
+        wx.showToast({ title: result.error || '操作失败', icon: 'none' })
+      }
+    } catch (err) {
+      wx.hideLoading()
+      wx.showToast({ title: '操作失败', icon: 'none' })
+    }
+  },
+
   // 辅助：代购订单状态文本
   getDaigouOrderStatusText(status) {
     const map = {
@@ -2008,5 +2338,284 @@ Page({
       toast('操作失败')
       this.loadFeatureFlags()
     }
-  }
+  },
+
+  // ========== 等级管理 ==========
+
+  // 加载代购者列表
+  async loadLevelUsers() {
+    if (this.data.levelUserLoading || this.data.levelUserNoMore) return
+    this.setData({ levelUserLoading: true })
+    try {
+      const res = await callCloud('adminMgr', {
+        action: 'getDaigouLevelUsers',
+        page: this.data.levelUserPage,
+        pageSize: 20,
+        keyword: this.data.levelUserKeyword || '',
+        filter: this.data.levelUserFilter || 'all'
+      })
+      if (res.success) {
+        this.setData({
+          levelUsers: [...this.data.levelUsers, ...(res.list || [])],
+          levelUserPage: this.data.levelUserPage + 1,
+          levelUserNoMore: (res.list || []).length < 20
+        })
+      }
+    } catch (e) {
+      toast('加载等级用户失败')
+    } finally {
+      this.setData({ levelUserLoading: false })
+    }
+  },
+
+  // 切换等级筛选
+  changeLevelUserFilter(e) {
+    const filter = e.currentTarget.dataset.filter
+    this.setData({ levelUserFilter: filter, levelUsers: [], levelUserPage: 1, levelUserNoMore: false })
+    this.loadLevelUsers()
+  },
+
+  // 搜索
+  onLevelUserSearch(e) {
+    if (this._levelSearchTimer) clearTimeout(this._levelSearchTimer)
+    const keyword = e.detail.value
+    this._levelSearchTimer = setTimeout(() => {
+      this.setData({ levelUserKeyword: keyword, levelUsers: [], levelUserPage: 1, levelUserNoMore: false })
+      this.loadLevelUsers()
+    }, 500)
+  },
+
+  // 打开调整等级弹窗
+  openLevelModal(e) {
+    const openid = e.currentTarget.dataset.openid
+    const idx = e.currentTarget.dataset.index
+    console.log('[openLevelModal] openid:', openid, 'index:', idx)
+    
+    // 三级匹配：openid -> _id -> index
+    let user = openid
+      ? this.data.levelUsers.find(u =>
+          (u.openid && u.openid === openid) ||
+          (u._openid && u._openid === openid) ||
+          (u._id && u._id === openid)
+        )
+      : null
+    
+    if (!user && typeof idx !== 'undefined') {
+      user = this.data.levelUsers[Number(idx)] || null
+    }
+    
+    if (!user) {
+      console.error('[openLevelModal] 找不到用户, openid=', openid, 'idx=', idx)
+      wx.showToast({ title: '用户数据获取失败', icon: 'none' })
+      return
+    }
+    this.setData({
+      levelModalUser: user,
+      levelModalVisible: true,
+      levelPickerIndex: user.daigouLevel || 0,
+      levelReason: ''
+    })
+  },
+
+  closeLevelModal() {
+    this.setData({ levelModalVisible: false, levelModalUser: null })
+  },
+
+  onLevelPickerChange(e) {
+    this.setData({ levelPickerIndex: Number(e.detail.value) })
+  },
+
+  onLevelReasonInput(e) {
+    this.setData({ levelReason: e.detail.value })
+  },
+
+  async confirmLevelAdjust() {
+    const { levelModalUser, levelPickerIndex, levelReason } = this.data
+    if (!levelModalUser) return
+    try {
+      wx.showLoading({ title: '保存中...' })
+      const res = await callCloud('adminMgr', {
+        action: 'adjustDaigouLevel',
+        userOpenid: levelModalUser.openid,
+        level: levelPickerIndex,
+        reason: levelReason || '管理员手动调整'
+      })
+      wx.hideLoading()
+      if (res.success) {
+        wx.showToast({ title: res.message || '调整成功', icon: 'success' })
+        this.setData({ levelModalVisible: false, levelUsers: [], levelUserPage: 1, levelUserNoMore: false })
+        this.loadLevelUsers()
+      } else {
+        wx.showToast({ title: res.error || '操作失败', icon: 'none' })
+      }
+    } catch (err) {
+      wx.hideLoading()
+      wx.showToast({ title: '操作失败', icon: 'none' })
+    }
+  },
+
+  // ===== 押金录入弹窗 =====
+  openDepositInputModal(e) {
+    const openid = e.currentTarget.dataset.openid
+    const idx = e.currentTarget.dataset.index
+    console.log('[openDepositInputModal] openid:', openid, 'index:', idx)
+    
+    // 三级匹配：openid -> _id -> index
+    let user = openid
+      ? this.data.levelUsers.find(u =>
+          (u.openid && u.openid === openid) ||
+          (u._openid && u._openid === openid) ||
+          (u._id && u._id === openid)
+        )
+      : null
+    
+    if (!user && typeof idx !== 'undefined') {
+      user = this.data.levelUsers[Number(idx)] || null
+    }
+    
+    if (!user) {
+      console.error('[openDepositInputModal] 找不到用户, openid=', openid, 'idx=', idx)
+      wx.showToast({ title: '用户数据获取失败', icon: 'none' })
+      return
+    }
+    this.setData({
+      depositInputUser: user,
+      depositInputModalVisible: true,
+      depositInputAmount: String(user.depositPaid || ''),
+      depositInputNote: ''
+    })
+  },
+
+  closeDepositInputModal() {
+    this.setData({ depositInputModalVisible: false, depositInputUser: null })
+  },
+
+  onDepositAmountInput(e) {
+    this.setData({ depositInputAmount: e.detail.value })
+  },
+
+  onDepositNoteInput(e) {
+    this.setData({ depositInputNote: e.detail.value })
+  },
+
+  // ──────────────────────────────────────────────
+  // ---- 充值审批 ----
+  // ──────────────────────────────────────────────
+
+  async loadRechargeList(refresh = false) {
+    if (this.data.rechargeLoading) return
+    if (!refresh && this.data.rechargeNoMore) return
+    const page = refresh ? 1 : this.data.rechargePage
+    this.setData({ rechargeLoading: true })
+    try {
+      const res = await callCloud('adminMgr', {
+        action: 'getRechargeApplies',
+        page,
+        pageSize: 20,
+        status: this.data.rechargeFilter === 'all' ? '' : this.data.rechargeFilter
+      })
+      if (res.success) {
+        const list = refresh ? (res.list || []) : [...this.data.rechargeList, ...(res.list || [])]
+        this.setData({
+          rechargeList: list,
+          rechargePage: page + 1,
+          rechargeNoMore: (res.list || []).length < 20,
+          rechargeTotal: res.total || 0
+        })
+      }
+    } catch (e) {
+      toast('加载充值列表失败')
+    } finally {
+      this.setData({ rechargeLoading: false })
+    }
+  },
+
+  changeRechargeFilter(e) {
+    const filter = e.currentTarget.dataset.filter
+    this.setData({ rechargeFilter: filter, rechargeList: [], rechargePage: 1, rechargeNoMore: false })
+    this.loadRechargeList(true)
+  },
+
+  // 审批通过
+  async approveRecharge(e) {
+    const { id, amount } = e.currentTarget.dataset
+    const res = await new Promise(resolve =>
+      wx.showModal({
+        title: '确认通过充值',
+        content: `确认已收到转账 ¥${amount}，通过该充值申请？`,
+        editable: true,
+        placeholderText: '审批备注（可选）',
+        confirmText: '通过',
+        confirmColor: '#30D158',
+        success: resolve,
+        fail: () => resolve({ confirm: false })
+      })
+    )
+    if (!res.confirm) return
+    wx.showLoading({ title: '操作中...' })
+    try {
+      const result = await callCloud('adminMgr', {
+        action: 'approveRecharge',
+        applyId: id,
+        adminNote: res.content || '审批通过'
+      })
+      wx.hideLoading()
+      if (result.success) {
+        wx.showToast({ title: `已通过，+¥${amount}`, icon: 'success' })
+        this.loadRechargeList(true)
+      } else {
+        wx.showToast({ title: result.error || '操作失败', icon: 'none' })
+      }
+    } catch (err) {
+      wx.hideLoading()
+      wx.showToast({ title: '操作失败', icon: 'none' })
+    }
+  },
+
+  // 审批拒绝
+  async rejectRecharge(e) {
+    const { id } = e.currentTarget.dataset
+    const res = await new Promise(resolve =>
+      wx.showModal({
+        title: '拒绝充值申请',
+        content: '请输入拒绝原因（将通知用户）',
+        editable: true,
+        placeholderText: '例如：未收到转账',
+        confirmText: '确认拒绝',
+        confirmColor: '#FF3B30',
+        success: resolve,
+        fail: () => resolve({ confirm: false })
+      })
+    )
+    if (!res.confirm) return
+    if (!res.content || !res.content.trim()) {
+      toast('请填写拒绝原因')
+      return
+    }
+    wx.showLoading({ title: '操作中...' })
+    try {
+      const result = await callCloud('adminMgr', {
+        action: 'rejectRecharge',
+        applyId: id,
+        adminNote: res.content.trim()
+      })
+      wx.hideLoading()
+      if (result.success) {
+        wx.showToast({ title: '已拒绝', icon: 'success' })
+        this.loadRechargeList(true)
+      } else {
+        wx.showToast({ title: result.error || '操作失败', icon: 'none' })
+      }
+    } catch (err) {
+      wx.hideLoading()
+      wx.showToast({ title: '操作失败', icon: 'none' })
+    }
+  },
+
+
 })
+
+
+
+
+

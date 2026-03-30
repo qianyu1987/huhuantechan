@@ -27,5 +27,10 @@ Page({
       toast('加载失败')
       this.setData({ loading: false })
     }
+  },
+
+  // 跳转到押金申请/管理页
+  goApplyDeposit() {
+    wx.navigateTo({ url: '/pages/daigou-deposit/index' })
   }
 })

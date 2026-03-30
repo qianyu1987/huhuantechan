@@ -165,6 +165,16 @@
       </view>
     </view>
 
+    <!-- 申请押金入口 -->
+    <view class="apply-deposit-card glass" bindtap="goApplyDeposit">
+      <text class="adc-icon">💳</text>
+      <view class="adc-info">
+        <text class="adc-title">申请/管理押金</text>
+        <text class="adc-desc">缴纳押金可解锁更高等级和更低费率</text>
+      </view>
+      <text class="adc-arrow">›</text>
+    </view>
+
     <view style="height:60rpx"></view>
   </block>
 </view>

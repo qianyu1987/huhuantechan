@@ -87,8 +87,8 @@ Page({
       const order = res.order
       const statusInfo = STATUS_MAP[order.status] || { text: order.status, desc: '', icon: '📋', color: '#888' }
 
-      // 计算预估积分奖励
-      const price = order.price || 0
+      // 计算预估积分奖励（与云函数 confirmReceived 逻辑一致：用 actualPrice）
+      const price = order.actualPrice || order.price || 0
       const estimatedReward = Math.max(5, Math.ceil(price * COMPLETE_REWARD_RATE))
       const pointsRewarded = order.pointsRewarded || 0
 
@@ -131,10 +131,11 @@ Page({
         needReview,
         myReviewed,
         otherReviewed,
-        sellerInfo: order.sellerInfo || null,
-        buyerNickName,
-        buyerOpenidShort,
-        loading: false
+        // 卖家信息（展示等级/认证和押金状态）
+      sellerInfo: order.sellerInfo || null,
+      buyerNickName,
+      buyerOpenidShort,
+      loading: false
       })
 
       // 同步最新积分

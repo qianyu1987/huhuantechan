@@ -24,15 +24,21 @@
     "pages/admin/index",
     "pages/dashboard/index",
     "pages/user-profile/index",
-    "pages/test-phone/index",
-    "pages/network-test/index",
+    "pages/wallet/index",
+    "pages/recharge/index",
+
     "pages/admin-webview/index",
     "pages/daigou-checkout/index",
     "pages/daigou-order/index",
     "pages/daigou-order-list/index",
     "pages/daigou-level/index",
     "pages/daigou-review/index",
-    "pages/daigou-verify/index"
+    "pages/daigou-verify/index",
+    "pages/daigou-benefits/index",
+    "pages/daigou-deposit/index",
+    "pages/deposit-apply/index",
+    "pages/withdrawal/index",
+    "pages/withdrawal-history/index"
   ],
   "window": {
     "backgroundTextStyle": "light",

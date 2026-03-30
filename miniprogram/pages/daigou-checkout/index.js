@@ -23,7 +23,9 @@ Page({
     pointsDeductible: 0,       // 最多可用积分
     pointsDeductAmount: 0,     // 积分抵扣金额（元）
     actualPrice: 0,            // 实际支付金额
-    estimatedReward: 0         // 下单后预估可得积分
+    estimatedReward: 0,        // 下单后预估可得积分
+    // 卖家信息
+    sellerInfo: null
   },
 
   onLoad(options) {
@@ -38,7 +40,7 @@ Page({
   },
 
   onShow() {
-    // 地址页 selectAddress 会把选中的地址写到当前页
+    // 地址页通过 prevPage.setData 写入 selectedAddress
     if (this.data.selectedAddress) {
       this.setData({ address: this.data.selectedAddress, selectedAddress: null })
     }
@@ -57,10 +59,11 @@ Page({
   async loadData(productId) {
     this.setData({ loading: true })
     try {
-      const [productRes, addrRes, userRes] = await Promise.all([
+      const [productRes, addrRes, userRes, sellerRes] = await Promise.all([
         callCloud('productMgr', { action: 'detail', productId }),
         callCloud('userInit', { action: 'getAddressList' }).catch(() => ({ addresses: [] })),
-        callCloud('userInit', { action: 'getStats' }).catch(() => null)
+        callCloud('userInit', { action: 'getStats' }).catch(() => null),
+        callCloud('daigouMgr', { action: 'getSellerInfo', sellerOpenid: productId.split('_')[0] }).catch(() => null)
       ])
 
       if (!productRes.success || !productRes.product) {
@@ -107,6 +110,12 @@ Page({
       // 完成后可得积分（价格 5%，最低5分）
       const estimatedReward = Math.max(5, Math.ceil(price * 0.05))
 
+      // 卖家信息
+      let sellerInfo = null
+      if (sellerRes && sellerRes.success) {
+        sellerInfo = sellerRes.sellerInfo
+      }
+
       this.setData({
         product: p,
         productCover: cover,
@@ -117,6 +126,7 @@ Page({
         pointsDeductAmount,
         actualPrice: price,
         estimatedReward,
+        sellerInfo,
         loading: false
       })
     } catch (e) {

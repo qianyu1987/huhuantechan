@@ -107,31 +107,28 @@ Page({
         const newList = reset ? res.list : [...this.data.list, ...res.list]
         const total = res.total || 0
 
-        // 当前页的统计（仅用于近似显示，完整统计需后端支持）
-        const pending = newList.filter(o => ['pending_payment', 'pending_shipment', 'shipped'].includes(o.status)).length
-        const completed = newList.filter(o => o.status === 'completed').length
+        // pending/completed 统计仅基于当前页（近似值），全量统计需后端扩展接口
+        // 首屏加载时重置统计，翻页时保持原统计不变（避免数据跳动）
+        if (reset) {
+          const pending = newList.filter(o => ['pending_payment', 'pending_shipment', 'shipped'].includes(o.status)).length
+          const completed = newList.filter(o => o.status === 'completed').length
 
-        // 如果没有更多数据了，统计准确；否则展示已加载的数量
-        const statsTotal = total
-        const statsPending = total <= this.data.pageSize ? pending : pending  // 最多第一页准确
-        const statsCompleted = total <= this.data.pageSize ? completed : completed
-
-        if (this.data.role === 'buyer') {
-          this.setData({
-            buyerStats: {
-              total: statsTotal,
-              completed: statsCompleted,
-              pending: statsPending
-            }
-          })
+          if (this.data.role === 'buyer') {
+            this.setData({
+              buyerStats: { total, completed, pending }
+            })
+          } else {
+            this.setData({
+              sellerStats: { total, completed, pending }
+            })
+          }
         } else {
-          this.setData({
-            sellerStats: {
-              total: statsTotal,
-              completed: statsCompleted,
-              pending: statsPending
-            }
-          })
+          // 翻页时只更新 total
+          if (this.data.role === 'buyer') {
+            this.setData({ 'buyerStats.total': total })
+          } else {
+            this.setData({ 'sellerStats.total': total })
+          }
         }
 
         this.setData({

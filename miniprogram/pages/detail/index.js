@@ -1,6 +1,10 @@
 // pages/detail/index.js
-const { PRODUCT_CATEGORIES_V2, VALUE_RANGES_V2, DESC_TAGS, MYSTERY_EMOJIS } = require('../../utils/constants')
+const { DESC_TAGS, MYSTERY_EMOJIS, PRODUCT_CATEGORIES, VALUE_RANGES } = require('../../utils/constants')
 const { callCloud, formatTime, getCreditLevel, getProvinceByCode, toast, processImageUrls } = require('../../utils/util')
+
+// 兼容别名
+const PRODUCT_CATEGORIES_V2 = PRODUCT_CATEGORIES
+const VALUE_RANGES_V2 = VALUE_RANGES
 
 Page({
   data: {
@@ -30,7 +34,13 @@ Page({
     reviews: [],
     reviewCount: 0,
     // 代购卖家信息（异步加载）
-    sellerDaigouInfo: null
+    sellerDaigouInfo: null,
+    // 代购评价（异步加载）
+    daigouReviews: [],
+    daigouReviewCount: 0,
+    daigouReviewsLoading: false,
+    daigouReviewsPage: 1,
+    daigouReviewsHasMore: false
   },
 
   getMysteryColor(name) {
@@ -150,9 +160,11 @@ Page({
       // 加载发布者评价
       this.loadReviews(res.product.openid)
 
-      // 若商品支持代购且非自己发布，异步加载代购卖家信息
+      // 若商品支持代购且非自己发布，异步加载代购卖家信息 + 代购评价
       if (!res.isMine && p.daigou && p.daigou.enabled) {
-        this.loadSellerDaigouInfo(p.openid || p._openid)
+        const sellerOpenid = p.openid || p._openid
+        this.loadSellerDaigouInfo(sellerOpenid)
+        this.loadDaigouReviews(sellerOpenid, 1)
       }
 
       wx.setNavigationBarTitle({ title: isMystery ? '惊喜特产' : p.name })
@@ -209,9 +221,59 @@ Page({
     }
   },
 
+  // 加载代购评价列表
+  async loadDaigouReviews(sellerOpenid, page) {
+    if (!sellerOpenid) return
+    const isFirstPage = page === 1
+    this.setData({ daigouReviewsLoading: true })
+    try {
+      const res = await callCloud('daigouMgr', {
+        action: 'getSellerReviews',
+        sellerOpenid,
+        page,
+        pageSize: 5
+      })
+      if (res.success) {
+        const formatted = (res.list || []).map(r => ({
+          ...r,
+          ratingLabel: r.rating >= 4 ? '👍 好评' : (r.rating >= 3 ? '😐 中评' : '👎 差评'),
+          ratingClass: r.rating >= 4 ? 'good' : (r.rating >= 3 ? 'neutral' : 'bad'),
+          timeText: formatTime(r.createTime)
+        }))
+        const current = isFirstPage ? [] : (this.data.daigouReviews || [])
+        this.setData({
+          daigouReviews: [...current, ...formatted],
+          daigouReviewCount: res.total || 0,
+          daigouReviewsPage: page,
+          daigouReviewsHasMore: (page * 5) < (res.total || 0)
+        })
+      }
+    } catch (e) {
+      // 静默失败
+    } finally {
+      this.setData({ daigouReviewsLoading: false })
+    }
+  },
+
+  // 加载更多代购评价
+  loadMoreDaigouReviews() {
+    if (this.data.daigouReviewsLoading || !this.data.daigouReviewsHasMore) return
+    const sellerOpenid = this.data.product?.openid || this.data.product?._openid
+    this.loadDaigouReviews(sellerOpenid, this.data.daigouReviewsPage + 1)
+  },
+
   previewImages(e) {
     const idx = e.currentTarget.dataset.index
     wx.previewImage({ urls: this.data.product.images, current: this.data.product.images[idx] })
+  },
+
+  onImageError(e) {
+    const imgIndex = e.currentTarget.dataset.imgIndex
+    if (imgIndex !== undefined && this.data.product && this.data.product.images[imgIndex]) {
+      const product = this.data.product
+      product.images[imgIndex] = '/images/default-product.png'
+      this.setData({ product })
+    }
   },
 
   toggleFav() {
@@ -279,7 +341,18 @@ Page({
   },
 
   goToUserProfile(e) {
-    wx.navigateTo({ url: `/pages/user-profile/index?openid=${e.currentTarget.dataset.openid}` })
+    const openid = e.currentTarget.dataset.openid
+    if (!openid || openid === 'undefined' || openid === 'null') {
+      // openid 获取失败时，用 product 本身的 openid 兜底
+      const fallback = this.data.product?.openid || this.data.product?._openid
+      if (!fallback) {
+        toast('用户信息暂不可用')
+        return
+      }
+      wx.navigateTo({ url: `/pages/user-profile/index?openid=${fallback}` })
+      return
+    }
+    wx.navigateTo({ url: `/pages/user-profile/index?openid=${openid}` })
   },
 
   // ========== 分享功能 ==========
@@ -290,14 +363,14 @@ Page({
    * 图片：商品第一张图（https链接）
    * 路径：直接跳转到该商品详情，支持深链
    */
-  onShareAppMessage() {
+  async onShareAppMessage() {
     const p = this.data.product
     const cfg = this.data._shareConfig || {}
 
     if (!p) {
       // 商品未加载完成时降级到默认分享
       return {
-        title: cfg.defaultTitle || '来特产互换平台，发现全国好物！',
+        title: cfg.defaultTitle || '朋友你愿意和我换家乡特产吗，没有金钱交易，只有真心款待！❤️',
         path: '/pages/index/index',
         imageUrl: cfg.defaultImage || '/images/share-default.png'
       }
@@ -326,10 +399,30 @@ Page({
       .trim()
       .replace(/\s+/g, ' ')
 
-    // 图片：优先用商品第一张图，其次用云端配置的默认图
-    const imageUrl = (p.images && p.images[0] && !p.images[0].startsWith('cloud://'))
-      ? p.images[0]
-      : (cfg.defaultProductImage || '/images/share-default.png')
+    // 图片处理：如果是 cloud:// 格式，需要获取临时链接
+    let imageUrl = cfg.defaultProductImage || '/images/share-default.png'
+    
+    if (p.images && p.images[0]) {
+      const firstImage = p.images[0]
+      
+      if (firstImage.startsWith('cloud://')) {
+        // 如果是 cloud:// 格式，获取临时链接
+        try {
+          const res = await wx.cloud.getTempFileURL({
+            fileList: [firstImage]
+          })
+          if (res.fileList && res.fileList[0] && res.fileList[0].tempFileURL) {
+            imageUrl = res.fileList[0].tempFileURL
+          }
+        } catch (e) {
+          console.error('获取图片临时链接失败:', e)
+          // 使用默认图片
+        }
+      } else if (firstImage.startsWith('http://') || firstImage.startsWith('https://')) {
+        // 已经是 HTTPS 链接，直接使用
+        imageUrl = firstImage
+      }
+    }
 
     return {
       title,
@@ -340,28 +433,58 @@ Page({
 
   /**
    * 分享到朋友圈（小程序码）
-   * 注意：朋友圈分享只支持自定义标题，路径固定为当前页
+   * 注意：朋友圈分享需要返回 imageUrl 才能显示缩略图
    */
-  onShareTimeline() {
+  async onShareTimeline() {
     const p = this.data.product
     const cfg = this.data._shareConfig || {}
 
     if (!p) {
-      return { title: cfg.defaultTitle || '来特产互换平台，发现全国好物！' }
+      return { 
+        title: cfg.defaultTitle || '来特产互换平台，发现全国好物！',
+        imageUrl: cfg.defaultImage || '/images/share-default.png'
+      }
+    }
+
+    // 图片处理：如果是 cloud:// 格式，需要获取临时链接
+    let imageUrl = cfg.defaultProductImage || '/images/share-default.png'
+    
+    if (p.images && p.images[0]) {
+      const firstImage = p.images[0]
+      
+      if (firstImage.startsWith('cloud://')) {
+        // 如果是 cloud:// 格式，获取临时链接
+        try {
+          const res = await wx.cloud.getTempFileURL({
+            fileList: [firstImage]
+          })
+          if (res.fileList && res.fileList[0] && res.fileList[0].tempFileURL) {
+            imageUrl = res.fileList[0].tempFileURL
+          }
+        } catch (e) {
+          console.error('获取图片临时链接失败:', e)
+          // 使用默认图片
+        }
+      } else if (firstImage.startsWith('http://') || firstImage.startsWith('https://')) {
+        // 已经是 HTTPS 链接，直接使用
+        imageUrl = firstImage
+      }
     }
 
     if (p.isMystery) {
       const province = this.data.locationText || ''
       return {
         title: `🎁 来自${province}的惊喜特产等你揭晓`,
-        query: `id=${p._id}`
+        query: `id=${p._id}`,
+        imageUrl: cfg.mysteryImage || imageUrl
       }
     }
 
     const province = this.data.locationText || ''
     return {
       title: `${p.name} · 来自${province}，快来跟我互换特产！`,
-      query: `id=${p._id}`
+      query: `id=${p._id}`,
+      imageUrl
     }
   },
 

@@ -63,6 +63,21 @@
           </view>
           <!-- 库存 -->
           <text class="product-stock">库存 {{product.daigou.stock}} 件</text>
+          
+          <!-- 卖家信息 -->
+          <view class="seller-info" wx:if="{{sellerInfo}}">
+            <view class="seller-level">
+              <view class="level-badge {{'v'+sellerInfo.level}}">
+                V{{sellerInfo.level}}
+              </view>
+              <text class="level-name">{{sellerInfo.levelName || '基础代购'}}</text>
+            </view>
+            <view class="seller-deposit" wx:if="{{sellerInfo.depositStatus}}">
+              <view class="deposit-status {{sellerInfo.depositStatus === 'active' ? 'deposit-active' : 'deposit-inactive'}}">
+                {{sellerInfo.depositStatus === 'active' ? '已缴纳押金' : '未缴纳押金'}}
+              </view>
+            </view>
+          </view>
         </view>
         <view class="product-qty">× 1</view>
       </view>

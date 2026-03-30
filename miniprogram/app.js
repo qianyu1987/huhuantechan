@@ -17,7 +17,7 @@ App({
     featureFlagsReady: false
   },
 
-  onLaunch() {
+onLaunch() {
     // 获取平台信息（支持三端）
     const platformInfo = platformUtil.getPlatformInfo()
     this.globalData.platform = platformInfo.platform
@@ -32,7 +32,7 @@ App({
         showCancel: false
       })
       return
-    }
+    } 
     
     // 使用指定的环境ID初始化
     // 强制指定环境ID，避免 "Environment not found" 错误
@@ -54,6 +54,53 @@ App({
 
     // 检查用户协议同意状态
     this.checkAgreement()
+
+    // 自动登录检查
+    this.autoLogin()
+  },
+
+  // 自动登录功能
+  async autoLogin() {
+    try {
+      console.log('[App] 检查自动登录状态...')
+      
+      // 检查本地存储的用户信息
+      const localUserInfo = wx.getStorageSync('userInfo')
+      const localOpenid = wx.getStorageSync('openid')
+      
+      if (localUserInfo && localOpenid) {
+        console.log('[App] 发现本地用户信息，尝试自动登录')
+        
+        // 设置全局数据
+        this.globalData.userInfo = localUserInfo
+        this.globalData.openid = localOpenid
+        
+        // 获取用户完整信息
+        const res = await this.callCloudFunctionWithRetry('userInit', { action: 'getProfile' }, 3)
+        if (res.result && res.result.success) {
+          this.globalData.userInfo = res.result.userInfo
+          this.globalData.creditScore = res.result.creditScore || 100
+          this.globalData.province = res.result.province || ''
+          this.globalData.provincesBadges = res.result.provincesBadges || []
+          this.globalData.points = res.result.points || 0
+          
+          console.log('[App] 自动登录成功，用户:', this.globalData.userInfo.nickName)
+          
+          // 保存更新后的用户信息
+          wx.setStorageSync('userInfo', this.globalData.userInfo)
+          wx.setStorageSync('openid', this.globalData.openid)
+        } else {
+          console.log('[App] 自动登录获取用户信息失败，重新初始化')
+          this.initUser()
+        }
+      } else {
+        console.log('[App] 未发现本地用户信息，正常初始化')
+        this.initUser()
+      }
+    } catch (err) {
+      console.error('[App] 自动登录失败:', err)
+      this.initUser()
+    }
   },
 
   // 加载功能开关配置
@@ -131,7 +178,7 @@ App({
     }
   },
 
-  // 检查用户协议同意状态（首次登录弹窗）
+  // 检查用户协议同意状态
   checkAgreement() {
     const hasAgreed = wx.getStorageSync('userAgreedAgreement')
     

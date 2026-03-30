@@ -314,6 +314,59 @@ page {
   position: relative;
   z-index: 1;
 }
+/* 待付款紧急变体 */
+.payment-tip-urgent {
+  background: rgba(255,69,58,0.07) !important;
+  border-color: rgba(255,69,58,0.22) !important;
+}
+.payment-tip-urgent .ptip-title {
+  color: #FF453A;
+}
+/* 步骤行 */
+.ptip-step-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14rpx;
+  margin-bottom: 12rpx;
+}
+.ptip-step-num {
+  flex-shrink: 0;
+  width: 36rpx;
+  height: 36rpx;
+  background: rgba(255,69,58,0.15);
+  color: #FF453A;
+  border-radius: 50%;
+  font-size: 22rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 36rpx;
+  text-align: center;
+}
+.ptip-step-text {
+  font-size: 24rpx;
+  color: rgba(60,60,67,0.75);
+  line-height: 1.6;
+  flex: 1;
+}
+/* 警告行 */
+.ptip-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8rpx;
+  margin-top: 16rpx;
+  padding: 12rpx 16rpx;
+  background: rgba(255,69,58,0.07);
+  border-radius: 12rpx;
+  border-left: 4rpx solid #FF453A;
+}
+.ptip-warn-icon { font-size: 24rpx; flex-shrink: 0; }
+.ptip-warn-text {
+  font-size: 22rpx;
+  color: rgba(60,60,67,0.65);
+  line-height: 1.5;
+}
 .ptip-hd {
   display: flex;
   align-items: center;
@@ -674,4 +727,66 @@ page {
   color: #fff;
   box-shadow: 0 6rpx 20rpx rgba(48,209,88,0.3);
   font-size: 26rpx;
+}
+
+/* ─────────── 等级徽章 ─────────── */
+.level-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rpx 12rpx;
+  border-radius: 16rpx;
+  font-size: 20rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-right: 12rpx;
+}
+
+.level-badge.v1 {
+  background: #34C759;
+}
+
+.level-badge.v2 {
+  background: #007AFF;
+}
+
+.level-badge.v3 {
+  background: #5856D6;
+}
+
+.level-badge.v4 {
+  background: #FF9500;
+}
+
+.level-name {
+  font-size: 24rpx;
+  color: #1C1C1E;
+  font-weight: 500;
+}
+
+/* ─────────── 押金状态 ─────────── */
+.deposit-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4rpx 12rpx;
+  border-radius: 16rpx;
+  font-size: 20rpx;
+  font-weight: 500;
+  margin-right: 12rpx;
+}
+
+.deposit-active {
+  background: #E8F5E9;
+  color: #388E3C;
+}
+
+.deposit-inactive {
+  background: #FFEBEE;
+  color: #C62828;
+}
+
+.deposit-amount {
+  font-size: 24rpx;
+  color: #FF9500;
+  font-weight: 500;
 }
