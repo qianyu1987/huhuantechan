@@ -3606,7 +3606,7 @@ Page({
       points:      { points: 88, reason: '完成互换奖励' },
       orderCancel: { cancelReason: '对方取消了订单', cancelTime: today },
       withdrawal:  { status: '已通过', amount: 50, account: '微信零钱' },
-      activity:    { content: '测试活动通知内容', startTime: today, endTime: today, remark: '这是一条测试消息' },
+      activity:    { content: '测试活动通知内容', startTime: today, endTime: today },
       swapRequest: { requesterName: '测试用户', productName: '云南普洱茶', requestTime: today },
       swapAccept:  { accepterName: '测试用户', productName: '云南普洱茶', acceptTime: today },
       swapReject:  { rejecterName: '测试用户', productName: '云南普洱茶', rejectTime: today },

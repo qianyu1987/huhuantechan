@@ -123,47 +123,38 @@ async function doSend(touser, templateId, data, page) {
 // 各业务消息发送函数
 // ======================
 
-/** 发货通知
- * 字段：发货状态(phrase12)、配送方式(?)、运单号(?)
- * phrase12 已由错误信息确认，其余字段待 getTemplateList 确认
- */
+/** 发货通知 */
 async function sendShipmentNotify(openid, params = {}) {
   const { status, deliveryMethod, trackingNumber, page } = params;
   return doSend(openid, TEMPLATES.SHIPMENT_NOTIFY, {
-    phrase12:          { value: fmtPhrase(status) },
-    thing13:           { value: fmtThing(deliveryMethod, 20) },
-    character_string14:{ value: fmtChar(trackingNumber, 32) },
+    phrase12:            { value: fmtPhrase(status) },
+    thing16:             { value: fmtThing(deliveryMethod, 20) },
+    character_string31:   { value: fmtChar(trackingNumber, 32) },
   }, page);
 }
 
-/** 积分到账提醒
- * 字段：获得积分(number5)、积分说明(?)
- * number5 已由错误信息确认
- */
+/** 积分到账提醒 */
 async function sendPointsArrival(openid, params = {}) {
   const { points, reason, page } = params;
   return doSend(openid, TEMPLATES.POINTS_ARRIVAL, {
     number5: { value: String(Number(points) || 0) },
-    thing6:  { value: fmtThing(reason, 20) },
+    thing15: { value: fmtThing(reason, 20) },
   }, page);
 }
 
-/** 订单取消通知
- * 字段：取消原因(thing1)、取消时间(date2)、thing3、thing6
- */
+/** 订单取消通知 */
 async function sendOrderCancel(openid, params = {}) {
   const { cancelReason, cancelTime, page } = params;
   return doSend(openid, TEMPLATES.ORDER_CANCEL, {
-    thing1: { value: fmtThing(cancelReason, 20) },
-    date2:  { value: fmtDate(cancelTime) },
-    thing3: { value: '特产互换平台' },
-    thing6: { value: '点击查看订单详情' },
+    thing1:  { value: fmtThing(cancelReason, 20) },
+    date2:   { value: fmtDate(cancelTime) },
+    thing3:  { value: '特产互换平台' },
+    thing6:  { value: '特产互换' },
+    phrase8: { value: '已取消' },
   }, page);
 }
 
-/** 提现结果通知
- * 字段：提现状态(thing1)、提现金额(amount2)、提现账号(thing3)、日期(date4)
- */
+/** 提现结果通知 */
 async function sendWithdrawalResult(openid, params = {}) {
   const { status, amount, account, page } = params;
   return doSend(openid, TEMPLATES.WITHDRAWAL_RESULT, {
@@ -178,21 +169,20 @@ async function sendWithdrawalResult(openid, params = {}) {
 async function sendNewProduct(openid, params = {}) {
   const { productName, price, origin, shelfTime, page } = params;
   return doSend(openid, TEMPLATES.NEW_PRODUCT, {
-    thing1:   { value: fmtThing(productName, 20) },
-    amount2:   { value: String(Number(price) || 0) },
-    thing3:    { value: fmtThing(origin, 20) },
-    time4:     { value: fmtTime(shelfTime) },
+    thing2:   { value: fmtThing(productName, 20) },
+    amount3:  { value: String(Number(price) || 0) },
+    thing6:   { value: fmtThing(origin, 20) },
+    time10:   { value: fmtTime(shelfTime) },
   }, page);
 }
 
 /** 活动通知（通用） */
 async function sendActivityNotify(openid, params = {}) {
-  const { content, startTime, endTime, remark, page } = params;
+  const { content, startTime, endTime, page } = params;
   return doSend(openid, TEMPLATES.ACTIVITY_NOTIFY, {
-    thing1: { value: fmtThing(content, 20) },
-    date2:  { value: fmtDate(startTime) },     // 活动开始日期（date2 = 第2字段，日期型）
-    date3:  { value: fmtDate(endTime) },      // 活动截止日期（date3 = 第3字段，日期型）
-    thing4: { value: fmtThing(remark, 20) },   // 备注
+    thing4: { value: fmtThing(content, 20) },
+    date2:  { value: fmtDate(startTime) },
+    date3:  { value: fmtDate(endTime) },
   }, page);
 }
 
@@ -200,10 +190,9 @@ async function sendActivityNotify(openid, params = {}) {
 async function sendSwapRequest(openid, params = {}) {
   const { requesterName, productName, requestTime, page } = params;
   return doSend(openid, TEMPLATES.ACTIVITY_NOTIFY, {
-    thing1: { value: fmtThing(`${fmtThing(requesterName, 10)}想和你互换「${fmtThing(productName, 10)}」`, 20) },
+    thing4: { value: fmtThing(`${fmtThing(requesterName, 10)}想和你互换「${fmtThing(productName, 10)}」`, 20) },
     date2:  { value: fmtDate(requestTime) },
-    date3:  { value: fmtDate() },             // 截止日期，用今天占位
-    thing4: { value: '点击查看并处理互换请求' },
+    date3:  { value: fmtDate() },
   }, page);
 }
 
@@ -211,10 +200,9 @@ async function sendSwapRequest(openid, params = {}) {
 async function sendSwapAccept(openid, params = {}) {
   const { accepterName, productName, acceptTime, page } = params;
   return doSend(openid, TEMPLATES.ACTIVITY_NOTIFY, {
-    thing1: { value: fmtThing(`${fmtThing(accepterName, 10)}已同意互换「${fmtThing(productName, 10)}」`, 20) },
+    thing4: { value: fmtThing(`${fmtThing(accepterName, 10)}已同意互换「${fmtThing(productName, 10)}」`, 20) },
     date2:  { value: fmtDate(acceptTime) },
-    date3:  { value: fmtDate() },             // 截止日期，用今天占位
-    thing4: { value: '互换申请已通过，请填写快递信息' },
+    date3:  { value: fmtDate() },
   }, page);
 }
 
@@ -222,10 +210,9 @@ async function sendSwapAccept(openid, params = {}) {
 async function sendSwapReject(openid, params = {}) {
   const { rejecterName, productName, rejectTime, page } = params;
   return doSend(openid, TEMPLATES.ACTIVITY_NOTIFY, {
-    thing1: { value: fmtThing(`${fmtThing(rejecterName, 10)}拒绝了互换「${fmtThing(productName, 10)}」`, 20) },
+    thing4: { value: fmtThing(`${fmtThing(rejecterName, 10)}拒绝了互换「${fmtThing(productName, 10)}」`, 20) },
     date2:  { value: fmtDate(rejectTime) },
-    date3:  { value: fmtDate() },             // 截止日期，用今天占位
-    thing4: { value: '您的特产已释放，可重新发起申请' },
+    date3:  { value: fmtDate() },
   }, page);
 }
 
