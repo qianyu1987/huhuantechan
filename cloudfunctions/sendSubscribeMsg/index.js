@@ -189,7 +189,7 @@ async function sendSwapRequest(openid, params = {}) {
   return doSend(openid, TEMPLATES.ACTIVITY_NOTIFY, {
     thing1: { value: fmtThing(`${fmtThing(requesterName, 10)}想和你互换「${fmtThing(productName, 10)}」`, 20) },
     date2:  { value: fmtDate(requestTime) },
-    date3:  { value: '请尽快处理' },
+    date3:  { value: fmtDate() },             // 截止日期，用今天占位
     thing4: { value: '点击查看并处理互换请求' },
   }, page);
 }
@@ -200,7 +200,7 @@ async function sendSwapAccept(openid, params = {}) {
   return doSend(openid, TEMPLATES.ACTIVITY_NOTIFY, {
     thing1: { value: fmtThing(`${fmtThing(accepterName, 10)}已同意互换「${fmtThing(productName, 10)}」`, 20) },
     date2:  { value: fmtDate(acceptTime) },
-    date3:  { value: '请尽快发货' },
+    date3:  { value: fmtDate() },             // 截止日期，用今天占位
     thing4: { value: '互换申请已通过，请填写快递信息' },
   }, page);
 }
@@ -211,7 +211,7 @@ async function sendSwapReject(openid, params = {}) {
   return doSend(openid, TEMPLATES.ACTIVITY_NOTIFY, {
     thing1: { value: fmtThing(`${fmtThing(rejecterName, 10)}拒绝了互换「${fmtThing(productName, 10)}」`, 20) },
     date2:  { value: fmtDate(rejectTime) },
-    date3:  { value: '特产已释放' },
+    date3:  { value: fmtDate() },             // 截止日期，用今天占位
     thing4: { value: '您的特产已释放，可重新发起申请' },
   }, page);
 }
