@@ -1,5 +1,5 @@
 <!-- pages/my-reviews/index.wxml - 我的评价（全新设计） -->
-<view class="reviews-page">
+<view class="reviews-page theme-{{pageTheme}}">
   <!-- 顶部安全区 -->
   <view class="safe-top"></view>
 

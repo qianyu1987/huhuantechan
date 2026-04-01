@@ -1,5 +1,5 @@
 <!-- pages/wallet/index.wxml - 我的钱包 -->
-<view class="wallet-page">
+<view class="wallet-page theme-{{pageTheme}}">
 
   <!-- 顶部钱包概览 -->
   <view class="wallet-hero">

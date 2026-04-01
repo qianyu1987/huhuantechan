@@ -125,6 +125,10 @@ Page({
   },
 
   onLoad(options) {
+    // 初始化主题
+    const savedTheme = wx.getStorageSync('appTheme') || 'dark'
+    this.setData({ pageTheme: savedTheme })
+
     const { id, action } = options
     if (id) {
       this.setData({ orderId: id })

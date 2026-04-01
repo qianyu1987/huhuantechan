@@ -1,5 +1,5 @@
 <!-- pages/daigou-checkout/index.wxml - 下单页 iOS 26 毛玻璃 + 积分抵扣 -->
-<view class="page-root">
+<view class="page-root theme-{{pageTheme}}">
 
   <!-- 背景光晕 -->
   <view class="bg-blob blob-a"></view>

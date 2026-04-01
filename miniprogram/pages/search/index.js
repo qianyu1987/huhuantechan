@@ -16,6 +16,10 @@ Page({
   },
 
   onLoad() {
+    // 初始化主题
+    const savedTheme = wx.getStorageSync('appTheme') || 'dark'
+    this.setData({ pageTheme: savedTheme })
+
     this.loadHistory()
   },
 

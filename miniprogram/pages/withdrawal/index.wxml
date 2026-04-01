@@ -1,5 +1,5 @@
 <!-- pages/withdrawal/index.wxml - 提现页面 -->
-<view class="withdrawal-page">
+<view class="withdrawal-page theme-{{pageTheme}}">
 
   <!-- 顶部安全区 -->
   <view class="safe-top"></view>

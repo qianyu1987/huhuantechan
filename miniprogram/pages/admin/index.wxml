@@ -1,5 +1,5 @@
 <!-- pages/admin/index.wxml - 管理后台 v3 重设计 -->
-<view class="admin-page">
+<view class="admin-page theme-{{pageTheme}}">
 
   <!-- 安全区 -->
   <view class="safe-top"></view>

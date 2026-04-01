@@ -1,5 +1,5 @@
 <!-- pages/match/index.wxml - 互换匹配页 -->
-<view class="match-page">
+<view class="match-page theme-{{pageTheme}}">
 
   <!-- 功能未开放占位 -->
   <view wx:if="{{featureDisabled}}" class="feature-disabled-wrap">

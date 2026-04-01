@@ -1,5 +1,5 @@
 <!-- pages/order/index.wxml - 互换记录页（iOS 26 毛玻璃风格） -->
-<view class="order-page">
+<view class="order-page theme-{{pageTheme}}">
 
   <!-- 功能未开放占位 -->
   <view wx:if="{{featureDisabled}}" class="feature-disabled-wrap">

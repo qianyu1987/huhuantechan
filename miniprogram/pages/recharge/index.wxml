@@ -1,5 +1,5 @@
 <!-- pages/recharge/index.wxml - 钱包充值 -->
-<view class="recharge-page">
+<view class="recharge-page theme-{{pageTheme}}">
 
   <!-- 顶部导航 -->
   <view class="page-header safe-top">

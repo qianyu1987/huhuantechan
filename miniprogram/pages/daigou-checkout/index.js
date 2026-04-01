@@ -29,6 +29,10 @@ Page({
   },
 
   onLoad(options) {
+    // 初始化主题
+    const savedTheme = wx.getStorageSync('appTheme') || 'dark'
+    this.setData({ pageTheme: savedTheme })
+
     const { productId } = options
     if (!productId) {
       toast('参数错误')

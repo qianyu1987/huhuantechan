@@ -1,5 +1,5 @@
 <!--pages/search/index.wxml-->
-<view class="search-page">
+<view class="search-page theme-{{pageTheme}}">
   <!-- 搜索头部 -->
   <view class="search-header">
     <view class="search-input-wrap">

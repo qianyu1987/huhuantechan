@@ -1,5 +1,5 @@
 <!-- pages/favorites/index.wxml - 我的收藏（全新设计） -->
-<view class="favorites-page">
+<view class="favorites-page theme-{{pageTheme}}">
   <!-- 顶部安全区 -->
   <view class="safe-top"></view>
 
