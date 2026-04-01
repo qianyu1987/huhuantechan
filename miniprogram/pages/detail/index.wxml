@@ -1,5 +1,5 @@
 <!-- pages/detail/index.wxml - 特产详情页 - iOS 26 -->
-<view class="detail-page">
+<view class="detail-page theme-{{pageTheme}}">
   <view wx:if="{{loading}}" class="loading-wrap">
     <view class="loading-spinner"></view>
     <text>加载中...</text>
@@ -8,8 +8,23 @@
   <block wx:elif="{{product}}">
     <!-- 惊喜特产头图 -->
     <view class="mystery-hero {{mysteryColorClass}}" wx:if="{{product.isMystery}}">
-      <view class="mystery-emoji">{{mysteryEmoji}}</view>
-      <view class="mystery-label">惊喜特产</view>
+      <!-- 发光背景 -->
+      <view class="mystery-hero-glow"></view>
+      <!-- 星星装饰 -->
+      <view class="mystery-hero-stars">
+        <text class="hero-star">✨</text>
+        <text class="hero-star">⭐</text>
+        <text class="hero-star">💫</text>
+        <text class="hero-star">🌟</text>
+      </view>
+      <!-- 礼盒 -->
+      <view class="mystery-hero-box">
+        <text class="mystery-hero-emoji">{{mysteryEmoji}}</text>
+        <view class="mystery-hero-ring"></view>
+      </view>
+      <!-- 标签 -->
+      <view class="mystery-hero-label">🎁 惊喜特产</view>
+      <view class="mystery-hero-province" wx:if="{{locationText}}">📍 {{locationText}}</view>
     </view>
 
     <!-- 普通特产 - 图片轮播（圆角+渐变融入） -->
@@ -199,8 +214,13 @@
       </view>
       <view wx:else class="bottom-bar-inner">
         <view class="fav-btn" bindtap="toggleFav">
-          <text class="fav-icon">{{isFav ? '🩷' : '🤍'}}</text>
-          <text class="fav-label" style="color:{{isFav ? '#FF453A' : ''}}">收藏</text>
+          <text class="fav-icon">{{isFav ? '💖' : '🤍'}}</text>
+          <text class="fav-label" style="color:{{isFav ? '#FF2D55' : ''}}">{{isFav ? '已收藏' : '收藏'}}</text>
+        </view>
+        <!-- 举报按钮 -->
+        <view class="report-btn-bottom" bindtap="onReportProduct" wx:if="{{product && product._id}}">
+          <text class="report-icon">🚨</text>
+          <text class="report-text">举报</text>
         </view>
         <!-- 代购按钮（有代购且有库存） -->
         <button

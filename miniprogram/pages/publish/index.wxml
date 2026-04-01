@@ -1,5 +1,5 @@
 <!-- pages/publish/index.wxml - 发布特产 -->
-<view class="publish-page">
+<view class="publish-page theme-{{pageTheme}}">
 
   <!-- 功能未开放占位 -->
   <view wx:if="{{featureDisabled}}" class="feature-disabled-wrap">

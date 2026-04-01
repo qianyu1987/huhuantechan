@@ -1,0 +1,114 @@
+/* 测试订阅消息页面样式 */
+
+.container {
+  padding: 30rpx;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 40rpx;
+}
+
+.title {
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.section {
+  background-color: #fff;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+  border-left: 8rpx solid #07c160;
+  padding-left: 20rpx;
+}
+
+.openid-box {
+  background-color: #f8f8f8;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.openid-text {
+  font-size: 26rpx;
+  color: #666;
+  word-break: break-all;
+  text-align: center;
+}
+
+.copy-hint {
+  font-size: 24rpx;
+  color: #07c160;
+  margin-top: 12rpx;
+}
+
+.test-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30rpx;
+  border-radius: 12rpx;
+  margin-bottom: 20rpx;
+  border: none;
+}
+
+.test-btn::after {
+  border: none;
+}
+
+.subscribe-btn {
+  background: linear-gradient(135deg, #07c160, #05a050);
+}
+
+.send-btn {
+  background: linear-gradient(135deg, #ff6b35, #ff9f0a);
+}
+
+.btn-icon {
+  font-size: 40rpx;
+  margin-right: 16rpx;
+}
+
+.btn-text {
+  font-size: 32rpx;
+  color: #fff;
+  font-weight: 500;
+}
+
+.result-box {
+  background-color: #e8f5e9;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  border-left: 8rpx solid #07c160;
+}
+
+.result-text {
+  font-size: 28rpx;
+  color: #2e7d32;
+}
+
+.tips {
+  display: flex;
+  flex-direction: column;
+}
+
+.tip-item {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.8;
+  margin-bottom: 12rpx;
+}

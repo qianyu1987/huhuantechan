@@ -11,12 +11,41 @@
   top: 0;
   left: 0;
   right: 0;
-  bottom: 0;
-  background: 
-    radial-gradient(ellipse 90% 60% at 50% 0%, rgba(191, 90, 242, 0.15) 0%, transparent 50%),
-    radial-gradient(ellipse 60% 40% at 20% 100%, rgba(10, 132, 255, 0.1) 0%, transparent 50%);
+  height: 500rpx;
+  background: linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 50%, #1a0a2e 100%);
   z-index: 0;
   pointer-events: none;
+}
+
+/* ===== 自定义导航栏 ===== */
+.nav-bar {
+  position: relative;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 100rpx 16rpx 20rpx;
+  height: 88rpx;
+}
+
+.nav-back {
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36rpx;
+  color: #fff;
+}
+
+.nav-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #fff;
+}
+
+.nav-placeholder {
+  width: 64rpx;
 }
 
 /* ===== 顶部介绍 ===== */

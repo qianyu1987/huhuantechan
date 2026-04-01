@@ -454,6 +454,7 @@ page {
 .icon-blue { background: rgba(10, 132, 255, 0.15); }
 .icon-gray { background: rgba(142, 142, 147, 0.15); }
 .icon-orange { background: rgba(255, 149, 0, 0.15); }
+.icon-green { background: rgba(48, 209, 88, 0.15); }
 
 .tool-label {
   font-size: 24rpx;

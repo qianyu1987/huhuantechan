@@ -75,6 +75,49 @@
   color: #FF9500;
 }
 
+/* 押金操作按钮 */
+.deposit-actions {
+  display: flex;
+  gap: 24rpx;
+  margin-top: 32rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid #E5E5EA;
+}
+
+.deposit-action-btn {
+  flex: 1;
+  height: 88rpx;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  transition: all 0.25s ease;
+}
+
+.deposit-action-btn .btn-icon {
+  font-size: 32rpx;
+}
+
+.deposit-action-btn.refund {
+  background: linear-gradient(135deg, #FF3B30 0%, #CC0000 100%);
+  color: #fff;
+  box-shadow: 0 4rpx 16rpx rgba(255, 59, 48, 0.3);
+}
+
+.deposit-action-btn.add {
+  background: linear-gradient(135deg, #34C759 0%, #248A3D 100%);
+  color: #fff;
+  box-shadow: 0 4rpx 16rpx rgba(52, 199, 89, 0.3);
+}
+
+.deposit-action-btn:active {
+  transform: scale(0.96);
+  opacity: 0.9;
+}
+
 /* 联系客服 */
 .contact-section {
   background: #FFFFFF;

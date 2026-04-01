@@ -17,7 +17,8 @@ Component({
 
   data: {
     safeAreaBottom: 0,
-    tabs: ALL_TABS
+    tabs: ALL_TABS,
+    currentTheme: 'dark'
   },
 
   lifetimes: {
@@ -26,6 +27,10 @@ Component({
       this.setData({
         safeAreaBottom: windowInfo.safeArea ? (windowInfo.screenHeight - windowInfo.safeArea.bottom) : 0
       });
+
+      // 初始化主题
+      const savedTheme = wx.getStorageSync('appTheme') || 'dark'
+      this.setData({ currentTheme: savedTheme })
 
       // 根据功能开关过滤标签
       const app = getApp()
@@ -36,6 +41,16 @@ Component({
           return flags[tab.flag] !== false
         })
         this.setData({ tabs: filtered })
+      }
+    }
+  },
+
+  pageLifetimes: {
+    show() {
+      // 每次页面显示时更新主题
+      const savedTheme = wx.getStorageSync('appTheme') || 'dark'
+      if (this.data.currentTheme !== savedTheme) {
+        this.setData({ currentTheme: savedTheme })
       }
     }
   },

@@ -2,6 +2,8 @@
   "navigationBarTitleText": "我的",
   "navigationBarBackgroundColor": "#000000",
   "navigationBarTextStyle": "white",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark",
   "usingComponents": {
     "tab-bar": "/components/tab-bar/tab-bar",
     "phone-verify": "/components/phone-verify/index"

@@ -121,7 +121,7 @@
   box-shadow: 0 0 0 4rpx rgba(10, 132, 255, 0.2);
 }
 
-/* 神秘特产缩略图 */
+/* 神秘特产缩略图 - 炫酷版 */
 .my-product-mystery {
   width: 160rpx;
   height: 160rpx;
@@ -131,6 +131,8 @@
   justify-content: center;
   border: 4rpx solid transparent;
   transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 .my-product-item.selected .my-product-mystery {
@@ -138,21 +140,90 @@
   box-shadow: 0 0 0 4rpx rgba(10, 132, 255, 0.2);
 }
 
-.mystery-mini-emoji {
-  font-size: 52rpx;
+/* 深色渐变背景 */
+.my-product-mystery.purple { background: linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 50%, #1a0a2e 100%); }
+.my-product-mystery.blue { background: linear-gradient(135deg, #0a1628 0%, #1a3a5c 50%, #0a1628 100%); }
+.my-product-mystery.green { background: linear-gradient(135deg, #0a1f0a 0%, #1a3a1a 50%, #0a1f0a 100%); }
+.my-product-mystery.red { background: linear-gradient(135deg, #1f0a0a 0%, #3a1a1a 50%, #1f0a0a 100%); }
+.my-product-mystery.gold { background: linear-gradient(135deg, #1f1a0a 0%, #3a3015 50%, #1f1a0a 100%); }
+
+/* 发光效果 */
+.mystery-mini-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%;
+  height: 80%;
+  background: radial-gradient(circle, rgba(138, 43, 226, 0.4) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: miniGlowPulse 3s ease-in-out infinite;
 }
 
-/* 神秘缩略图渐变色 */
-.my-product-mystery.color-1 { background: linear-gradient(135deg, #FF6B6B 0%, #EE5A24 100%); }
-.my-product-mystery.color-2 { background: linear-gradient(135deg, #FECA57 0%, #FF9F43 100%); }
-.my-product-mystery.color-3 { background: linear-gradient(135deg, #48DBFB 0%, #0ABDE3 100%); }
-.my-product-mystery.color-4 { background: linear-gradient(135deg, #A55EEA 0%, #8854D0 100%); }
-.my-product-mystery.color-5 { background: linear-gradient(135deg, #26DE81 0%, #20BF6B 100%); }
-.my-product-mystery.color-6 { background: linear-gradient(135deg, #FED330 0%, #F79F1F 100%); }
-.my-product-mystery.color-7 { background: linear-gradient(135deg, #FC5C65 0%, #EB3B5A 100%); }
-.my-product-mystery.color-8 { background: linear-gradient(135deg, #45AAF2 0%, #2D98DA 100%); }
-.my-product-mystery.color-9 { background: linear-gradient(135deg, #4B7BEC 0%, #3867D6 100%); }
-.my-product-mystery.color-10 { background: linear-gradient(135deg, #778CA3 0%, #4B6584 100%); }
+@keyframes miniGlowPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+  50% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+}
+
+/* 星星装饰 */
+.mystery-mini-stars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.mini-star {
+  position: absolute;
+  font-size: 18rpx;
+  opacity: 0;
+  animation: miniStarTwinkle 2s ease-in-out infinite;
+}
+
+.mini-star:nth-child(1) { top: 15%; left: 15%; animation-delay: 0s; }
+.mini-star:nth-child(2) { top: 60%; right: 15%; animation-delay: 0.7s; }
+
+@keyframes miniStarTwinkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* 礼盒 */
+.mystery-mini-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.mystery-mini-emoji {
+  font-size: 52rpx;
+  animation: miniBoxFloat 3s ease-in-out infinite;
+  filter: drop-shadow(0 4rpx 16rpx rgba(0,0,0,0.3));
+}
+
+@keyframes miniBoxFloat {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-8rpx) rotate(3deg); }
+}
+
+/* 光环 */
+.mystery-mini-ring {
+  position: absolute;
+  width: 120%;
+  height: 120%;
+  border: 2rpx solid rgba(255, 215, 0, 0.4);
+  border-radius: 50%;
+  animation: miniRingPulse 2s ease-out infinite;
+}
+
+@keyframes miniRingPulse {
+  0% { transform: scale(0.9); opacity: 1; }
+  100% { transform: scale(1.3); opacity: 0; }
+}
 
 .my-product-name {
   font-size: 22rpx;
@@ -341,33 +412,107 @@
   border: 1rpx solid rgba(255, 255, 255, 0.12);
 }
 
-/* 神秘特产图片区 */
+/* 神秘特产图片区 - 炫酷版 */
 .mystery-grid-wrap {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  overflow: hidden;
 }
 
-.mystery-grid-wrap.color-1 { background: linear-gradient(135deg, #FF6B6B 0%, #EE5A24 100%); }
-.mystery-grid-wrap.color-2 { background: linear-gradient(135deg, #FECA57 0%, #FF9F43 100%); }
-.mystery-grid-wrap.color-3 { background: linear-gradient(135deg, #48DBFB 0%, #0ABDE3 100%); }
-.mystery-grid-wrap.color-4 { background: linear-gradient(135deg, #A55EEA 0%, #8854D0 100%); }
-.mystery-grid-wrap.color-5 { background: linear-gradient(135deg, #26DE81 0%, #20BF6B 100%); }
-.mystery-grid-wrap.color-6 { background: linear-gradient(135deg, #FED330 0%, #F79F1F 100%); }
-.mystery-grid-wrap.color-7 { background: linear-gradient(135deg, #FC5C65 0%, #EB3B5A 100%); }
-.mystery-grid-wrap.color-8 { background: linear-gradient(135deg, #45AAF2 0%, #2D98DA 100%); }
-.mystery-grid-wrap.color-9 { background: linear-gradient(135deg, #4B7BEC 0%, #3867D6 100%); }
-.mystery-grid-wrap.color-10 { background: linear-gradient(135deg, #778CA3 0%, #4B6584 100%); }
+/* 深色渐变背景 */
+.mystery-grid-wrap.purple { background: linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 50%, #1a0a2e 100%); }
+.mystery-grid-wrap.blue { background: linear-gradient(135deg, #0a1628 0%, #1a3a5c 50%, #0a1628 100%); }
+.mystery-grid-wrap.green { background: linear-gradient(135deg, #0a1f0a 0%, #1a3a1a 50%, #0a1f0a 100%); }
+.mystery-grid-wrap.red { background: linear-gradient(135deg, #1f0a0a 0%, #3a1a1a 50%, #1f0a0a 100%); }
+.mystery-grid-wrap.gold { background: linear-gradient(135deg, #1f1a0a 0%, #3a3015 50%, #1f1a0a 100%); }
 
+/* 发光效果 */
+.mystery-grid-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%;
+  height: 80%;
+  background: radial-gradient(circle, rgba(138, 43, 226, 0.4) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: gridGlowPulse 3s ease-in-out infinite;
+}
+
+@keyframes gridGlowPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+  50% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+}
+
+/* 星星装饰 */
+.mystery-grid-stars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.grid-star {
+  position: absolute;
+  font-size: 22rpx;
+  opacity: 0;
+  animation: gridStarTwinkle 2s ease-in-out infinite;
+}
+
+.grid-star:nth-child(1) { top: 15%; left: 15%; animation-delay: 0s; }
+.grid-star:nth-child(2) { top: 25%; right: 20%; animation-delay: 0.5s; }
+.grid-star:nth-child(3) { bottom: 30%; left: 25%; animation-delay: 1s; }
+
+@keyframes gridStarTwinkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* 礼盒 */
+.mystery-grid-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.mystery-grid-emoji {
+  font-size: 72rpx;
+  animation: gridBoxFloat 3s ease-in-out infinite;
+  filter: drop-shadow(0 4rpx 20rpx rgba(0,0,0,0.3));
+}
+
+@keyframes gridBoxFloat {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-10rpx) rotate(3deg); }
+}
+
+/* 光环 */
+.mystery-grid-ring {
+  position: absolute;
+  width: 140%;
+  height: 140%;
+  border: 3rpx solid rgba(255, 215, 0, 0.4);
+  border-radius: 50%;
+  animation: gridRingPulse 2s ease-out infinite;
+}
+
+@keyframes gridRingPulse {
+  0% { transform: scale(0.9); opacity: 1; }
+  100% { transform: scale(1.3); opacity: 0; }
+}
+
+/* 兼容旧样式 */
 .mystery-grid-content {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8rpx;
-}
-
-.mystery-grid-emoji {
-  font-size: 72rpx;
 }
 
 .mystery-grid-province {
@@ -842,4 +987,21 @@
 .rules-close-btn:active {
   transform: scale(0.97);
   box-shadow: 0 2rpx 8rpx rgba(10, 132, 255, 0.25);
+}
+
+/* 代购角标 - 橙色渐变 */
+.daigou-badge {
+  position: absolute;
+  top: 8rpx;
+  right: 8rpx;
+  padding: 4rpx 12rpx;
+  background: linear-gradient(135deg, #FF9F0A 0%, #FF6B35 100%);
+  color: #fff;
+  font-size: 18rpx;
+  font-weight: 700;
+  border-radius: 16rpx;
+  letter-spacing: 1rpx;
+  box-shadow: 0 4rpx 16rpx rgba(255, 107, 53, 0.4);
+  border: 1rpx solid rgba(255, 255, 255, 0.2);
+  z-index: 2;
 }

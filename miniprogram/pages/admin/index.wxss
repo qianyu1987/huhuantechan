@@ -757,6 +757,11 @@ page {
   color: var(--color-hint);
 }
 
+.lc-time {
+  font-size: 20rpx;
+  color: var(--color-hint);
+}
+
 .lc-index {
   width: 48rpx;
   height: 48rpx;
@@ -954,6 +959,8 @@ page {
 }
 
 .ocv3-loc { font-size: 22rpx; color: var(--color-hint); }
+
+.ocv3-time { font-size: 20rpx; color: var(--color-hint); margin-top: 4rpx; }
 
 .ocv3-footer {
   display: flex;

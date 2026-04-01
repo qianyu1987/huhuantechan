@@ -1,0 +1,6 @@
+{
+  "envId": "cloud1-3g4sjhqr5e28e54e",
+  "cloudrun": {
+    "name": "message-receiver"
+  }
+}

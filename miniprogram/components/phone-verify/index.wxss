@@ -4,27 +4,23 @@
   width: 100%;
 }
 
-/* 已验证状态 */
+/* 已验证状态 - 简化版 */
 .verified-box {
   display: flex;
   align-items: center;
-  background: linear-gradient(135deg, rgba(52, 199, 89, 0.15), rgba(52, 199, 89, 0.05));
-  border: 1rpx solid rgba(52, 199, 89, 0.3);
-  border-radius: 24rpx;
-  padding: 32rpx;
-  backdrop-filter: blur(20rpx);
+  padding: 24rpx 0;
 }
 
 .verified-icon {
-  width: 64rpx;
-  height: 64rpx;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #34C759, #30B350);
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 12rpx;
+  background: rgba(52, 199, 89, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
-  font-size: 36rpx;
+  color: #34C759;
+  font-size: 40rpx;
   font-weight: bold;
   margin-right: 24rpx;
   flex-shrink: 0;
@@ -35,25 +31,24 @@
 }
 
 .verified-label {
-  font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 8rpx;
+  font-size: 26rpx;
+  color: #fff;
+  margin-bottom: 4rpx;
 }
 
 .verified-phone {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #fff;
-  letter-spacing: 2rpx;
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 1rpx;
 }
 
 .verified-badge {
-  padding: 8rpx 20rpx;
-  background: rgba(52, 199, 89, 0.2);
-  border-radius: 20rpx;
-  font-size: 24rpx;
+  padding: 6rpx 16rpx;
+  background: rgba(52, 199, 89, 0.15);
+  border-radius: 8rpx;
+  font-size: 22rpx;
   color: #34C759;
-  font-weight: 600;
+  font-weight: 500;
   flex-shrink: 0;
 }
 
@@ -67,11 +62,8 @@
   width: 100%;
   display: flex;
   align-items: center;
-  background: linear-gradient(135deg, rgba(0, 122, 255, 0.15), rgba(0, 122, 255, 0.05));
-  border: 1rpx solid rgba(0, 122, 255, 0.3);
-  border-radius: 24rpx;
-  padding: 32rpx;
-  backdrop-filter: blur(20rpx);
+  padding: 24rpx 0;
+  background: transparent;
   transition: all 0.3s ease;
 }
 
@@ -93,11 +85,8 @@
   width: 100%;
   display: flex;
   align-items: center;
-  background: linear-gradient(135deg, rgba(255, 149, 0, 0.15), rgba(255, 149, 0, 0.05));
-  border: 1rpx solid rgba(255, 149, 0, 0.3);
-  border-radius: 24rpx;
-  padding: 32rpx;
-  backdrop-filter: blur(20rpx);
+  padding: 24rpx 0;
+  background: transparent;
   transition: all 0.3s ease;
 }
 
@@ -106,23 +95,22 @@
 }
 
 .login-first-btn:active {
-  transform: scale(0.98);
-  opacity: 0.9;
+  opacity: 0.8;
 }
 
 .login-first-btn .btn-icon {
-  background: linear-gradient(135deg, #FF9500, #FF6B00);
+  background: rgba(255, 149, 0, 0.15);
 }
 
 .btn-icon {
-  width: 64rpx;
-  height: 64rpx;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #007AFF, #0051D5);
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 12rpx;
+  background: rgba(0, 122, 255, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32rpx;
+  font-size: 36rpx;
   margin-right: 24rpx;
   flex-shrink: 0;
 }
@@ -132,15 +120,14 @@
 }
 
 .btn-title {
-  font-size: 30rpx;
-  font-weight: 600;
+  font-size: 26rpx;
   color: #fff;
-  margin-bottom: 8rpx;
+  margin-bottom: 4rpx;
 }
 
 .btn-desc {
   font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.5);
 }
 
 /* 验证码输入 */

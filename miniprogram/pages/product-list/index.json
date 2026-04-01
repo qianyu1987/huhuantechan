@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "特产列表",
+  "navigationBarBackgroundColor": "#1a1a2e",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#1a1a2e",
+  "enablePullDownRefresh": false,
+  "usingComponents": {}
+}

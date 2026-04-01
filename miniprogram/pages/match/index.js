@@ -2,6 +2,7 @@
 const { PROVINCES, PRODUCT_CATEGORIES, VALUE_RANGES, MYSTERY_EMOJIS } = require('../../utils/constants')
 const { callCloud, formatTime, getCreditLevel, getProvinceByCode, toast, processImageUrl, getTempUrls } = require('../../utils/util')
 const imageOptimizer = require('../../utils/imageOptimizer')
+const subscribeMsg = require('../../utils/subscribeMessage')
 
 Page({
   data: {
@@ -46,7 +47,7 @@ Page({
         if (isMystery) {
           const provinceName = province ? province.name : item.province || '神秘'
           const code = provinceName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
-          const colors = ['color-1','color-2','color-3','color-4','color-5','color-6','color-7','color-8','color-9','color-10']
+          const colors = ['purple', 'blue', 'green', 'red', 'gold']
           return {
             ...item,
             isMystery: true,
@@ -139,7 +140,7 @@ Page({
     if (isMystery) {
       const provinceName = province ? province.name : item.province || '神秘'
       const code = provinceName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
-      const colors = ['color-1','color-2','color-3','color-4','color-5','color-6','color-7','color-8','color-9','color-10']
+      const colors = ['purple', 'blue', 'green', 'red', 'gold']
       mysteryStyle = {
         isMystery: true,
         colorClass: colors[code % colors.length],
@@ -213,7 +214,9 @@ Page({
             })
             if (result && result.success) {
               toast('分享请求已发出！', 'success')
-              wx.navigateTo({ url: `/pages/order-detail/index?orderId=${result.orderId}` })
+              // 请求互换申请通知订阅（对方同意/拒绝时会通知）
+              subscribeMsg.subscribeForActivity()
+              wx.navigateTo({ url: `/pages/order-detail/index?id=${result.orderId}` })
             } else {
               toast(result?.message || '发起失败，请重试')
             }

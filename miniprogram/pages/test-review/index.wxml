@@ -1,0 +1,84 @@
+<!-- pages/test-review/index.wxml -->
+<view class="container">
+  <view class="header">
+    <text>测试评价云函数</text>
+  </view>
+  
+  <view class="actions">
+    <button type="primary" bindtap="reTest" loading="{{loading}}">重新测试</button>
+  </view>
+  
+  <view wx:if="{{error}}" class="error">
+    <text>错误: {{error}}</text>
+  </view>
+  
+  <view class="section">
+    <view class="section-header">
+      <text>我发出的评价 (myReviews)</text>
+      <button size="mini" bindtap="copyResult" data-type="my">复制结果</button>
+    </view>
+    
+    <view wx:if="{{myReviewsResult}}">
+      <view class="result-item">
+        <text>success: {{myReviewsResult.success}}</text>
+      </view>
+      <view class="result-item">
+        <text>message: {{myReviewsResult.message || '无'}}</text>
+      </view>
+      <view class="result-item">
+        <text>list长度: {{myReviewsResult.list ? myReviewsResult.list.length : 0}}</text>
+      </view>
+      <view class="result-item">
+        <text>total: {{myReviewsResult.total || 0}}</text>
+      </view>
+      
+      <view wx:if="{{myReviewsResult.list && myReviewsResult.list.length > 0}}">
+        <text class="subtitle">评价列表:</text>
+        <view wx:for="{{myReviewsResult.list}}" wx:key="_id" class="review-item">
+          <text>ID: {{item._id}}</text>
+          <text>评分: {{item.rating}}</text>
+          <text>内容: {{item.content || '无'}}</text>
+          <text>时间: {{item.createTimeText || item.createTime}}</text>
+        </view>
+      </view>
+    </view>
+    <view wx:else>
+      <text class="no-data">无数据</text>
+    </view>
+  </view>
+  
+  <view class="section">
+    <view class="section-header">
+      <text>我收到的评价 (receivedReviews)</text>
+      <button size="mini" bindtap="copyResult" data-type="received">复制结果</button>
+    </view>
+    
+    <view wx:if="{{receivedReviewsResult}}">
+      <view class="result-item">
+        <text>success: {{receivedReviewsResult.success}}</text>
+      </view>
+      <view class="result-item">
+        <text>message: {{receivedReviewsResult.message || '无'}}</text>
+      </view>
+      <view class="result-item">
+        <text>list长度: {{receivedReviewsResult.list ? receivedReviewsResult.list.length : 0}}</text>
+      </view>
+      <view class="result-item">
+        <text>total: {{receivedReviewsResult.total || 0}}</text>
+      </view>
+      
+      <view wx:if="{{receivedReviewsResult.list && receivedReviewsResult.list.length > 0}}">
+        <text class="subtitle">评价列表:</text>
+        <view wx:for="{{receivedReviewsResult.list}}" wx:key="_id" class="review-item">
+          <text>ID: {{item._id}}</text>
+          <text>评分: {{item.rating}}</text>
+          <text>内容: {{item.content || '无'}}</text>
+          <text>时间: {{item.createTimeText || item.createTime}}</text>
+        </view>
+      </view>
+    </view>
+    <view wx:else>
+      <text class="no-data">无数据</text>
+    </view>
+  </view>
+</view>

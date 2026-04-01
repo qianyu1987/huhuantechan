@@ -2,6 +2,145 @@
 const { DEFAULT_FEATURE_FLAGS } = require('./utils/constants')
 const platformUtil = require('./utils/platform')
 
+// 主题配置
+const THEMES = {
+  dark: {
+    id: 'dark',
+    name: '深邃黑',
+    primary: '#0A84FF',
+    primaryLight: '#64D2FF',
+    primaryGradient: 'linear-gradient(135deg, #0A84FF 0%, #5AC8FA 100%)',
+    secondary: '#30D158',
+    secondaryGradient: 'linear-gradient(135deg, #30D158 0%, #34C759 100%)',
+    warning: '#FF9F0A',
+    warningGradient: 'linear-gradient(135deg, #FF9F0A 0%, #FF9500 100%)',
+    danger: '#FF453A',
+    dangerGradient: 'linear-gradient(135deg, #FF453A 0%, #FF3B30 100%)',
+    purple: '#BF5AF2',
+    purpleGradient: 'linear-gradient(135deg, #BF5AF2 0%, #AF52DE 100%)',
+    indigo: '#5E5CE6',
+    pink: '#FF375F',
+    pinkGradient: 'linear-gradient(135deg, #FF375F 0%, #FF2D55 100%)',
+    teal: '#64D2FF',
+    yellow: '#FFD60A',
+    bg: '#000000',
+    bgSecondary: '#0D0D0F',
+    bgTertiary: '#161619',
+    bgElevated: '#1C1C1E',
+    liquidSurface: 'rgba(255, 255, 255, 0.08)',
+    liquidSurfaceHover: 'rgba(255, 255, 255, 0.12)',
+    liquidSurfaceActive: 'rgba(255, 255, 255, 0.16)',
+    liquidSurfaceSolid: 'rgba(30, 30, 32, 0.95)',
+    glassPrimary: 'rgba(10, 132, 255, 0.15)',
+    glassSecondary: 'rgba(48, 209, 88, 0.12)',
+    glassPurple: 'rgba(191, 90, 242, 0.12)',
+    glassPink: 'rgba(255, 55, 95, 0.12)',
+    glassOrange: 'rgba(255, 159, 10, 0.12)',
+    glassTeal: 'rgba(100, 210, 255, 0.12)',
+    text: '#FFFFFF',
+    textSecondary: 'rgba(255, 255, 255, 0.8)',
+    textTertiary: 'rgba(255, 255, 255, 0.5)',
+    textQuaternary: 'rgba(255, 255, 255, 0.3)',
+    textLight: '#8E8E93',
+    textInverse: '#000000',
+    divider: 'rgba(255, 255, 255, 0.08)',
+    dividerStrong: 'rgba(255, 255, 255, 0.15)',
+    navBg: 'rgba(30, 30, 32, 0.7)',
+    cardBg: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)',
+    cardBorder: 'rgba(255, 255, 255, 0.08)'
+  },
+  light: {
+    id: 'light',
+    name: '纯净白',
+    primary: '#007AFF',
+    primaryLight: '#64D2FF',
+    primaryGradient: 'linear-gradient(135deg, #007AFF 0%, #5AC8FA 100%)',
+    secondary: '#34C759',
+    secondaryGradient: 'linear-gradient(135deg, #34C759 0%, #30D158 100%)',
+    warning: '#FF9500',
+    warningGradient: 'linear-gradient(135deg, #FF9500 0%, #FF9F0A 100%)',
+    danger: '#FF3B30',
+    dangerGradient: 'linear-gradient(135deg, #FF3B30 0%, #FF453A 100%)',
+    purple: '#AF52DE',
+    purpleGradient: 'linear-gradient(135deg, #AF52DE 0%, #BF5AF2 100%)',
+    indigo: '#5856D6',
+    pink: '#FF2D55',
+    pinkGradient: 'linear-gradient(135deg, #FF2D55 0%, #FF375F 100%)',
+    teal: '#5AC8FA',
+    yellow: '#FFCC00',
+    bg: '#F2F2F7',
+    bgSecondary: '#FFFFFF',
+    bgTertiary: '#EFEFF4',
+    bgElevated: '#FFFFFF',
+    liquidSurface: 'rgba(255, 255, 255, 0.8)',
+    liquidSurfaceHover: 'rgba(255, 255, 255, 0.9)',
+    liquidSurfaceActive: 'rgba(240, 240, 245, 0.95)',
+    liquidSurfaceSolid: 'rgba(255, 255, 255, 0.95)',
+    glassPrimary: 'rgba(0, 122, 255, 0.12)',
+    glassSecondary: 'rgba(52, 199, 89, 0.1)',
+    glassPurple: 'rgba(175, 82, 222, 0.1)',
+    glassPink: 'rgba(255, 45, 85, 0.1)',
+    glassOrange: 'rgba(255, 149, 0, 0.1)',
+    glassTeal: 'rgba(90, 200, 250, 0.1)',
+    text: '#000000',
+    textSecondary: 'rgba(0, 0, 0, 0.6)',
+    textTertiary: 'rgba(0, 0, 0, 0.4)',
+    textQuaternary: 'rgba(0, 0, 0, 0.2)',
+    textLight: '#8E8E93',
+    textInverse: '#FFFFFF',
+    divider: 'rgba(0, 0, 0, 0.08)',
+    dividerStrong: 'rgba(0, 0, 0, 0.15)',
+    navBg: 'rgba(255, 255, 255, 0.8)',
+    cardBg: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%)',
+    cardBorder: 'rgba(0, 0, 0, 0.06)'
+  },
+  rose: {
+    id: 'rose',
+    name: '玫瑰红',
+    primary: '#FF3B54',
+    primaryLight: '#FF6B7F',
+    primaryGradient: 'linear-gradient(135deg, #FF3B54 0%, #FF6B7F 100%)',
+    secondary: '#34C759',
+    secondaryGradient: 'linear-gradient(135deg, #34C759 0%, #30D158 100%)',
+    warning: '#FF9F0A',
+    warningGradient: 'linear-gradient(135deg, #FF9F0A 0%, #FF9500 100%)',
+    danger: '#FF453A',
+    dangerGradient: 'linear-gradient(135deg, #FF453A 0%, #FF3B30 100%)',
+    purple: '#BF5AF2',
+    purpleGradient: 'linear-gradient(135deg, #BF5AF2 0%, #AF52DE 100%)',
+    indigo: '#5E5CE6',
+    pink: '#FF375F',
+    pinkGradient: 'linear-gradient(135deg, #FF375F 0%, #FF2D55 100%)',
+    teal: '#64D2FF',
+    yellow: '#FFD60A',
+    bg: '#1A0008',
+    bgSecondary: '#2D0010',
+    bgTertiary: '#3D0015',
+    bgElevated: '#4D001A',
+    liquidSurface: 'rgba(255, 59, 84, 0.12)',
+    liquidSurfaceHover: 'rgba(255, 59, 84, 0.18)',
+    liquidSurfaceActive: 'rgba(255, 59, 84, 0.24)',
+    liquidSurfaceSolid: 'rgba(45, 0, 16, 0.95)',
+    glassPrimary: 'rgba(255, 59, 84, 0.2)',
+    glassSecondary: 'rgba(48, 209, 88, 0.12)',
+    glassPurple: 'rgba(191, 90, 242, 0.12)',
+    glassPink: 'rgba(255, 59, 84, 0.25)',
+    glassOrange: 'rgba(255, 159, 10, 0.12)',
+    glassTeal: 'rgba(100, 210, 255, 0.12)',
+    text: '#FFFFFF',
+    textSecondary: 'rgba(255, 255, 255, 0.8)',
+    textTertiary: 'rgba(255, 255, 255, 0.5)',
+    textQuaternary: 'rgba(255, 255, 255, 0.3)',
+    textLight: '#FFB3C1',
+    textInverse: '#FFFFFF',
+    divider: 'rgba(255, 59, 84, 0.15)',
+    dividerStrong: 'rgba(255, 59, 84, 0.25)',
+    navBg: 'rgba(45, 0, 16, 0.7)',
+    cardBg: 'linear-gradient(135deg, rgba(255, 59, 84, 0.15) 0%, rgba(255, 59, 84, 0.05) 100%)',
+    cardBorder: 'rgba(255, 59, 84, 0.2)'
+  }
+}
+
 App({
   globalData: {
     userInfo: null,
@@ -14,7 +153,9 @@ App({
     platform: 'weixin', // 平台：weixin/ohos/android/ios
     platformInfo: null, // 详细平台信息
     featureFlags: null,
-    featureFlagsReady: false
+    featureFlagsReady: false,
+    theme: 'dark', // 当前主题
+    themes: THEMES // 主题配置
   },
 
 onLaunch() {
@@ -23,6 +164,9 @@ onLaunch() {
     this.globalData.platform = platformInfo.platform
     this.globalData.platformInfo = platformInfo
     console.log('[App] 平台:', platformInfo)
+
+    // 初始化主题
+    this.initTheme()
 
     // 初始化云开发
     if (!wx.cloud) {
@@ -160,8 +304,99 @@ onLaunch() {
     return flags[flag]
   },
 
+  // ========== 主题管理 ==========
+  initTheme() {
+    const savedTheme = wx.getStorageSync('appTheme') || 'dark'
+    this.applyTheme(savedTheme)
+    console.log('[App] 主题初始化:', savedTheme)
+  },
+
+  applyTheme(themeId) {
+    const theme = this.globalData.themes[themeId]
+    if (!theme) {
+      console.warn('[App] 未知主题:', themeId)
+      return
+    }
+
+    this.globalData.theme = themeId
+    wx.setStorageSync('appTheme', themeId)
+
+    // 更新 CSS 变量
+    const cssVars = {
+      '--color-primary': theme.primary,
+      '--color-primary-light': theme.primaryLight,
+      '--color-primary-gradient': theme.primaryGradient,
+      '--color-secondary': theme.secondary,
+      '--color-secondary-gradient': theme.secondaryGradient,
+      '--color-warning': theme.warning,
+      '--color-warning-gradient': theme.warningGradient,
+      '--color-danger': theme.danger,
+      '--color-danger-gradient': theme.dangerGradient,
+      '--color-purple': theme.purple,
+      '--color-purple-gradient': theme.purpleGradient,
+      '--color-indigo': theme.indigo,
+      '--color-pink': theme.pink,
+      '--color-pink-gradient': theme.pinkGradient,
+      '--color-teal': theme.teal,
+      '--color-yellow': theme.yellow,
+      '--color-bg': theme.bg,
+      '--color-bg-secondary': theme.bgSecondary,
+      '--color-bg-tertiary': theme.bgTertiary,
+      '--color-bg-elevated': theme.bgElevated,
+      '--liquid-surface': theme.liquidSurface,
+      '--liquid-surface-hover': theme.liquidSurfaceHover,
+      '--liquid-surface-active': theme.liquidSurfaceActive,
+      '--liquid-surface-solid': theme.liquidSurfaceSolid,
+      '--glass-primary': theme.glassPrimary,
+      '--glass-secondary': theme.glassSecondary,
+      '--glass-purple': theme.glassPurple,
+      '--glass-pink': theme.glassPink,
+      '--glass-orange': theme.glassOrange,
+      '--glass-teal': theme.glassTeal,
+      '--color-text': theme.text,
+      '--color-text-secondary': theme.textSecondary,
+      '--color-text-tertiary': theme.textTertiary,
+      '--color-text-quaternary': theme.textQuaternary,
+      '--color-text-light': theme.textLight,
+      '--color-text-inverse': theme.textInverse,
+      '--color-divider': theme.divider,
+      '--color-divider-strong': theme.dividerStrong,
+      '--nav-bg': theme.navBg,
+      '--card-bg': theme.cardBg,
+      '--card-border': theme.cardBorder
+    }
+
+    // 动态设置页面样式
+    wx.setStorageSync('currentTheme', theme)
+
+    // 通知页面主题变化
+    const pages = getCurrentPages()
+    pages.forEach(page => {
+      if (page.onThemeChange) {
+        page.onThemeChange(theme)
+      }
+    })
+
+    console.log('[App] 主题应用:', theme.name)
+  },
+
+  switchTheme(themeId) {
+    this.applyTheme(themeId)
+    wx.showToast({
+      title: '主题已切换',
+      icon: 'success'
+    })
+  },
+
+  getCurrentTheme() {
+    return this.globalData.themes[this.globalData.theme] || this.globalData.themes.dark
+  },
+
+  getThemes() {
+    return Object.values(this.globalData.themes)
+  },
+
   // 强制刷新功能开关（admin修改后调用）
-  async refreshFeatureFlags() {
     try {
       wx.removeStorageSync('featureFlags')
       wx.removeStorageSync('featureFlagsTTL')

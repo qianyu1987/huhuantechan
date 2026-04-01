@@ -561,14 +561,15 @@
 
 .currency-sign {
   font-size: 28rpx;
-  color: rgba(60,60,67,0.6);
+  color: #B8860B;
   margin-right: 8rpx;
 }
 
 .daigou-input {
   flex: 1;
-  font-size: 28rpx;
-  color: #1c1c1e;
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #DAA520;
   height: 72rpx;
   line-height: 72rpx;
 }
@@ -594,9 +595,9 @@
 }
 
 .stock-num {
-  font-size: 34rpx;
+  font-size: 36rpx;
   font-weight: 600;
-  color: #1c1c1e;
+  color: #DAA520;
   min-width: 60rpx;
   text-align: center;
 }

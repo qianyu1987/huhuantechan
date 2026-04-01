@@ -2,6 +2,13 @@
 <view class="mystery-page">
   <view class="bg-gradient"></view>
 
+  <!-- 自定义导航栏 -->
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="goBack">‹</view>
+    <text class="nav-title">神秘特产</text>
+    <view class="nav-placeholder"></view>
+  </view>
+
   <!-- 顶部介绍 -->
   <view class="mystery-header">
     <view class="header-icon-wrapper">

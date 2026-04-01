@@ -29,7 +29,7 @@ Page({
     // 惊喜特产
     isMystery: false,
     mysteryEmoji: '🎁',
-    mysteryColorClass: 'color-1',
+    mysteryColorClass: 'purple',
     // 评价
     reviews: [],
     reviewCount: 0,
@@ -44,9 +44,10 @@ Page({
   },
 
   getMysteryColor(name) {
-    if (!name) return 'color-1'
+    if (!name) return 'purple'
+    const colors = ['purple', 'blue', 'green', 'red', 'gold']
     const code = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
-    return 'color-' + (code % 10 + 1)
+    return colors[code % colors.length]
   },
 
   getMysteryEmoji(name) {
@@ -58,6 +59,10 @@ Page({
   onLoad(options) {
     const app = getApp()
     this.setData({ featureFlags: app.globalData.featureFlags || {} })
+
+    // 初始化主题
+    const savedTheme = wx.getStorageSync('appTheme') || 'dark'
+    this.setData({ pageTheme: savedTheme })
 
     // 预加载云端分享配置（热更新：不改代码就能调整分享话术）
     this._loadShareConfig()
@@ -111,6 +116,29 @@ Page({
 
       // 处理图片
       p.images = processImageUrls(p.images)
+      
+      // 预处理分享图片：cloud:// 格式需要转换为 HTTPS
+      let shareImageUrl = ''
+      if (p.images && p.images[0]) {
+        const firstImage = p.images[0]
+        if (firstImage.startsWith('http://') || firstImage.startsWith('https://')) {
+          shareImageUrl = firstImage
+        } else if (firstImage.startsWith('cloud://')) {
+          // 异步获取临时链接，存储到 _shareImageUrl
+          wx.cloud.getTempFileURL({
+            fileList: [firstImage]
+          }).then(res => {
+            if (res.fileList && res.fileList[0] && res.fileList[0].tempFileURL) {
+              this.setData({
+                'product._shareImageUrl': res.fileList[0].tempFileURL
+              })
+            }
+          }).catch(() => {
+            // 静默失败，使用默认图片
+          })
+        }
+      }
+      p._shareImageUrl = shareImageUrl
 
       // 地区文本：省 市 区
       const locParts = [province?.name, p.city, p.district].filter(Boolean)
@@ -363,9 +391,14 @@ Page({
    * 图片：商品第一张图（https链接）
    * 路径：直接跳转到该商品详情，支持深链
    */
-  async onShareAppMessage() {
+  async onShareAppMessage(res) {
     const p = this.data.product
     const cfg = this.data._shareConfig || {}
+
+    // 记录分享日志（异步执行，不阻塞分享）
+    if (p && p._id) {
+      this._recordShareLog(p._id, p.name || '神秘特产', 'friend')
+    }
 
     if (!p) {
       // 商品未加载完成时降级到默认分享
@@ -434,10 +467,16 @@ Page({
   /**
    * 分享到朋友圈（小程序码）
    * 注意：朋友圈分享需要返回 imageUrl 才能显示缩略图
+   * 重要：onShareTimeline 必须是同步函数，不能使用 async/await
    */
-  async onShareTimeline() {
+  onShareTimeline() {
     const p = this.data.product
     const cfg = this.data._shareConfig || {}
+
+    // 记录分享日志（异步执行，不阻塞分享）
+    if (p && p._id) {
+      this._recordShareLog(p._id, p.name || '神秘特产', 'timeline')
+    }
 
     if (!p) {
       return { 
@@ -446,29 +485,17 @@ Page({
       }
     }
 
-    // 图片处理：如果是 cloud:// 格式，需要获取临时链接
-    let imageUrl = cfg.defaultProductImage || '/images/share-default.png'
+    // 图片处理：使用预处理的图片URL（在加载产品时已经转换）
+    // 注意：不能在这里使用异步方法获取 cloud:// 的临时链接
+    let imageUrl = p._shareImageUrl || cfg.defaultProductImage || '/images/share-default.png'
     
+    // 如果图片是 HTTP/HTTPS 链接，直接使用
     if (p.images && p.images[0]) {
       const firstImage = p.images[0]
-      
-      if (firstImage.startsWith('cloud://')) {
-        // 如果是 cloud:// 格式，获取临时链接
-        try {
-          const res = await wx.cloud.getTempFileURL({
-            fileList: [firstImage]
-          })
-          if (res.fileList && res.fileList[0] && res.fileList[0].tempFileURL) {
-            imageUrl = res.fileList[0].tempFileURL
-          }
-        } catch (e) {
-          console.error('获取图片临时链接失败:', e)
-          // 使用默认图片
-        }
-      } else if (firstImage.startsWith('http://') || firstImage.startsWith('https://')) {
-        // 已经是 HTTPS 链接，直接使用
+      if (firstImage.startsWith('http://') || firstImage.startsWith('https://')) {
         imageUrl = firstImage
       }
+      // cloud:// 格式的图片已经在 onLoad 中预转换，这里直接使用 _shareImageUrl
     }
 
     if (p.isMystery) {
@@ -501,5 +528,52 @@ Page({
     } catch (e) {
       // 静默失败，降级用本地默认值
     }
+  },
+
+  /**
+   * 记录分享日志
+   * @param {string} productId - 特产ID
+   * @param {string} productName - 特产名称
+   * @param {string} shareType - 分享类型：friend(好友) / timeline(朋友圈)
+   */
+  async _recordShareLog(productId, productName, shareType) {
+    try {
+      await callCloud('adminMgr', {
+        action: 'logUserAction',
+        actionType: 'share_product',
+        targetType: 'product',
+        targetId: productId,
+        detail: {
+          productName,
+          shareType
+        }
+      })
+    } catch (e) {
+      // 静默失败，不影响分享体验
+      console.log('[detail] 记录分享日志失败', e)
+    }
+  },
+
+  // ========== 举报功能 ==========
+
+  /**
+   * 举报商品
+   */
+  onReportProduct() {
+    const p = this.data.product
+    if (!p || !p._id) return
+
+    // 检查是否是自己的商品
+    const app = getApp()
+    const userInfo = app.globalData.userInfo
+    if (p.openid === userInfo._openid) {
+      toast('不能举报自己的商品', 'error')
+      return
+    }
+
+    // 跳转到举报页面
+    wx.navigateTo({
+      url: `/pages/report/index?type=product&targetId=${p._id}&targetName=${encodeURIComponent(p.name || '未知商品')}&targetImage=${encodeURIComponent(p.images[0] || '')}&ownerId=${p.openid}`
+    })
   }
 })

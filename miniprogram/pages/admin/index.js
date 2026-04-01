@@ -31,12 +31,14 @@ Page({
     userLoading: false,
     userNoMore: false,
     userKeyword: '',
+    totalUsers: 0, // 用户总数（用于计算序号）
     // 特产列表
     products: [],
     productPage: 1,
     productLoading: false,
     productNoMore: false,
     productFilter: 'all', // all, active, mystery
+    totalProducts: 0, // 特产总数（用于计算序号）
     // 订单列表
     orders: [],
     orderPage: 1,
@@ -44,18 +46,20 @@ Page({
     orderNoMore: false,
     orderFilter: 'all',
     orderStats: { pending: 0, shipping: 0, completed: 0 },
+    totalOrders: 0, // 订单总数（用于计算序号）
     // 审核列表
     reviews: [],
     reviewPage: 1,
     reviewLoading: false,
     reviewNoMore: false,
+    reviewFilter: 'pending', // pending=待审核, approved=已通过, rejected=已拒绝
     // 待审核产品列表
     pendingProducts: [],
     pendingPage: 1,
     pendingLoading: false,
     pendingNoMore: false,
     auditFilter: 'all',
-    pendingStats: { autoBlocked: 0, manualReview: 0 },
+    pendingStats: { autoBlocked: 0, manualReview: 0, pending: 0, approved: 0, rejected: 0, total: 0 },
     // 积分管理
     selectedUser: null,
     pointsModalVisible: false,
@@ -746,46 +750,50 @@ Page({
     } else if (index === 4 && this.data.pendingProducts.length === 0) {
       this.loadPendingProducts()
     } else if (index === 5) {
-      // 日志 Tab
-      if (this.data.operationLogs.length === 0) this.loadUserOperationLogs()
-    } else if (index === 6) {
-      // 实名审核 Tab
-      if (this.data.daigouVerifyList.length === 0) this.loadDaigouVerifyList()
-    } else if (index === 7 && this.data.pointsUsers.length === 0) {
+      // 日志 Tab（普通管理员）或 实名认证 Tab（超管，见WXML中isSuperAdmin条件）
+      if (!this.data.isSuperAdmin && this.data.operationLogs.length === 0) {
+        this.loadUserOperationLogs()
+      } else if (this.data.isSuperAdmin && this.data.daigouVerifyList.length === 0) {
+        this.loadDaigouVerifyList()
+      }
+    } else if (index === 6 && this.data.pointsUsers.length === 0) {
       // 积分管理 Tab
       this.loadPointsUsers()
-    } else if (index === 8 && this.data.creditUsers.length === 0) {
+    } else if (index === 7 && this.data.creditUsers.length === 0) {
       // 信用分管理 Tab
       this.loadCreditUsers()
-    } else if (index === 9 && this.data.mysteryProducts.length === 0) {
+    } else if (index === 8 && this.data.mysteryProducts.length === 0) {
       // 神秘特产管理 Tab
       this.loadMysteryProducts()
-    } else if (index === 10) {
+    } else if (index === 9) {
       // 代购管理：加载统计 + 订单
       if (this.data.daigouOrders.length === 0) this.loadDaigouOrders()
       this.loadDaigouStats()
-    } else if (index === 11) {
+    } else if (index === 10) {
       // 押金审批
       if (this.data.depositApplyList.length === 0) this.loadDepositApplyList()
-    } else if (index === 12) {
+    } else if (index === 11) {
       // 提现审批
       if (this.data.withdrawalList.length === 0) this.loadWithdrawalList(true)
-    } else if (index === 13) {
+    } else if (index === 12) {
       // 充值审批
       if (this.data.rechargeList.length === 0) this.loadRechargeList(true)
-    } else if (index === 14) {
+    } else if (index === 13) {
       // 功能开关
       this.loadFeatureFlags()
       this.loadServiceConfig()
-    } else if (index === 15) {
+    } else if (index === 14) {
       // 等级管理
       if (this.data.levelUsers.length === 0) this.loadLevelUsers()
-    } else if (index === 16) {
+    } else if (index === 15) {
       // 邀请裂变
       this.loadInviteConfig()
     } else if (index === 17) {
       // 纠纷处理
       if (this.data.disputeList.length === 0) this.loadDisputes()
+    } else if (index === 18) {
+      // 举报管理
+      if (this.data.reportList.length === 0) this.loadReports()
     }
   },
 
@@ -813,7 +821,11 @@ Page({
             createTime: o.createTime ? this.formatTime(o.createTime) : ''
           }))
         }
-        this.setData({ stats: res })
+        this.setData({ 
+          stats: res,
+          totalUsers: res.totalUsers || 0,
+          totalProducts: res.totalProducts || 0
+        })
       }
       // 加载所有待处理通知
       this.loadAllNotifications()
@@ -913,15 +925,13 @@ Page({
         keyword: this.data.userKeyword || ''
       })
 
-      // 按时间倒序排序（最新的在前）
-      const sortedList = (res.list || []).sort((a, b) => {
-        const timeA = new Date(a.createTime || 0).getTime()
-        const timeB = new Date(b.createTime || 0).getTime()
-        return timeB - timeA
-      })
+      // 获取用户总数（用于计算序号）
+      const totalUsers = res.stats?.totalUsers || this.data.totalUsers || 0
+      const currentPage = this.data.userPage
+      const pageSize = 20
       
-      const startIndex = (this.data.userPage - 1) * 20
-      const list = sortedList.map((u, index) => {
+      // 云函数返回倒序（最新在前），最新序号最大
+      const list = (res.list || []).map((u, index) => {
         // 处理时间字段 - 统一使用 createTime
         let timeValue = u.createTime
         if (timeValue instanceof Date) {
@@ -930,18 +940,24 @@ Page({
           timeValue = new Date(timeValue).getTime()
         }
         
+        // 序号计算：跨页连续（最新在前，序号最大）
+        // 第一页：totalUsers, totalUsers-1, ...
+        // 第二页：totalUsers-20, totalUsers-21, ...
+        const userIndex = totalUsers - ((currentPage - 1) * pageSize) - index
+        
         return {
           ...u,
           creditLevel: this.getCreditLevel(u.creditScore || 100),
           registerTime: timeValue ? this.formatTime(timeValue) : '',
-          userIndex: startIndex + index + 1
+          userIndex: userIndex
         }
       })
 
       this.setData({
         users: [...this.data.users, ...list],
         userPage: this.data.userPage + 1,
-        userNoMore: list.length < 20
+        userNoMore: list.length < 20,
+        totalUsers: totalUsers
       })
     } catch (e) {
       toast('加载用户失败')
@@ -1027,16 +1043,27 @@ Page({
 
       const res = await callCloud('adminMgr', params)
 
-      const list = (res.list || []).map(p => ({
-        ...p,
-        coverUrl: p.images && p.images[0] ? p.images[0] : '',
-        statusText: p.status === 'active' ? '展示中' : p.status === 'pending_review' ? '待审核' : p.status === 'rejected' ? '已拒绝' : p.status === 'in_swap' ? '分享中' : p.status === 'swapped' ? '已分享' : p.status === 'removed' ? '已下架' : p.status === 'banned' ? '已封禁' : '未知'
-      }))
+      // 获取特产总数（用于计算序号）
+      const totalProducts = res.total || this.data.totalProducts || 0
+      const currentPage = this.data.productPage
+      const pageSize = 20
+      
+      // 云函数返回倒序（最新在前），最新序号最大，跨页连续
+      const list = (res.list || []).map((p, index) => {
+        const productIndex = totalProducts - ((currentPage - 1) * pageSize) - index
+        return {
+          ...p,
+          productIndex: productIndex,
+          coverUrl: p.images && p.images[0] ? p.images[0] : '',
+          statusText: p.status === 'active' ? '展示中' : p.status === 'pending_review' ? '待审核' : p.status === 'rejected' ? '已拒绝' : p.status === 'in_swap' ? '分享中' : p.status === 'swapped' ? '已分享' : p.status === 'removed' ? '已下架' : p.status === 'banned' ? '已封禁' : '未知'
+        }
+      })
 
       this.setData({
         products: [...this.data.products, ...list],
         productPage: this.data.productPage + 1,
-        productNoMore: list.length < 20
+        productNoMore: list.length < 20,
+        totalProducts: totalProducts
       })
     } catch (e) {
       toast('加载特产失败')
@@ -1058,18 +1085,30 @@ Page({
         filter: this.data.orderFilter
       })
 
-      const list = (res.list || []).map(o => ({
-        ...o,
-        statusText: this.getOrderStatusText(o.status),
-        productCover: o.productCover || (o.productImages && o.productImages[0] ? o.productImages[0] : ''),
-        createTimeStr: o.createdAt ? this.formatTime(o.createdAt) : (o._createTime ? this.formatTime(o._createTime) : '')
-      }))
+      // 获取订单总数（用于计算序号）
+      const totalOrders = res.total || this.data.totalOrders || 0
+      const currentPage = this.data.orderPage
+      const pageSize = 20
+      
+      // 云函数返回倒序（最新在前），最新序号最大，跨页连续
+      const list = (res.list || []).map((o, index) => {
+        const orderIndex = totalOrders - ((currentPage - 1) * pageSize) - index
+        
+        return {
+          ...o,
+          orderIndex: orderIndex,
+          statusText: this.getOrderStatusText(o.status),
+          productCover: o.productCover || (o.productImages && o.productImages[0] ? o.productImages[0] : ''),
+          createTimeStr: o.createdAt ? this.formatTime(o.createdAt) : (o._createTime ? this.formatTime(o._createTime) : '')
+        }
+      })
 
       this.setData({
         orders: [...this.data.orders, ...list],
         orderPage: this.data.orderPage + 1,
         orderNoMore: list.length < 20,
-        orderStats: res.stats || this.data.orderStats
+        orderStats: res.stats || this.data.orderStats,
+        totalOrders: totalOrders
       })
     } catch (e) {
       toast('加载订单失败')
@@ -1102,19 +1141,32 @@ Page({
   },
 
   // 加载审核列表
-  async loadReviews() {
-    if (this.data.reviewLoading || this.data.reviewNoMore) return
+  async loadReviews(reset = false) {
+    if (this.data.reviewLoading) return
+
+    if (reset) {
+      this.setData({ reviews: [], reviewPage: 1, reviewNoMore: false })
+    }
+    if (this.data.reviewNoMore) return
 
     this.setData({ reviewLoading: true })
     try {
+      // 根据筛选类型调用不同的接口
+      let action = 'getPendingReviews'
+      if (this.data.reviewFilter === 'approved') {
+        action = 'getApprovedReviews'
+      } else if (this.data.reviewFilter === 'rejected') {
+        action = 'getRejectedReviews'
+      }
+
       const res = await callCloud('adminMgr', {
-        action: 'getPendingReviews',
+        action,
         page: this.data.reviewPage,
         pageSize: 20
       })
 
       this.setData({
-        reviews: [...this.data.reviews, ...(res.list || [])],
+        reviews: reset ? (res.list || []) : [...this.data.reviews, ...(res.list || [])],
         reviewPage: this.data.reviewPage + 1,
         reviewNoMore: (res.list || []).length < 20
       })
@@ -1125,9 +1177,18 @@ Page({
     }
   },
 
+  // 切换审核筛选
+  switchReviewFilter(e) {
+    const filter = e.currentTarget.dataset.filter
+    this.setData({ reviewFilter: filter, reviews: [], reviewPage: 1, reviewNoMore: false })
+    this.loadReviews(true)
+  },
+
   // ========== 待审核产品 ==========
   async loadPendingProducts() {
-    if (this.data.pendingLoading || this.data.pendingNoMore) return
+    if (this.data.pendingLoading) return
+    if (this.data.pendingNoMore) return
+
     this.setData({ pendingLoading: true })
     try {
       const res = await callCloud('adminMgr', {
@@ -1147,8 +1208,9 @@ Page({
           pendingPage: this.data.pendingPage + 1,
           pendingNoMore: list.length < 20,
           pendingStats: {
-            autoBlocked: res.stats?.autoBlocked || 0,
-            manualReview: res.stats?.manualReview || 0,
+            pending: res.stats?.pending || 0,
+            approved: res.stats?.approved || 0,
+            rejected: res.stats?.rejected || 0,
             total: res.stats?.total || 0
           }
         })
@@ -1304,8 +1366,8 @@ Page({
     try {
       await callCloud('adminMgr', { action: 'approveReview', reviewId: id })
       toast('审核通过', 'success')
-      this.setData({ reviews: [], reviewPage: 1, reviewNoMore: false })
-      this.loadReviews()
+      // 如果当前在待审核列表，刷新列表；否则刷新当前列表
+      this.loadReviews(true)
     } catch (e) {
       toast('操作失败')
     }
@@ -1317,8 +1379,8 @@ Page({
     try {
       await callCloud('adminMgr', { action: 'rejectReview', reviewId: id })
       toast('已拒绝', 'success')
-      this.setData({ reviews: [], reviewPage: 1, reviewNoMore: false })
-      this.loadReviews()
+      // 如果当前在待审核列表，刷新列表；否则刷新当前列表
+      this.loadReviews(true)
     } catch (e) {
       toast('操作失败')
     }

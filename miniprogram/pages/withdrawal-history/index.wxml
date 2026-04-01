@@ -82,9 +82,9 @@
             <text class="info-label">申请时间</text>
             <text class="info-value">{{item.createTimeText}}</text>
           </view>
-          <view class="info-row" wx:if="{{item.contactInfo}}">
-            <text class="info-label">收款账户</text>
-            <text class="info-value">{{item.contactInfo}}</text>
+          <view class="info-row" wx:if="{{item.paymentQrcode}}">
+            <text class="info-label">收款方式</text>
+            <text class="info-value">微信收款码</text>
           </view>
           <view class="info-row" wx:if="{{item.remark}}">
             <text class="info-label">备注</text>

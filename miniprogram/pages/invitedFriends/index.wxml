@@ -106,7 +106,7 @@
       <view class="tips-item">1. 邀请好友成功注册，邀请人得¥{{rewardSummary.inviterCashReward}}现金+{{rewardSummary.inviterReward}}积分，被邀请人得¥{{rewardSummary.inviteeCashReward}}现金+{{rewardSummary.inviteeReward}}积分</view>
       <view class="tips-item">2. 好友首次分享成功，邀请人再得¥{{rewardSummary.firstSwapCashReward}}现金+20积分</view>
       <view class="tips-item">3. 邀请人数无上限，现金奖励无上限</view>
-      <view class="tips-item">4. 现金奖励可提现，提现门槛¥30</view>
+      <view class="tips-item">4. 现金奖励可提现，提现门槛¥{{rewardSummary.withdrawalThreshold || 30}}</view>
     </view>
   </view>
 

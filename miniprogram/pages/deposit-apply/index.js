@@ -93,9 +93,9 @@ Page({
     // 已有申请记录
     existingApply: null,
     loadingExisting: true,
-    // 客服信息
-    wechatCs: 'xiaoqiange12315',
-    phoneCs: '13127899995',
+    // 客服信息（从后台配置读取）
+    wechatCs: '',
+    phoneCs: '',
     // 协议勾选
     agreed: false,
     // 步骤2校验提示
@@ -104,6 +104,22 @@ Page({
 
   onLoad() {
     this._loadExistingApply()
+    this._loadServiceConfig()
+  },
+
+  // 加载客服配置
+  async _loadServiceConfig() {
+    try {
+      const res = await callCloud('userInit', { action: 'getServiceConfig' })
+      if (res && res.success) {
+        this.setData({
+          wechatCs: res.serviceWechat || '',
+          phoneCs: res.servicePhone || ''
+        })
+      }
+    } catch (e) {
+      console.error('加载客服配置失败', e)
+    }
   },
 
   // ─── 加载已有申请 ───

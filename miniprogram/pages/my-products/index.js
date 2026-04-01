@@ -1,5 +1,5 @@
 // pages/my-products/index.js
-const { PRODUCT_CATEGORIES_V2 } = require('../../utils/constants')
+const { PRODUCT_CATEGORIES } = require('../../utils/constants')
 const { callCloud, formatTime, getProvinceByCode, toast, showLoading, hideLoading, processImageUrl } = require('../../utils/util')
 
 const STATUS_TABS = [
@@ -105,10 +105,14 @@ Page({
 
       const newProducts = (res.list || []).map(item => this.formatProduct(item))
       const allProducts = reset ? newProducts : [...this.data.products, ...newProducts]
+      
+      // 统计神秘特产数量
+      const mysteryCount = allProducts.filter(p => p.isMystery).length
 
       this.setData({
         products: allProducts,
         totalCount: res.total || 0,
+        mysteryCount: mysteryCount,
         noMore: newProducts.length < this.data.pageSize,
         page: this.data.page + 1
       })
@@ -129,8 +133,12 @@ Page({
 
   formatProduct(item) {
     const province = getProvinceByCode(item.province)
-    const category = PRODUCT_CATEGORIES_V2.find(c => c.id === item.category)
+    const category = PRODUCT_CATEGORIES.find(c => c.id === item.category)
     const statusConfig = STATUS_CONFIG[item.status] || STATUS_CONFIG.active
+    
+    // 神秘特产颜色映射
+    const colorMap = ['purple', 'blue', 'green', 'red', 'gold']
+    const mysteryEmojis = ['🎁', '🎀', '🎄', '🎃', '🎉', '🎈', '🎎', '🎏', '🎑', '🎭']
 
     return {
       ...item,
@@ -141,7 +149,10 @@ Page({
       statusConfig,
       timeLabel: formatTime(item.createTime),
       viewCount: item.viewCount || 0,
-      favCount: item.favCount || 0
+      favCount: item.favCount || 0,
+      // 神秘特产专用属性
+      colorClass: item.isMystery ? (colorMap[item._id?.charCodeAt(0) % colorMap.length] || 'purple') : '',
+      emoji: item.isMystery ? (item.emoji || mysteryEmojis[item._id?.charCodeAt(0) % mysteryEmojis.length] || '🎁') : ''
     }
   },
 

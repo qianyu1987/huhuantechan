@@ -1,0 +1,100 @@
+<!-- pages/report/index.wxml - 举报页面 -->
+<view class="report-page">
+  <!-- 页面标题 -->
+  <view class="page-header">
+    <text class="page-title">🚨 举报{{targetType === 'user' ? '用户' : '商品'}}</text>
+    <text class="page-subtitle">请如实填写举报信息，恶意举报将受到处罚</text>
+  </view>
+
+  <!-- 被举报对象信息 -->
+  <view class="target-card">
+    <image wx:if="{{targetImage}}" class="target-image" src="{{targetImage}}" mode="aspectFill"/>
+    <view wx:else class="target-image target-image-placeholder">
+      <text class="target-image-icon">{{targetType === 'user' ? '👤' : '📦'}}</text>
+    </view>
+    <view class="target-info">
+      <text class="target-name">{{targetName}}</text>
+      <text class="target-type">{{targetType === 'user' ? '被举报用户' : '被举报商品'}}</text>
+    </view>
+  </view>
+
+  <!-- 举报类型选择 -->
+  <view class="section">
+    <view class="section-title">
+      <text class="section-title-text">选择举报类型</text>
+      <text class="section-required">*</text>
+    </view>
+    <view class="report-types">
+      <view wx:for="{{reportTypes}}" wx:key="code" 
+            class="type-item {{selectedType === item.code ? 'selected' : ''}}"
+            bindtap="onSelectType" data-code="{{item.code}}">
+        <text class="type-icon">{{item.icon}}</text>
+        <view class="type-info">
+          <text class="type-name">{{item.name}}</text>
+          <text class="type-desc">{{item.desc}}</text>
+        </view>
+        <view class="type-check">
+          <view class="check-circle {{selectedType === item.code ? 'checked' : ''}}"></view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 详细描述 -->
+  <view class="section">
+    <view class="section-title">
+      <text class="section-title-text">详细描述</text>
+      <text class="section-required">*</text>
+    </view>
+    <view class="desc-input-wrap">
+      <textarea class="desc-input" 
+                value="{{description}}"
+                bindinput="onDescriptionInput"
+                placeholder="请详细描述举报原因，包括但不限于：具体情况、发生时间、涉及金额等，以便管理员核实处理..."
+                maxlength="500"
+                show-confirm-bar="{{false}}"/>
+      <text class="desc-count">{{description.length}}/500</text>
+    </view>
+  </view>
+
+  <!-- 凭证图片 -->
+  <view class="section">
+    <view class="section-title">
+      <text class="section-title-text">上传凭证</text>
+      <text class="section-optional">（选填，最多3张）</text>
+    </view>
+    <view class="image-upload">
+      <view wx:for="{{images}}" wx:key="*this" class="uploaded-image-wrap">
+        <image class="uploaded-image" src="{{item}}" mode="aspectFill" bindtap="previewImage" data-url="{{item}}"/>
+        <view class="delete-image" bindtap="deleteImage" data-index="{{index}}">
+          <text class="delete-icon">✕</text>
+        </view>
+      </view>
+      <view wx:if="{{images.length < 3}}" class="upload-btn" bindtap="chooseImage">
+        <text class="upload-icon">+</text>
+        <text class="upload-text">添加图片</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 提示信息 -->
+  <view class="tips-card">
+    <text class="tips-title">📋 举报须知</text>
+    <view class="tips-list">
+      <text class="tips-item">1. 请确保举报内容真实有效，恶意举报将受到处罚</text>
+      <text class="tips-item">2. 举报将在1-3个工作日内处理完毕</text>
+      <text class="tips-item">3. 处理结果将通过消息通知告知您</text>
+      <text class="tips-item">4. 同一商品/用户24小时内只能举报1次</text>
+    </view>
+  </view>
+
+  <!-- 底部安全区 -->
+  <view class="safe-bottom"></view>
+</view>
+
+<!-- 底部提交按钮 -->
+<view class="footer-bar">
+  <view class="footer-btn {{selectedType && description.length >= 10 ? 'active' : 'disabled'}}" bindtap="submitReport">
+    <text class="footer-btn-text">提交举报</text>
+  </view>
+</view>

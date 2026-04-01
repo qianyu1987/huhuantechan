@@ -1,0 +1,199 @@
+<!-- pages/product-list/index.wxml - iOS 26 毛玻璃风格 -->
+<view class="product-list-page">
+  <!-- 顶部标语栏 -->
+  <view class="header-section">
+    <view class="slogan-bar">
+      <view class="slogan-item">
+        <text class="slogan-emoji">🛡️</text>
+        <text class="slogan-text">诚实守信</text>
+      </view>
+      <view class="slogan-dot"></view>
+      <view class="slogan-item">
+        <text class="slogan-emoji">🏔️</text>
+        <text class="slogan-text">家乡以我为荣</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Banner 区域 -->
+  <view class="banner-section">
+    <view class="banner-bg">
+      <view class="banner-gradient"></view>
+      <view class="banner-pattern"></view>
+    </view>
+    <view class="banner-content">
+      <view class="banner-icon">{{isMystery ? '🎁' : (categoryEmoji || '📦')}}</view>
+      <view class="banner-text">
+        <text class="banner-subtitle">{{isMystery ? '发现未知的惊喜，体验互换的乐趣' : '发现各地特色好物，开启互换之旅'}}</text>
+      </view>
+    </view>
+    <view class="banner-decoration">
+      <view class="deco-circle c1"></view>
+      <view class="deco-circle c2"></view>
+      <view class="deco-circle c3"></view>
+    </view>
+  </view>
+
+  <!-- 平台数据概览卡片 -->
+  <view class="stats-overview">
+    <view class="stats-card">
+      <view class="stats-bg-glow"></view>
+      <view class="stats-content">
+        <view class="stats-header">
+          <view class="stats-icon-wrap">
+            <text class="stats-icon">📊</text>
+          </view>
+          <text class="stats-title">平台数据</text>
+        </view>
+        <view class="stats-grid">
+          <view class="stats-item">
+            <text class="stats-value">{{platformStats.productCount || 0}}</text>
+            <text class="stats-label">特产总数</text>
+          </view>
+          <view class="stats-divider"></view>
+          <view class="stats-item">
+            <text class="stats-value">{{platformStats.swapCount || 0}}</text>
+            <text class="stats-label">成功互换</text>
+          </view>
+          <view class="stats-divider"></view>
+          <view class="stats-item">
+            <text class="stats-value">{{platformStats.userCount || 0}}</text>
+            <text class="stats-label">活跃用户</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 分类快捷入口（仅当不是惊喜特产时显示） -->
+  <view class="category-quick-access" wx:if="{{!isMystery && categories.length > 0}}">
+    <scroll-view scroll-x enable-flex class="category-scroll" show-scrollbar="{{false}}">
+      <view class="category-list">
+        <view 
+          class="category-chip {{selectedCategory === item.id ? 'active' : ''}}" 
+          wx:for="{{categories}}" 
+          wx:key="id"
+          bindtap="switchCategory"
+          data-code="{{item.id}}"
+        >
+          <text class="category-emoji">{{item.emoji}}</text>
+          <text class="category-name">{{item.name}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 筛选栏 -->
+  <view class="filter-bar">
+    <view class="filter-header">
+      <view class="filter-title">
+        <text class="filter-icon">🔍</text>
+        <text>筛选</text>
+      </view>
+      <text class="filter-count" wx:if="{{products.length > 0}}">共 {{totalCount || products.length}} 个</text>
+    </view>
+    <scroll-view scroll-x enable-flex class="filter-scroll" show-scrollbar="{{false}}">
+      <view class="filter-list">
+        <view class="filter-item {{activeFilter === '' ? 'active' : ''}}" bindtap="setFilter" data-filter="">
+          <text class="filter-dot {{activeFilter === '' ? 'show' : ''}}"></text>
+          <text>全部</text>
+        </view>
+        <view class="filter-item {{activeFilter === 'active' ? 'active' : ''}}" bindtap="setFilter" data-filter="active">
+          <text class="filter-dot {{activeFilter === 'active' ? 'show' : ''}}"></text>
+          <text>可互换</text>
+        </view>
+        <view class="filter-item {{activeFilter === 'swapped' ? 'active' : ''}}" bindtap="setFilter" data-filter="swapped">
+          <text class="filter-dot {{activeFilter === 'swapped' ? 'show' : ''}}"></text>
+          <text>已互换</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 产品列表 -->
+  <scroll-view 
+    class="product-scroll" 
+    scroll-y 
+    enable-back-to-top
+    bindscrolltolower="loadMore"
+    refresher-enabled="{{true}}"
+    refresher-triggered="{{refreshing}}"
+    bindrefresherrefresh="onRefresh"
+  >
+    <view class="product-grid">
+      <block wx:for="{{products}}" wx:key="_id">
+        <view class="product-card" bindtap="goToDetail" data-id="{{item._id}}">
+          <!-- 惊喜特产 -->
+          <block wx:if="{{item.isMystery}}">
+            <view class="product-img-wrap mystery-img-wrap {{item.colorClass}}">
+              <!-- 发光背景 -->
+              <view class="mystery-glow"></view>
+              <!-- 星星装饰 -->
+              <view class="mystery-stars">
+                <text class="mystery-star">✨</text>
+                <text class="mystery-star">⭐</text>
+                <text class="mystery-star">💫</text>
+              </view>
+              <!-- 礼盒 -->
+              <view class="mystery-box-wrap">
+                <text class="mystery-box-emoji">{{item.emoji || '🎁'}}</text>
+                <view class="mystery-ring-gold"></view>
+              </view>
+              <!-- 标签 -->
+              <view class="mystery-tag-badge" wx:if="{{item.status === 'in_swap'}}">🔄 匹配中</view>
+              <view class="mystery-tag-badge" wx:else>🎁 神秘特产</view>
+            </view>
+            <view class="product-info">
+              <view class="product-name">🎁 惊喜特产</view>
+              <view class="product-meta">
+                <text class="product-province">{{item.provinceName}}</text>
+                <text class="product-status {{item.status}}">{{item.statusText}}</text>
+              </view>
+            </view>
+          </block>
+          <!-- 普通特产 -->
+          <block wx:else>
+            <view class="product-img-wrap">
+              <image class="product-img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load/>
+              <!-- 代购标签 -->
+              <view class="daigou-badge" wx:if="{{item.daigou}}">代购</view>
+              <view class="product-status-badge {{item.status}}" wx:if="{{item.status !== 'active'}}">
+                {{item.statusText}}
+              </view>
+            </view>
+            <view class="product-info">
+              <view class="product-name">{{item.name}}</view>
+              <view class="product-meta">
+                <text class="product-province">{{item.provinceName}}</text>
+                <text class="product-category" wx:if="{{item.categoryName}}">{{item.categoryName}}</text>
+              </view>
+              <view class="product-user" wx:if="{{item.userInfo}}">
+                <image class="user-avatar" src="{{item.userInfo.avatarUrl}}" mode="aspectFill"/>
+                <text class="user-nickname">{{item.userInfo.nickname}}</text>
+              </view>
+            </view>
+          </block>
+        </view>
+      </block>
+    </view>
+
+    <!-- 加载更多 -->
+    <view class="load-more" wx:if="{{loadingMore}}">
+      <view class="loading-spinner"></view>
+      <text>加载中...</text>
+    </view>
+
+    <!-- 没有更多 -->
+    <view class="no-more" wx:if="{{!hasMore && products.length > 0}}">
+      <text>— 没有更多了 —</text>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{!loading && products.length === 0}}">
+      <text class="empty-icon">📦</text>
+      <text class="empty-text">暂无此类特产</text>
+      <text class="empty-subtext">去发布一个吧~</text>
+      <view class="empty-btn" bindtap="goToPublish">发布特产</view>
+    </view>
+  </scroll-view>
+</view>

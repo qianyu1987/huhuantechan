@@ -1,5 +1,5 @@
 <!-- pages/index/index.wxml - 发现页 -->
-<view class="index-page">
+<view class="index-page theme-{{pageTheme}}">
   
   <!-- 顶部搜索栏 -->
   <view class="header">
@@ -22,9 +22,19 @@
     </view>
     
     <!-- 搜索框 -->
-    <view class="search-bar" bindtap="goToSearch">
+    <view class="search-bar">
       <text class="search-emoji">🔍</text>
-      <text class="search-placeholder">搜索特产、省份...</text>
+      <input 
+        class="search-input" 
+        placeholder="搜索特产、省份..." 
+        placeholder-class="search-placeholder"
+        value="{{searchKeyword}}"
+        bindinput="onSearchInput"
+        confirm-type="search"
+        bindconfirm="onSearch"
+      />
+      <view wx:if="{{searchKeyword}}" class="search-clear" bindtap="clearSearch">✕</view>
+      <view wx:if="{{searchKeyword}}" class="search-btn" bindtap="onSearch">搜索</view>
     </view>
     
     <!-- 省份筛选横滑 -->
@@ -64,69 +74,326 @@
     </scroll-view>
   </view>
 
+
+
   <!-- 主内容区 -->
   <view class="product-content">
-    <!-- 骨架屏加载状态 -->
-    <view wx:if="{{loading && products.length === 0}}" class="skeleton-wrap">
-      <view class="product-grid-skeleton">
-        <block wx:for="{{9}}" wx:key="*this">
-          <view class="skeleton-card">
-            <view class="skeleton-img"></view>
-            <view class="skeleton-line w60"></view>
-            <view class="skeleton-line w40"></view>
-          </view>
-        </block>
+    <!-- 搜索结果 -->
+    <view wx:if="{{isSearching}}" class="search-results">
+      <view class="search-header">
+        <text class="search-title">"{{searchKeyword}}" 的搜索结果</text>
+        <text class="search-count" wx:if="{{products.length > 0}}">共 {{products.length}} 条</text>
       </view>
-    </view>
-    
-    <!-- 空状态 -->
-    <view wx:elif="{{!loading && products.length === 0}}" class="empty-wrap">
-      <view class="empty-state" style="margin-top: 200rpx;">
-        <text class="empty-icon">📦</text>
-        <text class="empty-desc">暂无特产信息</text>
-        <view class="empty-btn" wx:if="{{featureFlags.tab_publish !== false}}" bindtap="goToPublish">立即发布</view>
-      </view>
-    </view>
-    
-    <!-- 产品网格 - 一行三个正方形卡片 -->
-    <view wx:else class="product-grid">
-      <block wx:for="{{products}}" wx:key="_id">
-        <!-- 统一卡片结构，神秘特产使用条件类 -->
-        <view 
-          class="product-card-square {{item.isMystery ? 'mystery-card' : ''}}" 
-          bindtap="goToDetail" 
-          data-id="{{item._id}}"
-        >
-          <block wx:if="{{item.isMystery}}">
-            <view class="square-img-wrap mystery-img-wrap {{item.colorClass}}">
-              <view class="mystery-card-content">
-                <view class="mystery-emoji">{{item.emoji || '🎁'}}</view>
-                <view class="mystery-province-inner">{{item.provinceName}}</view>
-              </view>
-              <view class="mystery-tag" wx:if="{{item.status === 'in_swap'}}">匹配中</view>
-            </view>
-            <view class="square-info">
-              <view class="square-title">惊喜特产</view>
-              <view class="square-meta">
-                <text class="square-province-tag" style="background:{{item.provinceColor}}22;color:{{item.provinceColor}}">{{item.provinceName}}</text>
-              </view>
-            </view>
-          </block>
-          <block wx:else>
-            <view class="square-img-wrap">
-              <image class="square-img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load decode binderror="onImageError" data-index="{{index}}"/>
-              <view wx:if="{{featureFlags.feature_value_display !== false}}" class="square-value-tag">{{item.valueLabel}}</view>
-              <view wx:if="{{item.daigou && item.daigou.enabled}}" class="daigou-badge">代购</view>
-            </view>
-            <view class="square-info">
-              <view class="square-title">{{item.name}}</view>
-              <view class="square-meta">
-                <text class="square-province-tag" style="background:{{item.provinceColor}}22;color:{{item.provinceColor}}">{{item.provinceName}}</text>
-              </view>
+      
+      <!-- 搜索结果瀑布流 -->
+      <view class="waterfall" wx:if="{{products.length > 0}}">
+        <view class="waterfall-column">
+          <block wx:for="{{leftColumn}}" wx:key="_id">
+            <view class="product-card {{item.isMystery ? 'mystery-card' : ''}}" bindtap="goToDetail" data-id="{{item._id}}">
+              <!-- 惊喜特产 -->
+              <block wx:if="{{item.isMystery}}">
+                <view class="product-img-wrap mystery-img-wrap {{item.colorClass}}">
+                  <view class="mystery-glow"></view>
+                  <view class="mystery-stars">
+                    <text class="mystery-star">✨</text>
+                    <text class="mystery-star">⭐</text>
+                    <text class="mystery-star">💫</text>
+                  </view>
+                  <view class="mystery-box-wrap">
+                    <text class="mystery-box-emoji">{{item.emoji || '🎁'}}</text>
+                    <view class="mystery-ring-gold"></view>
+                  </view>
+                  <view class="mystery-tag-badge" wx:if="{{item.status === 'in_swap'}}">🔄 匹配中</view>
+                  <view class="mystery-tag-badge" wx:else>🎁 神秘特产</view>
+                </view>
+                <view class="product-info">
+                  <view class="product-name">🎁 惊喜特产</view>
+                  <view class="product-meta">
+                    <text class="product-province">{{item.provinceName}}</text>
+                    <text class="product-status {{item.status}}">{{item.statusText}}</text>
+                  </view>
+                </view>
+              </block>
+              <!-- 普通特产 -->
+              <block wx:else>
+                <view class="product-img-wrap">
+                  <image class="product-img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load/>
+                  <!-- 代购标签 -->
+                  <view class="daigou-badge" wx:if="{{item.daigou}}">代购</view>
+                </view>
+                <view class="product-info">
+                  <view class="product-name">{{item.name}}</view>
+                  <view class="product-meta">
+                    <text class="product-province">{{item.provinceName}}</text>
+                    <text class="product-status {{item.status}}">{{item.statusText}}</text>
+                  </view>
+                </view>
+              </block>
             </view>
           </block>
         </view>
+        <view class="waterfall-column">
+          <block wx:for="{{rightColumn}}" wx:key="_id">
+            <view class="product-card {{item.isMystery ? 'mystery-card' : ''}}" bindtap="goToDetail" data-id="{{item._id}}">
+              <!-- 惊喜特产 -->
+              <block wx:if="{{item.isMystery}}">
+                <view class="product-img-wrap mystery-img-wrap {{item.colorClass}}">
+                  <view class="mystery-glow"></view>
+                  <view class="mystery-stars">
+                    <text class="mystery-star">✨</text>
+                    <text class="mystery-star">⭐</text>
+                    <text class="mystery-star">💫</text>
+                  </view>
+                  <view class="mystery-box-wrap">
+                    <text class="mystery-box-emoji">{{item.emoji || '🎁'}}</text>
+                    <view class="mystery-ring-gold"></view>
+                  </view>
+                  <view class="mystery-tag-badge" wx:if="{{item.status === 'in_swap'}}">🔄 匹配中</view>
+                  <view class="mystery-tag-badge" wx:else>🎁 神秘特产</view>
+                </view>
+                <view class="product-info">
+                  <view class="product-name">🎁 惊喜特产</view>
+                  <view class="product-meta">
+                    <text class="product-province">{{item.provinceName}}</text>
+                    <text class="product-status {{item.status}}">{{item.statusText}}</text>
+                  </view>
+                </view>
+              </block>
+              <!-- 普通特产 -->
+              <block wx:else>
+                <view class="product-img-wrap">
+                  <image class="product-img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load/>
+                  <!-- 代购标签 -->
+                  <view class="daigou-badge" wx:if="{{item.daigou}}">代购</view>
+                </view>
+                <view class="product-info">
+                  <view class="product-name">{{item.name}}</view>
+                  <view class="product-meta">
+                    <text class="product-province">{{item.provinceName}}</text>
+                    <text class="product-status {{item.status}}">{{item.statusText}}</text>
+                  </view>
+                </view>
+              </block>
+            </view>
+          </block>
+        </view>
+      </view>
+      
+      <!-- 搜索空状态 -->
+      <view wx:if="{{!loading && products.length === 0}}" class="empty-wrap">
+        <view class="empty-state">
+          <text class="empty-icon">🔍</text>
+          <text class="empty-desc">未找到相关特产</text>
+          <text class="empty-sub">换个关键词试试吧</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 惊喜特产专区 -->
+    <view class="mystery-section" wx:if="{{!isSearching && mysteryProducts.length > 0}}">
+      <view class="mystery-section-header">
+        <text class="mystery-section-emoji">🎁</text>
+        <text class="mystery-section-title">惊喜特产</text>
+        <view class="more-btn" bindtap="goToMysteryList">
+          <text>更多特产</text>
+          <text class="more-arrow">👉</text>
+        </view>
+      </view>
+      <scroll-view scroll-x enable-flex class="mystery-products-scroll">
+        <view class="mystery-products-list">
+          <block wx:for="{{mysteryProducts}}" wx:key="_id">
+            <view class="mystery-product-card" bindtap="goToDetail" data-id="{{item._id}}">
+              <view class="mystery-card-img-wrap mystery-img-wrap {{item.colorClass}}">
+                <!-- 发光背景 -->
+                <view class="mystery-glow"></view>
+                <!-- 星星装饰 -->
+                <view class="mystery-stars">
+                  <text class="mystery-star">✨</text>
+                  <text class="mystery-star">⭐</text>
+                  <text class="mystery-star">💫</text>
+                </view>
+                <!-- 礼盒 -->
+                <view class="mystery-box-wrap">
+                  <text class="mystery-box-emoji">{{item.emoji || '🎁'}}</text>
+                  <view class="mystery-ring-gold"></view>
+                </view>
+                <!-- 标签 -->
+                <view class="mystery-tag-badge" wx:if="{{item.status === 'in_swap'}}">🔄 匹配中</view>
+                <view class="mystery-tag-badge" wx:else>🎁 神秘特产</view>
+              </view>
+              <view class="mystery-card-title">{{item.provinceName}} · 惊喜特产</view>
+            </view>
+          </block>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- 分类产品视图（仅在默认全部模式显示） -->
+    <view class="category-sections" wx:if="{{!isSearching && viewMode === 'category'}}">
+      <block wx:for="{{categories}}" wx:key="id">
+        <view class="category-section" wx:if="{{categoryProducts[item.id] && categoryProducts[item.id].products.length > 0}}">
+          <view class="category-header">
+            <view class="category-title-wrap">
+              <text class="category-emoji">{{item.emoji}}</text>
+              <text class="category-name">{{item.name}}</text>
+              <text class="category-count">({{categoryProducts[item.id].products.length}})</text>
+            </view>
+            <view class="more-btn" bindtap="goToCategoryList" data-category="{{item.id}}">
+              <text>更多特产</text>
+              <text class="more-arrow">👉</text>
+            </view>
+          </view>
+          <scroll-view scroll-x enable-flex class="category-products-scroll">
+            <view class="category-products-list">
+              <block wx:for="{{categoryProducts[item.id].products}}" wx:for-item="product" wx:key="_id">
+                <view class="category-product-card" bindtap="goToDetail" data-id="{{product._id}}">
+                  <block wx:if="{{product.isMystery}}">
+                    <view class="cat-card-img-wrap mystery-img-wrap {{product.colorClass}}">
+                      <view class="mystery-glow"></view>
+                      <view class="mystery-stars">
+                        <text class="mystery-star">✨</text>
+                        <text class="mystery-star">⭐</text>
+                      </view>
+                      <view class="mystery-box-wrap">
+                        <text class="mystery-box-emoji">{{product.emoji || '🎁'}}</text>
+                        <view class="mystery-ring-gold"></view>
+                      </view>
+                    </view>
+                    <view class="cat-card-title">🎁 惊喜特产</view>
+                  </block>
+                  <block wx:else>
+                    <view class="cat-card-img-wrap">
+                      <image class="cat-card-img" src="{{product.coverUrl}}" mode="aspectFill" lazy-load/>
+                      <!-- 代购标签 -->
+                      <view class="daigou-badge" wx:if="{{product.daigou}}">代购</view>
+                    </view>
+                    <view class="cat-card-title">{{product.name}}</view>
+                  </block>
+                </view>
+              </block>
+            </view>
+          </scroll-view>
+        </view>
       </block>
+      
+      <!-- 分类视图空状态 -->
+      <view wx:if="{{!loading && Object.keys(categoryProducts).length === 0}}" class="empty-wrap">
+        <view class="empty-state" style="margin-top: 200rpx;">
+          <text class="empty-icon">📦</text>
+          <text class="empty-desc">暂无分类产品</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 瀑布流视图（筛选后显示） -->
+    <view class="search-results" wx:if="{{!isSearching && viewMode === 'list' && products.length > 0}}">
+      <view class="search-header">
+        <text class="search-title">筛选结果</text>
+        <text class="search-count">共 {{products.length}} 条</text>
+      </view>
+      
+      <!-- 瀑布流 -->
+      <view class="waterfall">
+        <view class="waterfall-column">
+          <block wx:for="{{leftColumn}}" wx:key="_id">
+            <view class="product-card {{item.isMystery ? 'mystery-card' : ''}}" bindtap="goToDetail" data-id="{{item._id}}">
+              <block wx:if="{{item.isMystery}}">
+                <view class="product-img-wrap mystery-img-wrap {{item.colorClass}}">
+                  <view class="mystery-glow"></view>
+                  <view class="mystery-stars">
+                    <text class="mystery-star">✨</text>
+                    <text class="mystery-star">⭐</text>
+                    <text class="mystery-star">💫</text>
+                  </view>
+                  <view class="mystery-box-wrap">
+                    <text class="mystery-box-emoji">{{item.emoji || '🎁'}}</text>
+                    <view class="mystery-ring-gold"></view>
+                  </view>
+                  <view class="mystery-tag-badge" wx:if="{{item.status === 'in_swap'}}">🔄 匹配中</view>
+                  <view class="mystery-tag-badge" wx:else>🎁 神秘特产</view>
+                </view>
+                <view class="product-info">
+                  <view class="product-name">🎁 惊喜特产</view>
+                  <view class="product-meta">
+                    <text class="product-province">{{item.provinceName}}</text>
+                    <text class="product-status {{item.status}}">{{item.statusText}}</text>
+                  </view>
+                </view>
+              </block>
+              <block wx:else>
+                <view class="product-img-wrap">
+                  <image class="product-img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load/>
+                  <view class="daigou-badge" wx:if="{{item.daigou}}">代购</view>
+                </view>
+                <view class="product-info">
+                  <view class="product-name">{{item.name}}</view>
+                  <view class="product-meta">
+                    <text class="product-province">{{item.provinceName}}</text>
+                    <text class="product-status {{item.status}}">{{item.statusText}}</text>
+                  </view>
+                </view>
+              </block>
+            </view>
+          </block>
+        </view>
+        <view class="waterfall-column">
+          <block wx:for="{{rightColumn}}" wx:key="_id">
+            <view class="product-card {{item.isMystery ? 'mystery-card' : ''}}" bindtap="goToDetail" data-id="{{item._id}}">
+              <block wx:if="{{item.isMystery}}">
+                <view class="product-img-wrap mystery-img-wrap {{item.colorClass}}">
+                  <view class="mystery-glow"></view>
+                  <view class="mystery-stars">
+                    <text class="mystery-star">✨</text>
+                    <text class="mystery-star">⭐</text>
+                    <text class="mystery-star">💫</text>
+                  </view>
+                  <view class="mystery-box-wrap">
+                    <text class="mystery-box-emoji">{{item.emoji || '🎁'}}</text>
+                    <view class="mystery-ring-gold"></view>
+                  </view>
+                  <view class="mystery-tag-badge" wx:if="{{item.status === 'in_swap'}}">🔄 匹配中</view>
+                  <view class="mystery-tag-badge" wx:else>🎁 神秘特产</view>
+                </view>
+                <view class="product-info">
+                  <view class="product-name">🎁 惊喜特产</view>
+                  <view class="product-meta">
+                    <text class="product-province">{{item.provinceName}}</text>
+                    <text class="product-status {{item.status}}">{{item.statusText}}</text>
+                  </view>
+                </view>
+              </block>
+              <block wx:else>
+                <view class="product-img-wrap">
+                  <image class="product-img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load/>
+                  <view class="daigou-badge" wx:if="{{item.daigou}}">代购</view>
+                </view>
+                <view class="product-info">
+                  <view class="product-name">{{item.name}}</view>
+                  <view class="product-meta">
+                    <text class="product-province">{{item.provinceName}}</text>
+                    <text class="product-status {{item.status}}">{{item.statusText}}</text>
+                  </view>
+                </view>
+              </block>
+            </view>
+          </block>
+        </view>
+      </view>
+      
+      <!-- 筛选结果空状态 -->
+      <view wx:if="{{!loading && products.length === 0}}" class="empty-wrap">
+        <view class="empty-state" style="margin-top: 200rpx;">
+          <text class="empty-icon">🔍</text>
+          <text class="empty-desc">暂无符合条件的特产</text>
+          <view class="empty-btn" bindtap="resetFilters">重置筛选</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 筛选视图加载状态 -->
+    <view wx:if="{{!isSearching && viewMode === 'list' && loading}}" class="loading-wrap">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">加载中...</text>
     </view>
     
     <!-- 加载更多 -->

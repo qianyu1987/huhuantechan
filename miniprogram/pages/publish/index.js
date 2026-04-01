@@ -47,6 +47,10 @@ Page({
   },
 
   onLoad(options) {
+    // 初始化主题
+    const savedTheme = wx.getStorageSync('appTheme') || 'dark'
+    this.setData({ pageTheme: savedTheme })
+
     if (!getApp().isFeatureEnabled('tab_publish')) {
       this.setData({ featureDisabled: true })
       return
@@ -352,8 +356,10 @@ Page({
     } else {
       if (images.length === 0)               { errors['images']      = '请至少上传一张特产图片，展示特产的真实样子';    if (!firstErrorId) firstErrorId = 'section-images' }
       if (!form.name || !form.name.trim())   { errors['name']        = '请填写特产名称，让大家知道是什么特产';            if (!firstErrorId) firstErrorId = 'section-name' }
+      else if (form.name.trim().length > 30) { errors['name']        = '特产名称不能超过30个字';                          if (!firstErrorId) firstErrorId = 'section-name' }
       if (!form.description || form.description.trim().length < 10) {
                                                errors['description']  = '请详细描述特产特点（至少10字），如口感、包装等'; if (!firstErrorId) firstErrorId = 'section-description' }
+      else if (form.description.trim().length > 500) { errors['description'] = '特产描述不能超过500个字';                 if (!firstErrorId) firstErrorId = 'section-description' }
       if (!form.province)                    { errors['province']    = '请选择特产产地，让大家知道特产来自哪里';            if (!firstErrorId) firstErrorId = 'section-province' }
       if (!form.category)                    { errors['category']    = '请选择品类，方便大家快速找到';               if (!firstErrorId) firstErrorId = 'section-category' }
       if (!form.valueRange)                  { errors['valueRange']  = '请选择估值区间，帮助大家了解价值';            if (!firstErrorId) firstErrorId = 'section-valueRange' }
@@ -392,6 +398,10 @@ Page({
   async submit() {
     if (!this.validate()) return
     if (this.data.submitting) return
+    
+    // 立即设置同步锁，防止 setData 异步延迟导致的重复提交
+    if (this._isSubmitting) return
+    this._isSubmitting = true
 
     // 发布前检查积分
     if (!this.data.isEdit) {
@@ -501,9 +511,20 @@ Page({
       }
 
       if (res && res.success) {
+        // 根据审核类型显示不同的提示
+        let toastMsg = res.message || (isEdit ? '保存成功！' : '发布成功！')
         const isPending = !res.auditPass
-        const toastMsg = isPending ? '已提交，系统审核中' : (isEdit ? '保存成功！' : '发布成功！')
-        toast(toastMsg, isPending ? 'none' : 'success')
+        const auditType = res.auditType
+        
+        // 根据审核类型设置提示图标
+        let icon = 'success'
+        if (auditType === 'rejected') {
+          icon = 'none'
+        } else if (auditType === 'manual') {
+          icon = 'none'
+        }
+        
+        toast(toastMsg, icon)
 
         setTimeout(() => {
           if (isEdit) {
@@ -570,6 +591,7 @@ Page({
       })
     } finally {
       this.setData({ submitting: false })
+      this._isSubmitting = false
     }
   }
 })

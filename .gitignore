@@ -40,3 +40,22 @@ logs/
 # 工作区内存文件
 .memory/
 .workspace/
+
+# 临时测试文件和脚本
+test*.js
+check*.js
+sample*.json
+*.md (文档除外)
+.import_product_guide.md
+
+# 云函数证书和密钥
+cloudfunctions/*/cert/
+*.pem
+*.key
+
+# OpenClaw 工作区
+.openclaw/
+
+# 部署临时文件
+DEPLOY_*.md
+HEARTBEAT.md

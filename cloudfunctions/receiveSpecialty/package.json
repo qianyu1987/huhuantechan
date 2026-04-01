@@ -1,0 +1,9 @@
+{
+  "name": "receiveSpecialty",
+  "version": "1.0.0",
+  "description": "确认收货",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+}

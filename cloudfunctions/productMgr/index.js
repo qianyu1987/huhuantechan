@@ -254,6 +254,16 @@ async function checkImage(fileId) {
         if (!data.name || !data.province || !data.category || !data.valueRange || !data.images?.length) {
           return { success: false, message: '请填写完整信息' }
         }
+        
+        // 添加名称长度限制（不超过30字）
+        if (data.name && data.name.trim().length > 30) {
+          return { success: false, message: '特产名称不能超过30个字' }
+        }
+        
+        // 添加描述长度限制（不超过500字）
+        if (data.description && data.description.trim().length > 500) {
+          return { success: false, message: '特产描述不能超过500个字' }
+        }
       }
 
       // ========== 自动审核 ==========
@@ -702,35 +712,38 @@ async function checkImage(fileId) {
       
       console.log('[productMgr/myList] 查询用户特产:', { openid, status, isMystery, page })
       
-      // 使用统一工具函数查询用户数据（兼容 _openid 和 openid）
-      const res = await openidHelper.queryByOpenid(
-        db,
-        'products',
-        openid
+      // 构建查询条件：同时查询 _openid 和 openid 字段，确保兼容性
+      let query = db.collection('products').where(
+        db.command.or([
+          { _openid: openid },
+          { openid: openid }
+        ])
       )
-      let list = res.data || []
-      
-      // 按时间排序
-      list.sort((a, b) => new Date(b.createTime) - new Date(a.createTime))
       
       // 应用状态筛选
       if (status) {
-        list = list.filter(p => p.status === status)
+        query = query.where({ status })
       }
       
       // 应用 isMystery 筛选
       if (isMystery !== undefined) {
-        list = list.filter(p => (p.isMystery || false) === isMystery)
+        query = query.where({ isMystery })
       }
       
-      let total = list.length
+      // 获取总数
+      const countRes = await query.count()
+      const total = countRes.total || 0
       
-      // 分页
-      const start = (page - 1) * pageSize
-      const end = start + pageSize
-      list = list.slice(start, end)
+      // 分页查询
+      const listRes = await query
+        .orderBy('createTime', 'desc')
+        .skip((page - 1) * pageSize)
+        .limit(pageSize)
+        .get()
       
-      console.log('[productMgr/myList] 最终返回:', { total, listLength: list.length })
+      let list = listRes.data || []
+      
+      console.log('[productMgr/myList] 查询结果:', { total, listLength: list.length })
 
       // 处理图片URL（非神秘的才处理）
       list = list.map(p => ({

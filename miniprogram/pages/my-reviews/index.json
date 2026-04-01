@@ -1,4 +1,9 @@
 {
+  "usingComponents": {},
   "navigationStyle": "custom",
-  "navigationBarTitleText": "我的评价"
+  "enablePullDownRefresh": true,
+  "backgroundColor": "#000000",
+  "backgroundTextStyle": "dark",
+  "onReachBottomDistance": 50,
+  "disableScroll": false
 }

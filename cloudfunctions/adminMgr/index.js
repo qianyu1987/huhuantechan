@@ -30,6 +30,12 @@ const simpleCache = {
   },
   set: (key, value, ttlMs = 5 * 60 * 1000) => {
     _cacheStore.set(key, { value, expireAt: Date.now() + ttlMs })
+  },
+  delete: (key) => {
+    _cacheStore.delete(key)
+  },
+  clear: () => {
+    _cacheStore.clear()
   }
 }
 
@@ -609,21 +615,44 @@ exports.main = async (event, context) => {
       case 'getProducts': {
         const { page = 1, pageSize = 20, status = '', isMystery = '' } = event
         let query = db.collection('products')
-        
+
         if (status) {
           query = query.where({ status })
         }
         if (isMystery !== '') {
           query = query.where({ isMystery: isMystery === 'true' })
         }
-        
+
         const res = await query
           .orderBy('_createTime', 'desc')
           .skip((page - 1) * pageSize)
           .limit(pageSize)
           .get()
 
-        return { list: res.data, isSuperAdmin }
+        // 格式化时间（精确到分钟）
+        const list = (res.data || []).map(item => ({
+          ...item,
+          createTimeText: item.createTime
+            ? new Date(
+                typeof item.createTime === 'object' && item.createTime.$date
+                  ? item.createTime.$date
+                  : item.createTime
+              ).toLocaleString('zh-CN', { hour12: false })
+                .replace(/\//g, '-')
+            : ''
+        }))
+
+        // 获取特产总数
+        let countQuery = db.collection('products')
+        if (status) {
+          countQuery = countQuery.where({ status })
+        }
+        if (isMystery !== '') {
+          countQuery = countQuery.where({ isMystery: isMystery === 'true' })
+        }
+        const totalCount = await countQuery.count()
+
+        return { list, total: totalCount.total, isSuperAdmin }
       }
 
       // 获取神秘特产列表（仅超级管理员）
@@ -787,14 +816,16 @@ exports.main = async (event, context) => {
         }))
 
         // 获取订单统计
-        const [pendingCount, shippingCount, completedCount] = await Promise.all([
+        const [pendingCount, shippingCount, completedCount, totalCount] = await Promise.all([
           db.collection('orders').where({ status: _.in(['pending', 'confirmed']) }).count(),
           db.collection('orders').where({ status: 'shipped' }).count(),
-          db.collection('orders').where({ status: 'completed' }).count()
+          db.collection('orders').where({ status: 'completed' }).count(),
+          db.collection('orders').count()
         ])
 
         return { 
           list,
+          total: totalCount.total,
           stats: {
             pending: pendingCount.total,
             shipping: shippingCount.total,
@@ -870,6 +901,32 @@ exports.main = async (event, context) => {
           }
         })
         return { success: true }
+      }
+
+      // 获取已通过的评价列表
+      case 'getApprovedReviews': {
+        const { page = 1, pageSize = 20 } = event
+        const res = await db.collection('reviews')
+          .where({ status: 'approved' })
+          .orderBy('_createTime', 'desc')
+          .skip((page - 1) * pageSize)
+          .limit(pageSize)
+          .get()
+
+        return { list: res.data || [] }
+      }
+
+      // 获取已拒绝的评价列表
+      case 'getRejectedReviews': {
+        const { page = 1, pageSize = 20 } = event
+        const res = await db.collection('reviews')
+          .where({ status: 'rejected' })
+          .orderBy('_createTime', 'desc')
+          .skip((page - 1) * pageSize)
+          .limit(pageSize)
+          .get()
+
+        return { list: res.data || [] }
       }
 
       // 获取操作日志
@@ -1004,25 +1061,22 @@ exports.main = async (event, context) => {
       // ========== 获取待审核产品列表 ==========
       case 'getPendingProducts': {
         try {
-          const { page = 1, pageSize = 20, filter = 'all' } = event
-          
-          let query = db.collection('products').where({ status: 'pending_review' })
-          
+          const { page = 1, pageSize = 20, filter = 'pending' } = event
+
+          let query = db.collection('products')
+
           // 筛选条件
-          if (filter === 'auto') {
-            query = db.collection('products').where({
-              status: 'pending_review',
-              auditReason: _.neq('')
-            })
-          } else if (filter === 'manual') {
-            query = db.collection('products').where({
-              status: 'pending_review',
-              auditReason: ''
-            })
+          if (filter === 'pending') {
+            query = query.where({ status: 'pending_review' })
+          } else if (filter === 'approved') {
+            query = query.where({ status: 'active' })
+              .where({ reviewedAt: _.exists(true) })
+          } else if (filter === 'rejected') {
+            query = query.where({ status: 'rejected' })
           }
 
           const res = await query
-            .orderBy('createTime', 'asc')
+            .orderBy('createTime', 'desc')
             .skip((page - 1) * pageSize)
             .limit(pageSize)
             .get()
@@ -1042,27 +1096,32 @@ exports.main = async (event, context) => {
 
           const list = res.data.map(p => ({
             ...p,
-            publisher: userMap[p.openid] || {}
+            publisher: userMap[p.openid] || {},
+            createTimeText: p.createTime
+              ? new Date(
+                  typeof p.createTime === 'object' && p.createTime.$date
+                    ? p.createTime.$date
+                    : p.createTime
+                ).toLocaleString('zh-CN', { hour12: false })
+                  .replace(/\//g, '-')
+              : ''
           }))
 
           // 统计
-          const [autoBlockedCount, manualReviewCount] = await Promise.all([
-            db.collection('products').where({
-              status: 'pending_review',
-              auditReason: _.neq('')
-            }).count(),
-            db.collection('products').where({
-              status: 'pending_review',
-              auditReason: ''
-            }).count()
+          const [pendingCount, approvedCount, rejectedCount] = await Promise.all([
+            db.collection('products').where({ status: 'pending_review' }).count(),
+            db.collection('products').where({ status: 'active' }).where({ reviewedAt: _.exists(true) }).count(),
+            db.collection('products').where({ status: 'rejected' }).count()
           ])
 
-          return { 
-            success: true, 
+          return {
+            success: true,
             list,
             stats: {
-              autoBlocked: autoBlockedCount.total,
-              manualReview: manualReviewCount.total
+              pending: pendingCount.total,
+              approved: approvedCount.total,
+              rejected: rejectedCount.total,
+              total: pendingCount.total + approvedCount.total + rejectedCount.total
             }
           }
         } catch (e) {
@@ -1556,6 +1615,8 @@ exports.main = async (event, context) => {
             ...r,
             createTimeText: formatTime(r.createTime),
             handleTimeText: formatTime(r.handleTime),
+            // 确保 userOpenid 存在（兼容 _openid 和 userOpenid）
+            userOpenid: r.userOpenid || r._openid || '',
             // 兼容旧版没有以下字段的记录
             realName: r.realName || '',
             phone: r.phone || '',
@@ -2111,6 +2172,202 @@ exports.main = async (event, context) => {
           return { success: true, oldBalance, newBalance, message: `余额调整成功` }
         } catch (e) {
           return { success: false, error: e.message }
+        }
+      }
+
+      // ══════════════════════════════════════════
+      // 纠纷处理
+      // ══════════════════════════════════════════
+
+      // 获取纠纷列表
+      case 'getDisputes': {
+        if (!isSuperAdmin) return { success: false, error: '无管理员权限' }
+        try {
+          const { page = 1, pageSize = 20, status = '' } = event
+          const skip = (page - 1) * pageSize
+
+          let whereClause = {}
+          if (status) whereClause.status = status
+
+          const [listRes, countRes] = await Promise.all([
+            db.collection('disputes')
+              .where(whereClause)
+              .orderBy('createTime', 'desc')
+              .skip(skip)
+              .limit(pageSize)
+              .get(),
+            db.collection('disputes')
+              .where(whereClause)
+              .count()
+          ])
+
+          // 统计各状态数量
+          const statsRes = await db.collection('disputes')
+            .aggregate()
+            .group({
+              _id: '$status',
+              count: $.sum(1)
+            })
+            .end()
+
+          const stats = { pending: 0, processing: 0, resolved: 0, closed: 0 }
+          for (const s of (statsRes.list || [])) {
+            if (stats.hasOwnProperty(s._id)) {
+              stats[s._id] = s.count
+            }
+          }
+
+          // 格式化纠纷数据
+          const statusTextMap = { pending: '待处理', processing: '处理中', resolved: '已解决', closed: '已关闭' }
+          const list = (listRes.data || []).map(item => ({
+            ...item,
+            statusText: statusTextMap[item.status] || item.status,
+            createTimeText: item.createTime
+              ? new Date(
+                  typeof item.createTime === 'object' && item.createTime.$date
+                    ? item.createTime.$date
+                    : item.createTime
+                ).toLocaleString('zh-CN')
+              : '',
+            updateTimeText: item.updateTime
+              ? new Date(
+                  typeof item.updateTime === 'object' && item.updateTime.$date
+                    ? item.updateTime.$date
+                    : item.updateTime
+                ).toLocaleString('zh-CN')
+              : ''
+          }))
+
+          return {
+            success: true,
+            list,
+            stats,
+            total: countRes.total || 0
+          }
+        } catch (e) {
+          console.error('[getDisputes]', e)
+          return { success: false, error: e.message }
+        }
+      }
+
+      // 处理纠纷
+      case 'handleDispute': {
+        if (!isSuperAdmin) return { success: false, error: '无管理员权限' }
+        try {
+          const { disputeId, disputeAction, result, note, punishment } = event
+          if (!disputeId || !disputeAction) return { success: false, error: '参数不完整' }
+
+          const disputeRes = await db.collection('disputes').doc(disputeId).get()
+          const dispute = disputeRes.data
+          if (!dispute) return { success: false, error: '纠纷不存在' }
+
+          // 根据操作类型更新状态
+          let newStatus
+          if (disputeAction === 'resolve') {
+            newStatus = 'resolved'
+          } else if (disputeAction === 'close') {
+            newStatus = 'closed'
+          } else {
+            newStatus = dispute.status
+          }
+
+          // 构建更新数据
+          const updateData = {
+            status: newStatus,
+            resolution: result || '',
+            adminNote: note || '',
+            handledBy: adminOpenid,
+            handledAt: db.serverDate(),
+            updateTime: db.serverDate()
+          }
+
+          // 如果有处罚信息
+          if (punishment && punishment.type && punishment.type !== 'none') {
+            updateData.punishment = punishment
+            updateData.responsibleParty = punishment.responsibleParty || ''
+
+            // 执行处罚
+            await _applyDisputePunishment(dispute, punishment, adminOpenid)
+          }
+
+          await db.collection('disputes').doc(disputeId).update({
+            data: updateData
+          })
+
+          // 记录管理日志
+          await db.collection('admin_logs').add({
+            data: {
+              _openid: adminOpenid,
+              type: 'dispute_handle',
+              targetId: disputeId,
+              detail: { disputeAction, result, note, punishment, newStatus },
+              createTime: db.serverDate()
+            }
+          })
+
+          return {
+            success: true,
+            message: disputeAction === 'resolve' ? '纠纷已解决' : '纠纷已关闭'
+          }
+        } catch (e) {
+          console.error('[handleDispute]', e)
+          return { success: false, error: e.message }
+        }
+      }
+
+      // 执行纠纷处罚
+      async function _applyDisputePunishment(dispute, punishment, adminOpenid) {
+        const { type, value, responsibleParty } = punishment
+        if (!value || value <= 0) return
+
+        // 确定被处罚的用户
+        let targetOpenid = ''
+        if (responsibleParty === 'initiator') {
+          targetOpenid = dispute.initiatorOpenid
+        } else if (responsibleParty === 'responder') {
+          targetOpenid = dispute.responderOpenid
+        } else if (responsibleParty === 'both') {
+          // 双方都处罚
+          if (dispute.initiatorOpenid) {
+            await _applySinglePunishment(dispute.initiatorOpenid, type, value, dispute._id, adminOpenid)
+          }
+          if (dispute.responderOpenid) {
+            await _applySinglePunishment(dispute.responderOpenid, type, value, dispute._id, adminOpenid)
+          }
+          return
+        } else {
+          return
+        }
+
+        if (targetOpenid) {
+          await _applySinglePunishment(targetOpenid, type, value, dispute._id, adminOpenid)
+        }
+      }
+
+      // 对单个用户执行处罚
+      async function _applySinglePunishment(targetOpenid, type, value, disputeId, adminOpenid) {
+        const userRes = await db.collection('users').where({ _openid: targetOpenid }).limit(1).get()
+        if (!userRes.data || userRes.data.length === 0) return
+        const user = userRes.data[0]
+
+        if (type === 'points') {
+          // 扣除积分
+          const newPoints = Math.max(0, (user.points || 0) - value)
+          await db.collection('users').doc(user._id).update({
+            data: { points: newPoints, updateTime: db.serverDate() }
+          })
+        } else if (type === 'credit') {
+          // 扣除信用分
+          const newCredit = Math.max(0, Math.min(100, (user.creditScore || 100) - value))
+          await db.collection('users').doc(user._id).update({
+            data: { creditScore: newCredit, updateTime: db.serverDate() }
+          })
+        } else if (type === 'deposit') {
+          // 扣除押金
+          const newDeposit = Math.max(0, (user.daigouDeposit || 0) - value)
+          await db.collection('users').doc(user._id).update({
+            data: { daigouDeposit: newDeposit, updateTime: db.serverDate() }
+          })
         }
       }
 

@@ -1,0 +1,9 @@
+{
+  "name": "initSuperAdmin",
+  "version": "1.0.0",
+  "description": "初始化超级管理员",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+}

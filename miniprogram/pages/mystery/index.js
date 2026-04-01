@@ -61,6 +61,7 @@ Page({
           const provinceName = prov ? prov.name : (p.province || '神秘')
           return {
             ...p,
+            id: p._id,
             coverUrl: p.images?.[0] || '',
             provinceName,
             categoryName: '',
@@ -109,6 +110,11 @@ Page({
     const month = date.getMonth() + 1
     const day = date.getDate()
     return `${month}月${day}日`
+  },
+
+  // 返回上一页
+  goBack() {
+    wx.navigateBack()
   },
 
   // 跳转到发布页面（神秘特产模式）

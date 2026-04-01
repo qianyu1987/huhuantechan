@@ -155,6 +155,7 @@ Page({
 
   onLoad() {
     this.setData({ featureFlags: getApp().globalData.featureFlags || {} })
+    this.initTheme()
     this.initProvinces()
     this.loadUserData()
     this._kbCallback = res => {
@@ -169,6 +170,9 @@ Page({
     // 只在需要时刷新，比如从其他页面返回时
     // 不再每次都调用 loadUserData，避免性能浪费
     const app = getApp()
+
+    // 更新主题
+    this.initTheme()
     
     // 如果 globalData 有数据，说明已经加载过
     if (app.globalData.userInfo) {
@@ -254,6 +258,12 @@ Page({
     if (this._kbCallback) {
       wx.offKeyboardHeightChange(this._kbCallback)
     }
+  },
+
+  // 初始化主题
+  initTheme() {
+    const savedTheme = wx.getStorageSync('appTheme') || 'dark'
+    this.setData({ pageTheme: savedTheme })
   },
 
   initProvinces() {
@@ -1024,68 +1034,5 @@ Page({
       phoneNumber: this.data.phoneNumber,
       phoneVerified: this.data.phoneVerified
     })
-  },
-
-  // 测试订阅消息
-  async testSubscribeMessage() {
-    const TEMPLATE_ID = 'qkNEkQTj0waYSCgdJC7dSe9L5_gqfAQqme-J0IEFA_c' // 活动通知
-
-    // 第1步：请求用户订阅授权
-    const authRes = await new Promise((resolve) => {
-      wx.requestSubscribeMessage({
-        tmplIds: [TEMPLATE_ID],
-        success: (res) => {
-          console.log('[订阅授权] 成功:', res)
-          resolve(res)
-        },
-        fail: (err) => {
-          console.error('[订阅授权] 失败:', err)
-          wx.showToast({ title: '授权失败', icon: 'none' })
-          resolve({ err })
-        }
-      })
-    })
-
-    // 检查用户是否允许
-    const acceptKey = TEMPLATE_ID
-    if (authRes[acceptKey] === 'accept') {
-      wx.showLoading({ title: '发送中...' })
-      try {
-        const openid = getApp().globalData.openid
-        if (!openid) {
-          wx.hideLoading()
-          wx.showToast({ title: '当前用户未登录', icon: 'none' })
-          return
-        }
-
-        // 第2步：发送订阅消息（通过云函数）
-        const sendRes = await callCloud('sendSubscribeMsg', {
-          action: 'activity',
-          openid: openid,
-          params: {
-            content: '🔔 测试消息：您的特产互换订单有新动态，请留意查看！',
-            startTime: new Date().toISOString().slice(0, 10),
-            endTime: new Date().toISOString().slice(0, 10),
-            page: '/pages/order/index'
-          }
-        })
-
-        wx.hideLoading()
-        if (sendRes && sendRes.success) {
-          wx.showToast({ title: '发送成功，请在微信服务通知中查看', icon: 'none', duration: 3000 })
-        } else {
-          console.error('[发送订阅消息] 失败:', JSON.stringify(sendRes))
-          wx.showToast({ title: '发送失败：' + (sendRes?.error?.message || sendRes?.error?.errMsg || JSON.stringify(sendRes?.error) || '未知错误'), icon: 'none', duration: 4000 })
-        }
-      } catch (e) {
-        wx.hideLoading()
-        console.error('[发送订阅消息] 异常:', e)
-        wx.showToast({ title: '发送异常：' + e.message, icon: 'none' })
-      }
-    } else if (authRes[acceptKey] === 'reject') {
-      wx.showToast({ title: '您拒绝了授权，无法收到消息', icon: 'none' })
-    } else {
-      wx.showToast({ title: '授权结果未知', icon: 'none' })
-    }
   }
 })

@@ -326,6 +326,85 @@ page {
   color: #fff;
 }
 
+/* ===== 收款码上传 ===== */
+.qrcode-upload-area {
+  margin-top: 8rpx;
+}
+
+.qrcode-upload-btn {
+  height: 200rpx;
+  border-radius: 20rpx;
+  border: 2rpx dashed rgba(0,199,190,0.5);
+  background: rgba(0,199,190,0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  transition: all 0.2s ease;
+}
+
+.qrcode-upload-btn:active {
+  background: rgba(0,199,190,0.1);
+  transform: scale(0.98);
+}
+
+.qrcode-icon {
+  font-size: 64rpx;
+}
+
+.qrcode-text {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #00A8A8;
+}
+
+.qrcode-hint {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.qrcode-preview {
+  margin-top: 8rpx;
+  background: rgba(0,0,0,0.04);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.qrcode-image {
+  width: 300rpx;
+  height: 300rpx;
+  border-radius: 16rpx;
+  background: #fff;
+}
+
+.qrcode-actions {
+  display: flex;
+  gap: 24rpx;
+}
+
+.qrcode-action-btn {
+  padding: 12rpx 32rpx;
+  border-radius: 32rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+  background: rgba(0,199,190,0.15);
+  color: #00A8A8;
+}
+
+.qrcode-action-btn:active {
+  opacity: 0.8;
+}
+
+.qrcode-action-btn.delete {
+  background: rgba(255,59,48,0.1);
+  color: #FF3B30;
+}
+
 /* ===== 提现说明 ===== */
 .withdrawal-tips {
   background: rgba(0,199,190,0.08);

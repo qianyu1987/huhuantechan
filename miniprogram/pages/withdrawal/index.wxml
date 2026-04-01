@@ -90,11 +90,11 @@
           <text class="quick-amounts-label">快捷金额</text>
           <view class="quick-amounts-grid">
             <view 
-              class="quick-amount-btn {{item == amount ? 'quick-amount-active' : ''}}" 
-              wx:for="{{quickAmountOptionsText}}" 
+              class="quick-amount-btn {{item.value == amount ? 'quick-amount-active' : ''}}" 
+              wx:for="{{quickAmounts}}" 
               wx:key="index"
               bindtap="selectQuickAmount"
-              data-amount="{{quickAmountOptions[index].value}}"
+              data-amount="{{item.value}}"
             >
               <text>¥{{item.text}}</text>
             </view>
@@ -106,20 +106,30 @@
               <text>全部提现</text>
             </view>
           </view>
-          <text class="form-hint" wx:if="{{quickAmountOptions.length === 0}}">可提现金额不足，无法使用快捷金额</text>
+          <text class="form-hint" wx:if="{{quickAmounts.length === 0}}">可提现金额不足，无法使用快捷金额</text>
         </view>
 
-        <!-- 收款信息 -->
+        <!-- 微信收款码 -->
         <view class="form-group">
-          <text class="form-label">收款账户信息</text>
-          <input 
-            class="form-input" 
-            placeholder="请输入支付宝/微信账号、银行卡号等" 
-            value="{{contactInfo}}" 
-            bindinput="onContactInfoInput"
-            maxlength="50"
-          />
-          <text class="form-hint">请确保账户信息准确，以免影响资金到账</text>
+          <text class="form-label">微信收款码</text>
+          <view class="qrcode-upload-area" wx:if="{{!paymentQrcodeLocal}}">
+            <view class="qrcode-upload-btn" bindtap="uploadPaymentQrcode">
+              <text class="qrcode-icon">📷</text>
+              <text class="qrcode-text">点击上传收款码</text>
+              <text class="qrcode-hint">请上传微信收款码二维码图片</text>
+            </view>
+          </view>
+          <view class="qrcode-preview" wx:else>
+            <image class="qrcode-image" src="{{paymentQrcodeLocal}}" mode="aspectFit" />
+            <view class="qrcode-actions">
+              <view class="qrcode-action-btn" bindtap="uploadPaymentQrcode">
+                <text>重新上传</text>
+              </view>
+              <view class="qrcode-action-btn delete" bindtap="deletePaymentQrcode">
+                <text>删除</text>
+              </view>
+            </view>
+          </view>
         </view>
 
         <!-- 备注 -->

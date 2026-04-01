@@ -1,8 +1,8 @@
-/* pages/settings/index.wxss - 设置 - iOS 26 毛玻璃风格 */
+/* pages/settings/index.wxss - 设置 - iOS 26 毛玻璃风格 + 主题支持 */
 
 .settings-page {
   min-height: 100vh;
-  background: #000000;
+  background: var(--color-bg);
   position: relative;
 }
 
@@ -18,6 +18,13 @@
   pointer-events: none;
 }
 
+/* 玫瑰红主题特殊渐变 */
+.theme-rose .bg-gradient {
+  background: 
+    radial-gradient(ellipse 80% 50% at 20% 0%, rgba(255, 59, 84, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(255, 107, 127, 0.1) 0%, transparent 50%);
+}
+
 /* 导航栏 */
 .glass-nav {
   position: sticky;
@@ -25,13 +32,13 @@
   z-index: 100;
   padding: 20rpx 32rpx;
   padding-top: calc(20rpx + env(safe-area-inset-top));
-  background: rgba(30, 30, 32, 0.7);
+  background: var(--liquid-surface);
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1rpx solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1rpx solid var(--color-divider);
 }
 
 .nav-back {
@@ -41,14 +48,14 @@
   align-items: center;
   justify-content: center;
   font-size: 44rpx;
-  color: #0A84FF;
+  color: var(--color-primary);
   font-weight: 300;
 }
 
 .nav-title {
   font-size: 34rpx;
   font-weight: 600;
-  color: #FFFFFF;
+  color: var(--color-text);
 }
 
 .nav-placeholder {
@@ -70,7 +77,7 @@
 .section-title {
   font-size: 24rpx;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--color-text-tertiary);
   margin-bottom: 12rpx;
   padding-left: 8rpx;
   text-transform: uppercase;
@@ -79,11 +86,11 @@
 
 /* 菜单列表 */
 .menu-list {
-  background: rgba(60, 60, 64, 0.35);
+  background: var(--liquid-surface);
   backdrop-filter: blur(25px);
   -webkit-backdrop-filter: blur(25px);
   border-radius: 24rpx;
-  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  border: 1rpx solid var(--color-divider);
   overflow: hidden;
 }
 
@@ -92,12 +99,12 @@
   align-items: center;
   justify-content: space-between;
   padding: 24rpx;
-  border-bottom: 1rpx solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1rpx solid var(--color-divider);
   transition: background 0.2s ease;
 }
 
 .menu-item:active {
-  background: rgba(120, 120, 128, 0.2);
+  background: var(--liquid-surface-hover);
 }
 
 .menu-item:last-child {
@@ -105,7 +112,7 @@
 }
 
 .menu-item.danger .menu-text {
-  color: #FF453A;
+  color: var(--color-danger);
 }
 
 .menu-left {
@@ -120,7 +127,7 @@
 
 .menu-text {
   font-size: 30rpx;
-  color: #FFFFFF;
+  color: var(--color-text);
 }
 
 .menu-right {
@@ -129,14 +136,25 @@
   gap: 8rpx;
 }
 
+.theme-name {
+  font-size: 26rpx;
+  color: var(--color-text-tertiary);
+  margin-right: 8rpx;
+}
+
 .cache-size {
   font-size: 26rpx;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--color-text-tertiary);
+}
+
+.version-text {
+  font-size: 26rpx;
+  color: var(--color-text-tertiary);
 }
 
 .menu-arrow {
   font-size: 32rpx;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--color-text-quaternary);
   font-weight: 300;
 }
 
@@ -151,6 +169,211 @@
 }
 
 .menu-switch .wx-switch-input.wx-switch-input-checked {
-  background: #0A84FF !important;
-  border-color: #0A84FF !important;
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+}
+
+/* ==================== 主题选择弹窗 ==================== */
+.theme-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.theme-modal.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.theme-modal-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--color-bg-secondary);
+  border-radius: 40rpx 40rpx 0 0;
+  padding: 0 0 env(safe-area-inset-bottom);
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.theme-modal.show .theme-modal-content {
+  transform: translateY(0);
+}
+
+/* 玫瑰红主题弹窗 */
+.theme-rose .theme-modal-content {
+  background: linear-gradient(180deg, var(--color-bg-secondary) 0%, var(--color-bg) 100%);
+}
+
+.theme-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32rpx 40rpx 24rpx;
+  border-bottom: 1rpx solid var(--color-divider);
+}
+
+.theme-modal-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.theme-modal-close {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  color: var(--color-text-tertiary);
+}
+
+.theme-modal-close:active {
+  opacity: 0.6;
+}
+
+.theme-list {
+  padding: 24rpx 32rpx;
+}
+
+/* 主题项 */
+.theme-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx;
+  background: var(--liquid-surface);
+  border-radius: 24rpx;
+  border: 2rpx solid transparent;
+  margin-bottom: 20rpx;
+  transition: all 0.25s ease;
+}
+
+.theme-item:last-child {
+  margin-bottom: 0;
+}
+
+.theme-item:active {
+  background: var(--liquid-surface-hover);
+}
+
+.theme-item.active {
+  border-color: var(--color-primary);
+  background: var(--glass-primary);
+}
+
+/* 主题预览 */
+.theme-preview {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 20rpx;
+  overflow: hidden;
+  margin-right: 24rpx;
+  position: relative;
+}
+
+.theme-preview-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 20rpx;
+}
+
+.theme-preview-dark {
+  background: linear-gradient(135deg, #0D0D0F 0%, #161619 100%);
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+}
+
+.theme-preview-dark::after {
+  content: '';
+  position: absolute;
+  top: 20%;
+  left: 15%;
+  width: 30%;
+  height: 20%;
+  background: #0A84FF;
+  border-radius: 6rpx;
+}
+
+.theme-preview-light {
+  background: linear-gradient(135deg, #F2F2F7 0%, #FFFFFF 100%);
+  border: 1rpx solid rgba(0, 0, 0, 0.1);
+}
+
+.theme-preview-light::after {
+  content: '';
+  position: absolute;
+  top: 20%;
+  left: 15%;
+  width: 30%;
+  height: 20%;
+  background: #007AFF;
+  border-radius: 6rpx;
+}
+
+.theme-preview-rose {
+  background: linear-gradient(135deg, #1A0008 0%, #3D0015 100%);
+  border: 1rpx solid rgba(255, 59, 84, 0.3);
+}
+
+.theme-preview-rose::after {
+  content: '';
+  position: absolute;
+  top: 20%;
+  left: 15%;
+  width: 30%;
+  height: 20%;
+  background: #FF3B54;
+  border-radius: 6rpx;
+  box-shadow: 0 0 12rpx rgba(255, 59, 84, 0.5);
+}
+
+.theme-info {
+  flex: 1;
+}
+
+.theme-item-name {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 8rpx;
+}
+
+.theme-item-desc {
+  display: block;
+  font-size: 24rpx;
+  color: var(--color-text-tertiary);
+}
+
+.theme-check {
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  color: var(--color-primary);
+  font-weight: bold;
+}
+
+/* 玫瑰红主题选中效果 */
+.theme-rose .theme-item.active {
+  border-color: #FF3B54;
+  background: rgba(255, 59, 84, 0.15);
+}
+
+.theme-rose .theme-check {
+  color: #FF3B54;
 }

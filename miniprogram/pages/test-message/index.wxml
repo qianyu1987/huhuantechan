@@ -1,0 +1,48 @@
+<!-- 测试订阅消息页面 -->
+<view class="container">
+  <view class="header">
+    <text class="title">订阅消息测试</text>
+  </view>
+
+  <!-- OpenID 显示 -->
+  <view class="section">
+    <view class="section-title">当前用户 OpenID</view>
+    <view class="openid-box" bindtap="copyOpenid">
+      <text class="openid-text">{{openid || '加载中...'}}</text>
+      <text class="copy-hint">点击复制</text>
+    </view>
+  </view>
+
+  <!-- 测试按钮 -->
+  <view class="section">
+    <view class="section-title">测试功能</view>
+    
+    <button class="test-btn subscribe-btn" bindtap="testSubscribe">
+      <text class="btn-icon">📬</text>
+      <text class="btn-text">请求订阅授权</text>
+    </button>
+
+    <button class="test-btn send-btn" bindtap="testSendMessage">
+      <text class="btn-icon">📨</text>
+      <text class="btn-text">发送测试消息</text>
+    </button>
+  </view>
+
+  <!-- 结果提示 -->
+  <view class="section" wx:if="{{result}}">
+    <view class="section-title">执行结果</view>
+    <view class="result-box">
+      <text class="result-text">{{result}}</text>
+    </view>
+  </view>
+
+  <!-- 说明 -->
+  <view class="section">
+    <view class="section-title">使用说明</view>
+    <view class="tips">
+      <text class="tip-item">1. 点击"请求订阅授权"允许接收通知</text>
+      <text class="tip-item">2. 点击"发送测试消息"发送一条测试通知</text>
+      <text class="tip-item">3. 在微信"服务通知"中查看消息</text>
+    </view>
+  </view>
+</view>

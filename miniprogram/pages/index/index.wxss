@@ -153,20 +153,202 @@
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-radius: var(--radius-xl);
-  padding: 20rpx 28rpx;
+  padding: 16rpx 24rpx;
   margin-bottom: 28rpx;
   border: 1rpx solid rgba(255, 255, 255, 0.08);
   transition: all 0.25s ease;
 }
 
-.search-bar:active {
+.search-bar:focus-within {
   background: var(--liquid-surface-hover);
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: rgba(10, 132, 255, 0.4);
+  box-shadow: 0 0 0 4rpx rgba(10, 132, 255, 0.1);
+}
+
+.search-emoji {
+  font-size: 32rpx;
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  font-size: 28rpx;
+  color: var(--color-text-primary);
+  height: 48rpx;
+  line-height: 48rpx;
 }
 
 .search-placeholder {
   font-size: 28rpx;
   color: var(--color-text-quaternary);
+}
+
+.search-clear {
+  width: 44rpx;
+  height: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  color: var(--color-text-quaternary);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.search-btn {
+  font-size: 26rpx;
+  color: #fff;
+  background: linear-gradient(135deg, #0A84FF 0%, #5856D6 100%);
+  padding: 12rpx 24rpx;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* 搜索结果 */
+.search-results {
+  padding: 0 32rpx;
+}
+
+.search-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24rpx;
+  padding-top: 16rpx;
+}
+
+.search-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.search-count {
+  font-size: 24rpx;
+  color: var(--color-text-tertiary);
+}
+
+/* 瀑布流布局 */
+.waterfall {
+  display: flex;
+  gap: 20rpx;
+}
+
+.waterfall-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+/* 产品卡片 */
+.product-card {
+  background: var(--liquid-surface);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  border: 1rpx solid rgba(255, 255, 255, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.product-card:active {
+  transform: scale(0.98);
+}
+
+.product-img-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: var(--color-bg-elevated);
+}
+
+.product-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-info {
+  padding: 20rpx;
+}
+
+.product-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 12rpx;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+
+.product-province {
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+}
+
+.product-status {
+  font-size: 22rpx;
+  padding: 6rpx 14rpx;
+  border-radius: var(--radius-full);
+  font-weight: 500;
+}
+
+.product-status.active {
+  background: rgba(48, 209, 88, 0.15);
+  color: #30D158;
+}
+
+.product-status.swapped {
+  background: rgba(142, 142, 147, 0.15);
+  color: #8E8E93;
+}
+
+.product-status.in_swap {
+  background: rgba(255, 159, 10, 0.15);
+  color: #FF9F0A;
+}
+
+/* 空状态 */
+.empty-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400rpx;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  opacity: 0.6;
+}
+
+.empty-desc {
+  font-size: 30rpx;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.empty-sub {
+  font-size: 26rpx;
+  color: var(--color-text-tertiary);
 }
 
 /* 省份筛选 - 液态胶囊标签 */
@@ -456,7 +638,7 @@
   -webkit-backdrop-filter: blur(8px);
 }
 
-/* ===== 神秘特产卡片 ===== */
+/* ===== 神秘特产卡片 - 炫酷版 ===== */
 .mystery-card {
   position: relative;
   overflow: hidden;
@@ -468,119 +650,138 @@
   align-items: center;
   justify-content: center;
   position: relative;
+  overflow: hidden;
 }
 
-/* 液态渐变背景 */
-.mystery-img-wrap.color-1 {
-  background: linear-gradient(135deg, #FF6B6B 0%, #EE5A24 100%);
-  position: relative;
+/* 深色渐变背景 */
+.mystery-img-wrap.purple {
+  background: linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 50%, #1a0a2e 100%);
 }
-.mystery-img-wrap.color-1::before {
+.mystery-img-wrap.blue {
+  background: linear-gradient(135deg, #0a1628 0%, #1a3a5c 50%, #0a1628 100%);
+}
+.mystery-img-wrap.green {
+  background: linear-gradient(135deg, #0a1f0a 0%, #1a3a1a 50%, #0a1f0a 100%);
+}
+.mystery-img-wrap.red {
+  background: linear-gradient(135deg, #1f0a0a 0%, #3a1a1a 50%, #1f0a0a 100%);
+}
+.mystery-img-wrap.gold {
+  background: linear-gradient(135deg, #1f1a0a 0%, #3a3015 50%, #1f1a0a 100%);
+}
+
+/* 发光效果 */
+.mystery-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%;
+  height: 80%;
+  background: radial-gradient(circle, rgba(138, 43, 226, 0.4) 0%, rgba(138, 43, 226, 0.1) 40%, transparent 70%);
+  border-radius: 50%;
+  animation: mysteryGlowPulse 3s ease-in-out infinite;
+}
+
+@keyframes mysteryGlowPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+  50% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+}
+
+/* 星星装饰 */
+.mystery-stars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.mystery-star {
+  position: absolute;
+  font-size: 24rpx;
+  opacity: 0;
+  animation: starTwinkle 2s ease-in-out infinite;
+}
+
+.mystery-star:nth-child(1) { top: 15%; left: 15%; animation-delay: 0s; }
+.mystery-star:nth-child(2) { top: 25%; right: 20%; animation-delay: 0.5s; }
+.mystery-star:nth-child(3) { bottom: 30%; left: 25%; animation-delay: 1s; }
+.mystery-star:nth-child(4) { top: 60%; right: 15%; animation-delay: 1.5s; }
+
+@keyframes starTwinkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* 礼盒容器 */
+.mystery-box-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+/* 礼盒emoji */
+.mystery-box-emoji {
+  font-size: 80rpx;
+  animation: boxFloat 3s ease-in-out infinite;
+  filter: drop-shadow(0 4rpx 20rpx rgba(0,0,0,0.3));
+}
+
+@keyframes boxFloat {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-10rpx) rotate(3deg); }
+}
+
+/* 光环效果 */
+.mystery-ring-gold {
+  position: absolute;
+  width: 140%;
+  height: 140%;
+  border: 3rpx solid rgba(255, 215, 0, 0.4);
+  border-radius: 50%;
+  animation: ringPulseGold 2s ease-out infinite;
+}
+
+.mystery-ring-gold::before {
   content: '';
   position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
+  top: 15rpx;
+  left: 15rpx;
+  right: 15rpx;
+  bottom: 15rpx;
+  border: 2rpx solid rgba(138, 43, 226, 0.3);
+  border-radius: 50%;
 }
 
-.mystery-img-wrap.color-2 {
-  background: linear-gradient(135deg, #FECA57 0%, #FF9F43 100%);
-  position: relative;
+@keyframes ringPulseGold {
+  0% { transform: scale(0.9); opacity: 1; }
+  100% { transform: scale(1.3); opacity: 0; }
 }
-.mystery-img-wrap.color-2::before {
-  content: '';
+
+/* 标签 */
+.mystery-tag-badge {
   position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
+  bottom: 20rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8rpx 24rpx;
+  background: linear-gradient(90deg, rgba(138, 43, 226, 0.4), rgba(10, 132, 255, 0.4));
+  border: 1rpx solid rgba(255, 255, 255, 0.2);
+  border-radius: 30rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #fff;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4rpx 16rpx rgba(138, 43, 226, 0.3);
+  white-space: nowrap;
 }
 
-.mystery-img-wrap.color-3 {
-  background: linear-gradient(135deg, #48DBFB 0%, #0ABDE3 100%);
-  position: relative;
-}
-.mystery-img-wrap.color-3::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
-}
-
-.mystery-img-wrap.color-4 {
-  background: linear-gradient(135deg, #A55EEA 0%, #8854D0 100%);
-  position: relative;
-}
-.mystery-img-wrap.color-4::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
-}
-
-.mystery-img-wrap.color-5 {
-  background: linear-gradient(135deg, #26DE81 0%, #20BF6B 100%);
-  position: relative;
-}
-.mystery-img-wrap.color-5::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
-}
-
-.mystery-img-wrap.color-6 {
-  background: linear-gradient(135deg, #FED330 0%, #F79F1F 100%);
-  position: relative;
-}
-.mystery-img-wrap.color-6::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
-}
-
-.mystery-img-wrap.color-7 {
-  background: linear-gradient(135deg, #FC5C65 0%, #EB3B5A 100%);
-  position: relative;
-}
-.mystery-img-wrap.color-7::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
-}
-
-.mystery-img-wrap.color-8 {
-  background: linear-gradient(135deg, #45AAF2 0%, #2D98DA 100%);
-  position: relative;
-}
-.mystery-img-wrap.color-8::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
-}
-
-.mystery-img-wrap.color-9 {
-  background: linear-gradient(135deg, #4B7BEC 0%, #3867D6 100%);
-  position: relative;
-}
-.mystery-img-wrap.color-9::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
-}
-
-.mystery-img-wrap.color-10 {
-  background: linear-gradient(135deg, #778CA3 0%, #4B6584 100%);
-  position: relative;
-}
-.mystery-img-wrap.color-10::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
-}
-
+/* 兼容旧样式 */
 .mystery-card-content {
   display: flex;
   flex-direction: column;
@@ -625,6 +826,183 @@
   padding: 40rpx;
   color: var(--color-text-tertiary);
   font-size: 24rpx;
+}
+
+/* ===== 惊喜特产专区 ===== */
+.mystery-section {
+  margin-bottom: 32rpx;
+  padding: 20rpx 0;
+}
+
+.mystery-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32rpx 16rpx;
+}
+
+.mystery-section-emoji {
+  font-size: 36rpx;
+}
+
+.mystery-section-title {
+  flex: 1;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-left: 12rpx;
+}
+
+.mystery-products-scroll {
+  padding-left: 32rpx;
+}
+
+.mystery-products-list {
+  display: flex;
+  gap: 20rpx;
+  padding-right: 32rpx;
+}
+
+.mystery-product-card {
+  flex-shrink: 0;
+  width: 200rpx;
+  background: var(--liquid-surface);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.15);
+}
+
+.mystery-card-img-wrap {
+  width: 200rpx;
+  height: 200rpx;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mystery-card-title {
+  padding: 12rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+  color: var(--color-text);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ===== 更多按钮 ===== */
+.more-btn {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  padding: 8rpx 16rpx;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-full);
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+}
+
+.more-btn text {
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+}
+
+.more-btn:active {
+  background: rgba(255, 255, 255, 0.12);
+  transform: scale(0.95);
+}
+
+.more-arrow {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+/* ===== 分类产品展示 ===== */
+.category-sections {
+  padding: 20rpx 0;
+}
+
+.category-section {
+  margin-bottom: 32rpx;
+}
+
+.category-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+  padding: 0 32rpx 16rpx;
+}
+
+.category-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex: 1;
+}
+
+.category-emoji {
+  font-size: 36rpx;
+}
+
+.category-name {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.category-count {
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+}
+
+.category-products-scroll {
+  padding-left: 32rpx;
+}
+
+.category-products-list {
+  display: flex;
+  gap: 20rpx;
+  padding-right: 32rpx;
+}
+
+.category-product-card {
+  flex-shrink: 0;
+  width: 200rpx;
+  background: var(--liquid-surface);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.15);
+}
+
+.cat-card-img-wrap {
+  width: 200rpx;
+  height: 200rpx;
+  position: relative;
+  overflow: hidden;
+}
+
+.cat-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cat-card-title {
+  padding: 12rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+  color: var(--color-text);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ===== 悬浮发布按钮 - 液态渐变 ===== */

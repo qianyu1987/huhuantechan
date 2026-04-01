@@ -1,5 +1,5 @@
 <!-- components/tab-bar/tab-bar.wxml - 统一底部导航组件 -->
-<view class="tab-bar-container" style="padding-bottom: {{safeAreaBottom}}px;">
+<view class="tab-bar-container theme-{{currentTheme}}" style="padding-bottom: {{safeAreaBottom}}px;">
   <view class="tab-bar">
     <block wx:for="{{tabs}}" wx:key="page">
       <view 

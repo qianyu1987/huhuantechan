@@ -1,0 +1,10 @@
+{
+  "name": "receiveMessage",
+  "version": "1.0.0",
+  "description": "接收微信消息推送服务",
+  "main": "app.js",
+  "dependencies": {
+    "express": "^4.18.2",
+    "wx-server-sdk": "latest"
+  }
+}

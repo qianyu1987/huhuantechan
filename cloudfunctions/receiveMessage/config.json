@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "openapi": [
+      "subscribeMessage.send"
+    ]
+  },
+  "triggers": [
+    {
+      "name": "receiveMessage",
+      "type": "http",
+      "config": {
+        "auth": "none",
+        "methods": ["GET", "POST"]
+      }
+    }
+  ]
+}

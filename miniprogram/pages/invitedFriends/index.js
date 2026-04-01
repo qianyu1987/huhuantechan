@@ -18,11 +18,11 @@ Page({
       cashSignupRewards: '0.00',
       cashSwapRewards: '0.00',
       cashTotalRewards: '0.00',
-      inviterReward: 10,
-      inviteeReward: 5,
-      inviterCashReward: '5.00',
-      inviteeCashReward: '2.00',
-      firstSwapCashReward: '10.00'
+      inviterReward: 0,         // 邀请人积分奖励（从后台 invite_points_inviter 读取）
+      inviteeReward: 0,         // 被邀请人积分奖励（从后台 invite_points_invitee 读取）
+      inviterCashReward: '0.30', // 邀请人现金奖励（从后台 invite_reward_inviter 读取）
+      inviteeCashReward: '0.10', // 被邀请人现金奖励（从后台 invite_reward_invitee 读取）
+      firstSwapCashReward: '0.00'
     }
   },
 
@@ -57,9 +57,9 @@ Page({
           cashSignupRewards: this.formatCash(rewardSummary.cashSignupRewards || 0),
           cashSwapRewards: this.formatCash(rewardSummary.cashSwapRewards || 0),
           cashTotalRewards: this.formatCash(rewardSummary.cashTotalRewards || 0),
-          inviterCashReward: this.formatCash(rewardSummary.inviterCashReward || 5.00),
-          inviteeCashReward: this.formatCash(rewardSummary.inviteeCashReward || 2.00),
-          firstSwapCashReward: this.formatCash(rewardSummary.firstSwapCashReward || 10.00)
+          inviterCashReward: this.formatCash(rewardSummary.inviterCashReward || 0.3),
+          inviteeCashReward: this.formatCash(rewardSummary.inviteeCashReward || 0.1),
+          firstSwapCashReward: this.formatCash(rewardSummary.firstSwapCashReward || 0)
         }
         
         // 格式化邀请列表中的现金奖励

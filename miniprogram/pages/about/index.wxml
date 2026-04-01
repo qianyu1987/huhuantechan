@@ -161,15 +161,17 @@
             <text class="copy-btn">复制</text>
           </view>
         </view>
-        <view class="contact-item" bindtap="copyText" data-id="风物之情">
+        <view class="contact-item" bindtap="copyText" data-id="换特产">
           <text class="contact-label">公众号</text>
           <view class="contact-value">
-            <text>风物之情</text>
+            <text>换特产</text>
             <text class="copy-btn">复制</text>
           </view>
         </view>
       </view>
     </view>
+
+
 
     <!-- 协议链接 -->
     <view class="links-section">

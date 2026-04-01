@@ -1,57 +1,211 @@
-<!-- pages/favorites/index.wxml - 我的收藏 -->
+<!-- pages/favorites/index.wxml - 我的收藏（全新设计） -->
 <view class="favorites-page">
-  <view class="bg-gradient"></view>
+  <!-- 顶部安全区 -->
+  <view class="safe-top"></view>
 
-  <!-- 毛玻璃导航栏 -->
-  <view class="glass-nav">
-    <view class="nav-back" bindtap="goBack">
-      <text class="back-arrow">‹</text>
+  <!-- 头部导航栏 -->
+  <view class="header">
+    <view class="header-left" bindtap="goBack">
+      <text class="back-icon">‹</text>
+      <text class="back-text">返回</text>
     </view>
-    <text class="nav-title">我的收藏</text>
-    <view class="nav-placeholder"></view>
+    <view class="header-center">
+      <text class="header-title">我的收藏</text>
+      <text class="header-subtitle">{{favorites.length}}个收藏</text>
+    </view>
+    <view class="header-right">
+      <view class="header-action" bindtap="onRefresh">
+        <text class="refresh-icon">↻</text>
+      </view>
+    </view>
   </view>
 
-  <!-- 加载中 -->
-  <view wx:if="{{loading}}" class="loading-state">
-    <view class="loading-dot"></view>
-    <text class="loading-text">加载中...</text>
+  <!-- 分类筛选 -->
+  <view class="filter-section" wx:if="{{favorites.length > 0}}">
+    <scroll-view scroll-x class="filter-scroll" shows-scrollbar="{{false}}">
+      <view class="filter-tags">
+        <view 
+          class="filter-tag {{activeFilter === 'all' ? 'filter-tag-active' : ''}}" 
+          bindtap="changeFilter" 
+          data-filter="all"
+        >
+          <text>全部</text>
+        </view>
+        <view 
+          class="filter-tag {{activeFilter === 'active' ? 'filter-tag-active' : ''}}" 
+          bindtap="changeFilter" 
+          data-filter="active"
+        >
+          <text>可分享</text>
+        </view>
+        <view 
+          class="filter-tag {{activeFilter === 'daigou' ? 'filter-tag-active' : ''}}" 
+          bindtap="changeFilter" 
+          data-filter="daigou"
+        >
+          <text>可代购</text>
+        </view>
+        <view 
+          class="filter-tag {{activeFilter === 'mystery' ? 'filter-tag-active' : ''}}" 
+          bindtap="changeFilter" 
+          data-filter="mystery"
+        >
+          <text>神秘特产</text>
+        </view>
+      </view>
+    </scroll-view>
   </view>
 
-  <scroll-view wx:else scroll-y class="favorites-scroll"
-    refresher-enabled
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-container">
+    <view class="loading-spinner">
+      <view class="spinner-dot"></view>
+      <view class="spinner-dot"></view>
+      <view class="spinner-dot"></view>
+    </view>
+    <text class="loading-text">加载收藏中...</text>
+  </view>
+
+  <!-- 空状态 -->
+  <view wx:elif="{{!loading && filteredFavorites.length === 0}}" class="empty-container">
+    <view class="empty-illustration">
+      <text class="empty-emoji">❤️</text>
+      <view class="empty-heartbeat"></view>
+    </view>
+    <text class="empty-title">收藏夹空空如也</text>
+    <text class="empty-desc">发现心仪的特产，点击❤️收藏起来吧</text>
+    <view class="empty-actions">
+      <view class="empty-btn" bindtap="goToDiscover">
+        <text>去发现</text>
+      </view>
+      <view class="empty-btn secondary" bindtap="goToMatch">
+        <text>去匹配</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 收藏列表 -->
+  <scroll-view 
+    wx:else 
+    scroll-y 
+    class="content-scroll"
+    refresher-enabled="{{true}}"
     bindrefresherrefresh="onRefresh"
-    refresher-triggered="{{refreshing}}">
-
-    <!-- 空状态 -->
-    <view wx:if="{{favorites.length === 0}}" class="empty-state">
-      <view class="empty-icon">❤️</view>
-      <view class="empty-title">还没有收藏</view>
-      <view class="empty-desc">发现喜欢的特产可以收藏哦</view>
+    refresher-triggered="{{refreshing}}"
+    refresher-background="transparent"
+  >
+    <!-- 收藏统计 -->
+    <view class="stats-card" wx:if="{{favorites.length > 0}}">
+      <view class="stats-row">
+        <view class="stat-item">
+          <text class="stat-value">{{favorites.length}}</text>
+          <text class="stat-label">收藏总数</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <text class="stat-value">{{activeCount}}</text>
+          <text class="stat-label">可分享</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <text class="stat-value">{{daigouCount}}</text>
+          <text class="stat-label">可代购</text>
+        </view>
+      </view>
     </view>
 
-    <!-- 收藏列表 -->
-    <view class="favorites-grid" wx:else>
-      <block wx:for="{{favorites}}" wx:key="_id">
-        <view class="product-card" bindtap="goToDetail" data-id="{{item._id}}">
-          <view class="card-img-wrap">
-            <image class="product-cover" src="{{item.coverUrl}}" mode="aspectFill" lazy-load="{{true}}"/>
-            <view wx:if="{{item.status !== 'active'}}" class="status-mask">
-              <text class="status-text">{{item.status === 'removed' ? '已下架' : item.status === 'swapped' ? '已分享' : '进行中'}}</text>
+    <!-- 收藏网格 -->
+    <view class="favorites-grid">
+      <block wx:for="{{filteredFavorites}}" wx:key="_id">
+        <view class="favorite-card" bindtap="goToDetail" data-id="{{item._id}}" bindlongpress="onCardLongPress" data-id="{{item._id}}">
+          <!-- 卡片顶部 -->
+          <view class="card-top">
+            <image class="card-image" src="{{item.coverUrl}}" mode="aspectFill" lazy-load="{{true}}"/>
+            
+            <!-- 状态标签 -->
+            <view class="card-badges">
+              <view class="badge status-badge" wx:if="{{item.status !== 'active'}}">
+                <text>{{getStatusText(item.status)}}</text>
+              </view>
+              <view class="badge daigou-badge" wx:if="{{item.daigou}}">
+                <text>代购</text>
+              </view>
+              <view class="badge mystery-badge" wx:if="{{item.isMystery}}">
+                <text>神秘</text>
+              </view>
+            </view>
+
+            <!-- 取消收藏按钮 -->
+            <view class="remove-btn" catchtap="removeFavorite" data-id="{{item._id}}">
+              <text class="remove-icon">×</text>
             </view>
           </view>
-          <view class="product-info">
-            <view class="product-name">{{item.name}}</view>
+
+          <!-- 卡片内容 -->
+          <view class="card-content">
+            <text class="product-name">{{item.name || '神秘特产'}}</text>
+            
             <view class="product-meta">
-              <text class="product-province" style="color: {{item.provinceColor}}">{{item.provinceName}}</text>
+              <view class="meta-item">
+                <text class="meta-icon">📍</text>
+                <text class="meta-text">{{item.provinceName}}</text>
+              </view>
+              <view class="meta-item" wx:if="{{item.categoryName}}">
+                <text class="meta-icon">🏷️</text>
+                <text class="meta-text">{{item.categoryName}}</text>
+              </view>
+            </view>
+
+            <view class="product-footer">
+              <view class="value-range" wx:if="{{item.valueRange && !item.isMystery}}">
+                <text class="value-text">{{getValueRangeText(item.valueRange)}}</text>
+              </view>
+              <view class="collect-time">
+                <text class="time-icon">⏱️</text>
+                <text class="time-text">{{formatCollectTime(item.collectTime)}}</text>
+              </view>
             </view>
           </view>
-          <view class="remove-btn" catchtap="removeFavorite" data-id="{{item._id}}">
-            <text>×</text>
+
+          <!-- 卡片底部操作 -->
+          <view class="card-actions">
+            <view class="action-btn share-btn" catchtap="shareProduct" data-id="{{item._id}}">
+              <text class="action-icon">↗️</text>
+              <text class="action-text">分享</text>
+            </view>
+            <view class="action-divider"></view>
+            <view class="action-btn match-btn" catchtap="goToMatchWithProduct" data-id="{{item._id}}">
+              <text class="action-icon">🤝</text>
+              <text class="action-text">匹配</text>
+            </view>
           </view>
         </view>
       </block>
     </view>
 
-    <view style="height: 80rpx"/>
+    <!-- 底部提示 -->
+    <view class="bottom-tips" wx:if="{{filteredFavorites.length > 0}}">
+      <text class="tips-text">长按卡片可快速取消收藏</text>
+      <text class="tips-text">点击右上角刷新按钮更新状态</text>
+    </view>
+
+    <view class="safe-bottom-placeholder"></view>
   </scroll-view>
+
+  <!-- 底部操作栏 -->
+  <view class="bottom-bar" wx:if="{{favorites.length > 0}}">
+    <view class="bottom-actions">
+      <view class="bottom-btn" bindtap="clearInactiveFavorites">
+        <text class="btn-icon">🗑️</text>
+        <text class="btn-text">清理无效</text>
+      </view>
+      <view class="bottom-btn" bindtap="exportFavorites">
+        <text class="btn-icon">📤</text>
+        <text class="btn-text">导出</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部安全区 -->
+  <view class="safe-bottom"></view>
 </view>

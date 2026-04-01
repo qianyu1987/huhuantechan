@@ -1,4 +1,9 @@
 {
-  "navigationBarTitleText": "我的收藏",
-  "navigationStyle": "custom"
+  "usingComponents": {},
+  "navigationStyle": "custom",
+  "enablePullDownRefresh": true,
+  "backgroundColor": "#000000",
+  "backgroundTextStyle": "dark",
+  "onReachBottomDistance": 50,
+  "disableScroll": false
 }

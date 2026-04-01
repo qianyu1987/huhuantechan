@@ -1,5 +1,5 @@
 <!-- pages/mine/index.wxml - 个人中心 - iOS 风格 -->
-<view class="mine-page">
+<view class="mine-page theme-{{pageTheme}}">
 
   <!-- 用户信息 + 统计 合并卡片 -->
   <view class="profile-card">
@@ -75,8 +75,8 @@
         </view>
       </view>
       <view class="deposit-right">
-        <text class="deposit-amount {{userInfo.daigouStats.depositBalance > 0 ? 'ok' : 'low'}}">¥{{userInfo.daigouStats.depositBalance || 0}}</text>
-        <text class="deposit-total">/¥{{userInfo.daigouStats.depositPaid || 0}}</text>
+        <text class="deposit-amount {{userInfo.daigouStats && userInfo.daigouStats.depositBalance > 0 ? 'ok' : 'low'}}">¥{{userInfo.daigouStats ? (userInfo.daigouStats.depositBalance || 0) : 0}}</text>
+        <text class="deposit-total">/¥{{userInfo.daigouStats ? (userInfo.daigouStats.depositPaid || 0) : 0}}</text>
         <text class="arrow">›</text>
       </view>
     </view>
@@ -216,6 +216,10 @@
     <view class="section">
       <view class="section-title">常用工具</view>
       <view class="tool-grid">
+        <view class="tool-item" bindtap="goToInvite">
+          <view class="tool-icon icon-green">🎁</view>
+          <text class="tool-label">邀请好友</text>
+        </view>
         <view class="tool-item" bindtap="goToAddress" wx:if="{{featureFlags.feature_swap !== false}}">
           <view class="tool-icon icon-teal">📍</view>
           <text class="tool-label">收货地址</text>
@@ -231,10 +235,6 @@
         <view class="tool-item" bindtap="goToSettings">
           <view class="tool-icon icon-gray">⚙️</view>
           <text class="tool-label">系统设置</text>
-        </view>
-        <view class="tool-item" bindtap="testSubscribeMessage">
-          <view class="tool-icon icon-orange">🔔</view>
-          <text class="tool-label">测试订阅</text>
         </view>
       </view>
     </view>

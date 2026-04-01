@@ -387,11 +387,13 @@
         <text class="empty-label">暂无特产数据</text>
       </view>
       <view class="list-card" wx:for="{{products}}" wx:key="_id" bindtap="goToProductDetail" data-id="{{item._id}}">
+        <view class="lc-index">{{item.productIndex}}</view>
         <image class="lc-cover" src="{{item.coverUrl}}" mode="aspectFill"/>
         <view class="lc-body">
           <text class="lc-title">{{item.name}}</text>
           <view class="lc-sub-row">
             <text class="lc-sub-text">📍 {{item.province}}</text>
+            <text class="lc-time">{{item.createTimeText}}</text>
             <view class="status-pill pill-status-{{item.status}}">{{item.statusText}}</view>
           </view>
         </view>
@@ -436,6 +438,7 @@
         <text class="empty-label">暂无订单记录</text>
       </view>
       <view class="order-card-v3" wx:for="{{orders}}" wx:key="_id" bindtap="goToOrderDetail" data-id="{{item._id}}">
+        <view class="lc-index">{{item.orderIndex}}</view>
         <view class="ocv3-header">
           <text class="ocv3-id">{{item._id}}</text>
           <view class="status-pill pill-status-{{item.status}}">{{item.statusText}}</view>
@@ -462,8 +465,8 @@
     <view wx:if="{{orderLoading}}" class="loading-row">⏳ 加载中...</view>
   </block>
 
-  <!-- ===== 用户操作日志（Tab=5）===== -->
-  <block wx:if="{{currentTab === 5}}">
+  <!-- ===== 用户操作日志（Tab=5 - 普通管理员）===== -->
+  <block wx:if="{{currentTab === 5 && !isSuperAdmin}}">
     <!-- 统计卡片 -->
     <view class="logs-stats">
       <view class="logs-stats-title">📊 实时操作统计（最近2小时）</view>
@@ -517,24 +520,24 @@
     </view>
     <view class="stats-row-card">
       <view class="src-item">
-        <text class="src-num src-blue">{{pendingStats.total || 0}}</text>
-        <text class="src-label">📋 全部待审</text>
+        <text class="src-num src-orange">{{pendingStats.pending || 0}}</text>
+        <text class="src-label">⏳ 待审核</text>
       </view>
       <view class="src-div"></view>
       <view class="src-item">
-        <text class="src-num src-orange">{{pendingStats.manualReview || 0}}</text>
-        <text class="src-label">⏳ 需人工</text>
+        <text class="src-num src-green">{{pendingStats.approved || 0}}</text>
+        <text class="src-label">✅ 已通过</text>
       </view>
       <view class="src-div"></view>
       <view class="src-item">
-        <text class="src-num src-red">{{pendingStats.autoBlocked || 0}}</text>
-        <text class="src-label">🔒 自动拦截</text>
+        <text class="src-num src-red">{{pendingStats.rejected || 0}}</text>
+        <text class="src-label">❌ 已拒绝</text>
       </view>
     </view>
     <view class="chip-bar">
-      <view class="chip {{auditFilter === 'all' ? 'chip-active' : ''}}" bindtap="changeAuditFilter" data-filter="all">全部</view>
-      <view class="chip {{auditFilter === 'auto' ? 'chip-active' : ''}}" bindtap="changeAuditFilter" data-filter="auto">自动拦截</view>
-      <view class="chip {{auditFilter === 'manual' ? 'chip-active' : ''}}" bindtap="changeAuditFilter" data-filter="manual">待人工</view>
+      <view class="chip {{auditFilter === 'pending' ? 'chip-active' : ''}}" bindtap="changeAuditFilter" data-filter="pending">待审核</view>
+      <view class="chip {{auditFilter === 'approved' ? 'chip-active' : ''}}" bindtap="changeAuditFilter" data-filter="approved">已通过</view>
+      <view class="chip {{auditFilter === 'rejected' ? 'chip-active' : ''}}" bindtap="changeAuditFilter" data-filter="rejected">已拒绝</view>
     </view>
     <view class="list-wrap">
       <view wx:if="{{pendingProducts.length === 0 && !pendingLoading}}" class="empty-state">
@@ -544,8 +547,8 @@
       <view class="order-card-v3" wx:for="{{pendingProducts}}" wx:key="_id">
         <view class="ocv3-header">
           <text class="ocv3-id">{{item._id}}</text>
-          <view class="status-pill {{item.auditType === 'rejected' ? 'pill-danger' : 'pill-warning'}}">
-            {{item.auditType === 'rejected' ? '🔒 自动拦截' : (item.auditType === 'manual' ? '⏳ 需人工' : '📋 待审核')}}
+          <view class="status-pill {{item.status === 'rejected' ? 'pill-danger' : (item.status === 'active' ? 'pill-success' : 'pill-warning')}}">
+            {{item.status === 'rejected' ? '❌ 已拒绝' : (item.status === 'active' ? '✅ 已通过' : '⏳ 待审核')}}
           </view>
         </view>
         <view class="ocv3-body">
@@ -553,6 +556,7 @@
           <view class="ocv3-info">
             <text class="ocv3-name">{{item.name}}</text>
             <text class="ocv3-loc">📍 {{item.province || '未知'}} · {{item.categoryName}}</text>
+            <text class="ocv3-time">{{item.createTimeText}}</text>
           </view>
         </view>
         <view class="audit-reason-bar" wx:if="{{item.auditReason}}">
@@ -563,7 +567,7 @@
             <image class="ocv3-avatar" src="{{item.publisher.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"/>
             <text class="ocv3-uname">{{item.publisher.nickName || '未知用户'}}</text>
           </view>
-          <view class="audit-actions-row">
+          <view class="audit-actions-row" wx:if="{{auditFilter === 'pending'}}">
             <view class="act-btn act-approve" catchtap="approvePendingProduct" data-id="{{item._id}}">✅ 通过</view>
             <view class="act-btn act-del" catchtap="rejectPendingProduct" data-id="{{item._id}}">❌ 拒绝</view>
           </view>
@@ -717,7 +721,7 @@
     </block>
   </block>
 
-  <!-- ===== 实名审核（Tab=5）===== -->
+  <!-- ===== 代购实名认证审核（Tab=5 - 超级管理员）===== -->
   <block wx:if="{{currentTab === 5 && isSuperAdmin}}">
     <view class="stats-row-card">
       <view class="src-item"><text class="src-num src-orange">{{daigouVerifyStats.pending || 0}}</text><text class="src-label">待审核</text></view>

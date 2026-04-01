@@ -40,9 +40,17 @@
           bindtap="selectMine"
           data-id="{{item._id}}"
         >
-          <!-- 惊喜特产：渐变+emoji -->
+          <!-- 惊喜特产：炫酷版 -->
           <view wx:if="{{item.isMystery}}" class="my-product-mystery {{item.colorClass}}">
-            <text class="mystery-mini-emoji">{{item.emoji || '🎁'}}</text>
+            <view class="mystery-mini-glow"></view>
+            <view class="mystery-mini-stars">
+              <text class="mini-star">✨</text>
+              <text class="mini-star">⭐</text>
+            </view>
+            <view class="mystery-mini-box">
+              <text class="mystery-mini-emoji">{{item.emoji || '🎁'}}</text>
+              <view class="mystery-mini-ring"></view>
+            </view>
           </view>
           <!-- 普通特产：缩略图 -->
           <image wx:else class="my-product-img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load decode/>
@@ -98,15 +106,23 @@
       <view class="recommend-grid" wx:else>
         <block wx:for="{{recommends}}" wx:key="_id">
           <view class="grid-card" bindtap="goToDetail" data-id="{{item._id}}">
-            <!-- 图片区 -->
+            <!-- 图片区 - 神秘特产 -->
             <view wx:if="{{item.isMystery}}" class="grid-img-wrap mystery-grid-wrap {{item.colorClass}}">
-              <view class="mystery-grid-content">
+              <view class="mystery-grid-glow"></view>
+              <view class="mystery-grid-stars">
+                <text class="grid-star">✨</text>
+                <text class="grid-star">⭐</text>
+                <text class="grid-star">💫</text>
+              </view>
+              <view class="mystery-grid-box">
                 <text class="mystery-grid-emoji">{{item.emoji}}</text>
-                <text class="mystery-grid-province">{{item.provinceName}}</text>
+                <view class="mystery-grid-ring"></view>
               </view>
             </view>
             <view wx:else class="grid-img-wrap">
               <image class="grid-img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load decode/>
+              <!-- 代购标签 -->
+              <view class="daigou-badge" wx:if="{{item.daigou}}">代购</view>
               <!-- 省份角标 -->
               <view class="province-badge" style="background:{{item.provinceColor}}">
                 <text class="province-badge-emoji">{{item.provinceEmoji}}</text>

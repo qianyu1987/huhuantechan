@@ -555,10 +555,42 @@ exports.main = async (event, context) => {
       }
       const u = user
 
-      // 获取订单各状态计数（订单中存储的是用户的 openid，需要用 _openid 匹配）
+      // 获取订单各状态计数（订单中可能存储 _openid 或 openid，需要兼容查询）
+      // 先获取用户的 openid 和 _openid
+      const userOpenid = u.openid || openid
+      const user_openid = u._openid || openid
+      
+      // 动态计算发布特产数
+      const publishCountRes = await db.collection('products')
+        .where({
+          $or: [
+            { _openid: user_openid },
+            { _openid: userOpenid },
+            { openid: user_openid },
+            { openid: userOpenid }
+          ]
+        })
+        .count()
+      const publishCount = publishCountRes.total || 0
+      
+      // 动态计算已完成的互换数
+      const completedOrdersRes = await db.collection('orders')
+        .where({
+          $or: [
+            { initiatorOpenid: user_openid }, { receiverOpenid: user_openid },
+            { initiatorOpenid: userOpenid }, { receiverOpenid: userOpenid }
+          ],
+          status: 'completed'
+        })
+        .count()
+      const swapCount = completedOrdersRes.total || 0
+      
       const pendingOrders = await db.collection('orders')
         .where({
-          $or: [{ initiatorOpenid: openid }, { receiverOpenid: openid }],
+          $or: [
+            { initiatorOpenid: user_openid }, { receiverOpenid: user_openid },
+            { initiatorOpenid: userOpenid }, { receiverOpenid: userOpenid }
+          ],
           status: db.command.in(['pending', 'confirmed', 'shipped_a', 'shipped_b', 'shipped', 'received_a', 'received_b'])
         }).count()
 
@@ -568,7 +600,10 @@ exports.main = async (event, context) => {
       // 简化版：一次性统计
       const allOrders = await db.collection('orders')
         .where({
-          $or: [{ initiatorOpenid: openid }, { receiverOpenid: openid }]
+          $or: [
+            { initiatorOpenid: user_openid }, { receiverOpenid: user_openid },
+            { initiatorOpenid: userOpenid }, { receiverOpenid: userOpenid }
+          ]
         })
         .field({ status: true })
         .get()
@@ -582,8 +617,8 @@ exports.main = async (event, context) => {
 
       return {
         success: true,
-        publishCount: u.publishCount || 0,
-        swapCount: u.swapCount || 0,
+        publishCount: publishCount,
+        swapCount: swapCount,
         badgeCount: (u.provincesBadges || []).length,
         creditScore: u.creditScore || 100,
         points: u.points || 0,

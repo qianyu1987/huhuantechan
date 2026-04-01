@@ -11,7 +11,9 @@ Page({
     depositStatus: 'ok', // ok, low, empty
     depositStatusText: '正常',
     points: 0,
-    transactions: []
+    transactions: [],
+    serviceWechat: '',
+    servicePhone: ''
   },
 
   onLoad() {
@@ -25,9 +27,10 @@ Page({
   // 加载钱包数据
   async loadWalletData() {
     try {
-      const [walletRes, transactionsRes] = await Promise.all([
+      const [walletRes, transactionsRes, configRes] = await Promise.all([
         callCloud('paymentMgr', { action: 'getWalletInfo' }),
-        callCloud('paymentMgr', { action: 'getTransactions', page: 1, pageSize: 5 })
+        callCloud('paymentMgr', { action: 'getTransactions', page: 1, pageSize: 5 }),
+        callCloud('userInit', { action: 'getServiceConfig' })
       ])
 
       if (walletRes && walletRes.success !== false) {
@@ -52,6 +55,14 @@ Page({
             time: item.time || '',
             emoji: this.getTransactionEmoji(item.bizType, item.title)
           }))
+        })
+      }
+
+      // 加载客服配置
+      if (configRes && configRes.success) {
+        this.setData({
+          serviceWechat: configRes.serviceWechat || '',
+          servicePhone: configRes.servicePhone || ''
         })
       }
     } catch (error) {
@@ -87,9 +98,19 @@ Page({
 
   // 联系客服
   contactCustomerService() {
+    const wechat = this.data.serviceWechat
+    if (!wechat) {
+      wx.showModal({
+        title: '客服暂未配置',
+        content: '客服联系方式正在配置中，请稍后再试或使用其他方式联系我们。',
+        showCancel: false,
+        confirmText: '知道了'
+      })
+      return
+    }
     wx.showModal({
       title: '联系客服',
-      content: '请添加客服微信进行押金相关操作\n\n客服微信：xiaoqiange12315',
+      content: `请添加客服微信进行押金相关操作\n\n客服微信：${wechat}`,
       showCancel: true,
       cancelText: '取消',
       confirmText: '复制微信',
@@ -101,10 +122,42 @@ Page({
 
   // 复制客服微信
   copyWechat() {
+    const wechat = this.data.serviceWechat
+    if (!wechat) {
+      wx.showModal({
+        title: '客服暂未配置',
+        content: '客服联系方式正在配置中，请稍后再试。',
+        showCancel: false,
+        confirmText: '知道了'
+      })
+      return
+    }
     wx.setClipboardData({
-      data: 'xiaoqiange12315',
+      data: wechat,
       success: () => toast('客服微信已复制', 'success'),
       fail: () => toast('复制失败')
+    })
+  },
+
+  // 拨打客服电话
+  callCustomerService() {
+    const phone = this.data.servicePhone
+    if (!phone) {
+      wx.showModal({
+        title: '客服暂未配置',
+        content: '客服电话正在配置中，请稍后再试或使用其他方式联系我们。',
+        showCancel: false,
+        confirmText: '知道了'
+      })
+      return
+    }
+    wx.makePhoneCall({
+      phoneNumber: phone.replace(/-/g, ''),
+      fail: (err) => {
+        if (err.errMsg.indexOf('cancel') === -1) {
+          toast('拨打失败')
+        }
+      }
     })
   },
 
@@ -123,7 +176,6 @@ Page({
     wx.navigateTo({ url: '/pages/credit/index' })
   },
 
-  // 跳转到提现页面
   // 跳转到提现页面
   goToWithdrawal() {
     wx.navigateTo({ url: '/pages/withdrawal/index' })

@@ -109,6 +109,8 @@
           <block wx:else>
             <view class="card-cover-wrap">
               <image class="card-cover-img" src="{{item.coverUrl}}" mode="aspectFill"/>
+              <!-- 代购标签 -->
+              <view class="daigou-badge" wx:if="{{item.daigou}}">代购</view>
             </view>
           </block>
           <!-- 信息 -->

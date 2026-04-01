@@ -1,5 +1,40 @@
 <view class="container">
 
+  <!-- 顶部 Header -->
+  <view class="page-header">
+    <view class="header-bg">
+      <view class="header-glow"></view>
+      <view class="header-particles">
+        <text class="particle">🎁</text>
+        <text class="particle">✨</text>
+        <text class="particle">🎀</text>
+        <text class="particle">💫</text>
+        <text class="particle">🌟</text>
+      </view>
+    </view>
+    <view class="header-content">
+      <view class="header-emoji-wrap">
+        <text class="header-emoji">🎁</text>
+        <view class="emoji-ring"></view>
+      </view>
+      <view class="header-title-wrap">
+        <text class="header-title">我的特产</text>
+        <text class="header-subtitle">管理你发布的特产与神秘礼物</text>
+      </view>
+      <view class="header-stats">
+        <view class="header-stat-item">
+          <text class="stat-num">{{totalCount}}</text>
+          <text class="stat-label">全部特产</text>
+        </view>
+        <view class="header-stat-divider"></view>
+        <view class="header-stat-item">
+          <text class="stat-num">{{mysteryCount || 0}}</text>
+          <text class="stat-label">神秘特产</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
   <!-- 功能未开放占位 -->
   <view wx:if="{{featureDisabled}}" class="feature-disabled-wrap">
     <view class="feature-disabled-icon">🔧</view>
@@ -41,8 +76,28 @@
       data-id="{{item._id}}"
     >
       <!-- 产品图片 -->
-      <view class="product-image-wrap">
-        <image class="product-image" src="{{item.coverUrl}}" mode="aspectFill"/>
+      <view class="product-image-wrap {{item.isMystery ? 'mystery-wrap' : ''}}">
+        <block wx:if="{{item.isMystery}}">
+          <!-- 神秘特产特殊展示 -->
+          <view class="mystery-visual {{item.colorClass}}">
+            <view class="mystery-glow"></view>
+            <view class="mystery-stars">
+              <text class="star">✨</text>
+              <text class="star">⭐</text>
+              <text class="star">💫</text>
+            </view>
+            <view class="mystery-box">
+              <text class="mystery-emoji">{{item.emoji || '🎁'}}</text>
+              <view class="mystery-ring"></view>
+            </view>
+            <view class="mystery-tag-float">🎁 神秘特产</view>
+          </view>
+        </block>
+        <block wx:else>
+          <image class="product-image" src="{{item.coverUrl}}" mode="aspectFill"/>
+          <!-- 代购标签 -->
+          <view class="daigou-badge" wx:if="{{item.daigou}}">代购</view>
+        </block>
         <view class="status-badge status-{{item.status}}">
           {{item.statusConfig.label}}
         </view>

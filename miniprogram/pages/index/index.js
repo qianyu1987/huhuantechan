@@ -2,9 +2,12 @@
 const { PROVINCES, PRODUCT_CATEGORIES, VALUE_RANGES, MYSTERY_EMOJIS } = require('../../utils/constants')
 const { callCloud, formatTime, getCreditLevel, formatValue, getProvinceByCode, processImageUrl } = require('../../utils/util')
 const imageOptimizer = require('../../utils/imageOptimizer')
+const subscribeMsg = require('../../utils/subscribeMessage')
 
 const PAGE_SIZE = 20
 const ALL_PRODUCTS_LIMIT = 500  // "全部"选项最多显示500条特产
+const CATEGORY_PRODUCT_LIMIT = 12  // 每个分类最多显示12条
+const MYSTERY_PRODUCT_LIMIT = 12  // 惊喜特产最多显示12条
 
 Page({
   data: {
@@ -12,9 +15,12 @@ Page({
     categories: PRODUCT_CATEGORIES,
     activeProvince: '',
     activeStatus: '',  // ''=全部, 'active'=未换, 'swapped'=已换, 'mystery'=神秘
+    viewMode: 'category',   // 默认显示分类视图
     products: [],
     leftColumn: [],
     rightColumn: [],
+    categoryProducts: {},  // 按分类组织的产品 { categoryId: [products] }
+    mysteryProducts: [],   // 惊喜特产列表
     loading: false,
     loadingMore: false,
     refreshing: false,
@@ -22,21 +28,27 @@ Page({
     page: 1,
     unreadCount: 0,
     scrollTop: 0,
-    featureFlags: {}   // 功能开关，从 app.globalData 同步
+    featureFlags: {},   // 功能开关，从 app.globalData 同步
+    searchKeyword: '',  // 搜索关键词
+    isSearching: false  // 是否处于搜索模式
   },
 
   onLoad(options) {
+    // 初始化主题
+    const savedTheme = wx.getStorageSync('appTheme') || 'dark'
+    this.setData({ pageTheme: savedTheme })
+
     // 同步功能开关到页面 data（优先从 globalData 读，若未就绪则监听）
     this._syncFeatureFlags()
 
     // 检查云开发状态（异步，不阻塞）
     this.checkCloudStatus()
     
-    // 优先加载特产列表（用户最关心）
-    this.loadProducts(true)
+    // 优先加载本地缓存（快速显示）
+    this._loadCachedData()
     
-    // 后台并行加载其他数据（不阻塞主流程）
-    this._loadAuxiliaryData()
+    // 后台加载最新数据（不阻塞主流程）
+    this._loadFreshData()
     
     // 处理邀请码
     if (options.inviteCode) {
@@ -52,6 +64,50 @@ Page({
       } catch (e) {
         console.warn('[Index] 解析 scene 参数失败:', e)
       }
+    }
+  },
+
+  // 加载本地缓存（快速响应）
+  _loadCachedData() {
+    try {
+      const cached = wx.getStorageSync('index_cache')
+      if (cached && cached.timestamp) {
+        const age = Date.now() - cached.timestamp
+        // 缓存有效期5分钟
+        if (age < 5 * 60 * 1000) {
+          this.setData({
+            categoryProducts: cached.categoryProducts || {},
+            mysteryProducts: cached.mysteryProducts || []
+          })
+          console.log('[Index] 已加载缓存数据')
+        }
+      }
+    } catch (e) {
+      console.warn('[Index] 读取缓存失败:', e)
+    }
+  },
+
+  // 后台加载最新数据并更新缓存
+  async _loadFreshData() {
+    try {
+      // 并行加载所有数据
+      await Promise.all([
+        this.loadProductsByCategory(),
+        this.loadMysteryProducts(),
+        this.loadUnread(),
+        this._loadShareConfig()
+      ])
+      
+      // 更新缓存
+      const cached = {
+        timestamp: Date.now(),
+        categoryProducts: this.data.categoryProducts,
+        mysteryProducts: this.data.mysteryProducts
+      }
+      wx.setStorageSync('index_cache', cached)
+      console.log('[Index] 数据已缓存')
+    } catch (e) {
+      console.error('[Index] 加载最新数据失败:', e)
     }
   },
 
@@ -321,8 +377,7 @@ Page({
     if (isMystery) {
       // 根据省份生成稳定的颜色和emoji
       const code = provinceName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
-      const colors = ['color-1', 'color-2', 'color-3', 'color-4', 'color-5',
-                      'color-6', 'color-7', 'color-8', 'color-9', 'color-10']
+      const colors = ['purple', 'blue', 'green', 'red', 'gold']
 
       return {
         ...item,
@@ -392,6 +447,8 @@ Page({
   filterProvince(e) {
     const code = e.currentTarget.dataset.code
     this.setData({ activeProvince: code })
+    // 切换到瀑布流视图
+    this.setData({ viewMode: 'list', products: [], leftColumn: [], rightColumn: [] })
     this.loadProducts(true)
   },
 
@@ -399,6 +456,8 @@ Page({
   filterStatus(e) {
     const status = e.currentTarget.dataset.status
     this.setData({ activeStatus: status })
+    // 切换到瀑布流视图
+    this.setData({ viewMode: 'list', products: [], leftColumn: [], rightColumn: [] })
     this.loadProducts(true)
   },
 
@@ -413,7 +472,9 @@ Page({
 
   // 原生下拉刷新
   onPullDownRefresh() {
-    this.loadProducts(true)
+    // 清除缓存，强制刷新
+    wx.removeStorageSync('index_cache')
+    this._loadFreshData()
   },
 
   // 原生触底加载
@@ -424,6 +485,22 @@ Page({
   // 下拉刷新（兼容旧引用）
   onRefresh() {
     this.loadProducts(true)
+  },
+
+  // 重置筛选（回到分类视图）
+  resetFilters() {
+    this.setData({
+      activeProvince: '',
+      activeStatus: '',
+      viewMode: 'category',
+      products: [],
+      leftColumn: [],
+      rightColumn: [],
+      page: 1,
+      noMore: false
+    })
+    // 重新加载分类数据
+    this._loadFreshData()
   },
 
   // 加载更多
@@ -439,6 +516,98 @@ Page({
     } catch (e) {}
   },
 
+  // 跳转到惊喜特产列表
+  goToMysteryList() {
+    wx.navigateTo({
+      url: '/pages/product-list/index?isMystery=true&title=惊喜特产'
+    })
+  },
+
+  // 跳转到分类特产列表
+  goToCategoryList(e) {
+    const category = e.currentTarget.dataset.category
+    const catInfo = PRODUCT_CATEGORIES.find(c => c.id === category)
+    if (catInfo) {
+      wx.navigateTo({
+        url: `/pages/product-list/index?category=${category}&title=${catInfo.name}`
+      })
+    }
+  },
+
+  // 按分类加载产品（每个分类最多12条）
+  async loadProductsByCategory() {
+    if (this.data.loading) return
+
+    this.setData({ loading: true })
+
+    try {
+      const categoryProducts = {}
+      const CATEGORY_LIMIT = 6  // 减少分类数量，只加载前6个常用分类
+
+      // 只加载常用分类（减少请求数量）
+      const categoriesToLoad = PRODUCT_CATEGORIES.slice(0, CATEGORY_LIMIT)
+
+      // 并行加载分类产品
+      const categoryPromises = categoriesToLoad.map(async (cat) => {
+        try {
+          const res = await callCloud('productMgr', {
+            action: 'list',
+            page: 1,
+            pageSize: CATEGORY_PRODUCT_LIMIT,
+            category: cat.id,
+            status: 'active'
+          })
+
+          if (res && res.success && res.list) {
+            const formattedProducts = res.list
+              .map(item => this.formatProduct(item))
+              .filter(item => !item.isMystery)
+            categoryProducts[cat.id] = {
+              name: cat.name,
+              emoji: cat.emoji,
+              products: formattedProducts
+            }
+          }
+        } catch (e) {
+          console.error(`[Index] 加载分类 ${cat.name} 失败:`, e)
+        }
+      })
+
+      await Promise.all(categoryPromises)
+
+      this.setData({
+        categoryProducts,
+        loading: false
+      })
+
+      console.log('[Index] 分类产品加载完成:', Object.keys(categoryProducts).length, '个分类')
+    } catch (e) {
+      console.error('[Index] 加载分类产品失败:', e)
+      this.setData({ loading: false })
+    }
+  },
+
+  // 加载惊喜特产
+  async loadMysteryProducts() {
+    try {
+      const res = await callCloud('productMgr', {
+        action: 'list',
+        page: 1,
+        pageSize: MYSTERY_PRODUCT_LIMIT,
+        isMystery: true,
+        status: 'active'
+      })
+
+      if (res && res.success && res.list) {
+        const mysteryProducts = res.list.map(item => this.formatProduct(item))
+        this.setData({ mysteryProducts })
+        console.log('[Index] 惊喜特产加载完成:', mysteryProducts.length, '条')
+      }
+    } catch (e) {
+      console.error('[Index] 加载惊喜特产失败:', e)
+    }
+  },
+
   goToDetail(e) {
     const id = e.currentTarget.dataset.id
     wx.navigateTo({ url: `/pages/detail/index?id=${id}` })
@@ -448,8 +617,89 @@ Page({
     wx.reLaunch({ url: '/pages/publish/index' })
   },
 
-  goToSearch() {
-    wx.navigateTo({ url: '/pages/search/index' })
+  // 搜索输入
+  onSearchInput(e) {
+    this.setData({
+      searchKeyword: e.detail.value
+    })
+  },
+
+  // 执行搜索
+  async onSearch() {
+    const keyword = this.data.searchKeyword.trim()
+    if (!keyword) {
+      // 如果搜索词为空，恢复默认分类视图
+      this.setData({
+        isSearching: false,
+        products: [],
+        leftColumn: [],
+        rightColumn: []
+      })
+      this.loadProductsByCategory()
+      this.loadMysteryProducts()
+      return
+    }
+
+    this.setData({
+      isSearching: true,
+      loading: true,
+      page: 1,
+      noMore: false
+    })
+
+    try {
+      const res = await callCloud('productMgr', {
+        action: 'search',
+        keyword: keyword,
+        page: 1,
+        pageSize: PAGE_SIZE
+      })
+
+      if (res && res.success) {
+        const searchResults = (res.list || []).map(item => this.formatProduct(item))
+        this.setData({
+          products: searchResults,
+          ...this.splitWaterfall(searchResults),
+          page: 2,
+          noMore: searchResults.length < PAGE_SIZE
+        })
+
+        // 如果没有搜索结果
+        if (searchResults.length === 0) {
+          wx.showToast({
+            title: '未找到相关特产',
+            icon: 'none'
+          })
+        }
+      } else {
+        wx.showToast({
+          title: res.message || '搜索失败',
+          icon: 'none'
+        })
+      }
+    } catch (e) {
+      console.error('[Index] 搜索失败:', e)
+      wx.showToast({
+        title: '搜索失败，请稍后重试',
+        icon: 'none'
+      })
+    } finally {
+      this.setData({ loading: false })
+    }
+  },
+
+  // 清空搜索
+  clearSearch() {
+    this.setData({
+      searchKeyword: '',
+      isSearching: false,
+      products: [],
+      leftColumn: [],
+      rightColumn: []
+    })
+    // 恢复默认分类视图
+    this.loadProductsByCategory()
+    this.loadMysteryProducts()
   },
 
   goToMessages() {

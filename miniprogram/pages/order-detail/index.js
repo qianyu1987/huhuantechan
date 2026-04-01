@@ -1,6 +1,7 @@
 // pages/order-detail/index.js
 const { ORDER_STATUS } = require('../../utils/constants')
 const { callCloud, formatTime, formatDateTime, getCreditLevel, getProvinceByCode, toast, showLoading, hideLoading, processImageUrl } = require('../../utils/util')
+const subscribeMsg = require('../../utils/subscribeMessage')
 
 const STATUS_CONFIG = {
   [ORDER_STATUS.PENDING]: {
@@ -76,6 +77,9 @@ Page({
     theirProduct: null,
     counterpart: null,
     timeline: [],
+    // 客服配置
+    servicePhone: '',
+    serviceWechat: '',
     hasReviewed: false,
     showShipModal: false,
     shipForm: {
@@ -779,6 +783,10 @@ Page({
       if (result.success) {
         toast(isPending ? '已确认' : '收货信息已更新', 'success')
         this.hideAddressModal()
+        // 确认互换后请求活动通知订阅（发货等状态变更会通知）
+        if (isPending) {
+          subscribeMsg.subscribeForActivity()
+        }
         this.loadOrderDetail()
       } else {
         toast(result.message || '操作失败')
@@ -869,6 +877,8 @@ Page({
       if (result.success) {
         toast('发货成功', 'success')
         this.hideShipModal()
+        // 请求发货通知订阅（让用户订阅发货状态通知）
+        subscribeMsg.subscribeForShipment()
         this.loadOrderDetail()
       } else {
         toast(result.message || '发货失败')
@@ -949,6 +959,8 @@ Page({
 
       if (result.success) {
         toast('已取消', 'success')
+        // 请求订单取消通知订阅
+        subscribeMsg.subscribeForOrderCancel()
         this.loadOrderDetail()
       } else {
         toast(result.message || '操作失败')
@@ -970,16 +982,6 @@ Page({
     wx.showModal({
       title: '联系对方',
       content: '当前版本暂不支持站内聊天。\n\n如需联系，可通过订单页面查看对方信息，或在完成互换后通过微信联系。',
-      showCancel: false,
-      confirmText: '知道了'
-    })
-  },
-
-  contactService() {
-    // 暂时不开放企业微信客服，有问题请通过小程序反馈
-    wx.showModal({
-      title: '联系客服',
-      content: '如有需要，请通过小程序底部"我的"-设置-帮助中心反馈问题',
       showCancel: false,
       confirmText: '知道了'
     })
@@ -1106,14 +1108,18 @@ Page({
 
     showLoading('提交中...')
     try {
-      // 上传图片
+      // 上传图片到云存储
       let uploadedImages = []
       if (images.length > 0) {
-        const uploadPromises = images.map(filePath => 
-          callCloud('uploadFile', { filePath, cloudPath: `disputes/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg` })
-        )
+        const uploadPromises = images.map(filePath => {
+          const cloudPath = `disputes/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`
+          return wx.cloud.uploadFile({
+            cloudPath,
+            filePath
+          })
+        })
         const uploadResults = await Promise.all(uploadPromises)
-        uploadedImages = uploadResults.filter(r => r.success).map(r => r.fileId)
+        uploadedImages = uploadResults.filter(r => r.fileID).map(r => r.fileID)
       }
 
       // 提交纠纷申请
@@ -1177,13 +1183,13 @@ Page({
   contactService() {
     wx.showModal({
       title: '联系客服',
-      content: '如有需要，请添加客服微信：xiaoqiange12315\n\n工作时间：9:00-18:00',
+      content: `如有需要，请添加客服微信：${this.data.serviceWechat || '未配置'}\n\n工作时间：9:00-18:00`,
       confirmText: '复制微信号',
       cancelText: '知道了',
       success: (res) => {
-        if (res.confirm) {
+        if (res.confirm && this.data.serviceWechat) {
           wx.setClipboardData({
-            data: 'xiaoqiange12315',
+            data: this.data.serviceWechat,
             success: () => toast('已复制客服微信', 'success')
           })
         }

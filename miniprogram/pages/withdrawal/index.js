@@ -23,7 +23,8 @@ Page({
     
     // 表单数据
     amount: '',
-    contactInfo: '',
+    paymentQrcode: '',    // 微信收款码URL
+    paymentQrcodeLocal: '', // 本地预览URL
     remark: '',
     amountError: '',
     
@@ -34,8 +35,7 @@ Page({
     actualAmountText: '0.00',
     
     // 快捷金额选项（根据可提现金额动态计算）
-    quickAmountOptions: [],
-    quickAmountOptionsText: [],
+    quickAmounts: [],   // 统一使用这个数组 [{value: 50, text: "50.00"}]
     
     // 提交状态
     canSubmit: false,
@@ -68,9 +68,9 @@ Page({
         
         // 动态计算快捷金额选项：只显示小于等于可提现金额的选项
         const presetAmounts = [50, 100, 200, 500]
-        const quickAmountOptions = presetAmounts.filter(amount => amount <= availableAmount)
-        // 生成格式化后的文本
-        const quickAmountOptionsText = quickAmountOptions.map(v => ({
+        const filteredAmounts = presetAmounts.filter(amount => amount <= availableAmount)
+        // 统一生成 quickAmounts 数组
+        const quickAmounts = filteredAmounts.map(v => ({
           value: v,
           text: formatAmount(v)
         }))
@@ -85,8 +85,7 @@ Page({
           maxWithdrawalAmount: maxWithdrawalAmount,
           withdrawalFeeRate: withdrawalFeeRate,
           canWithdraw: res.canWithdraw || false,
-          quickAmountOptions: quickAmountOptions.map(v => ({ value: v })),
-          quickAmountOptionsText: quickAmountOptionsText
+          quickAmounts: quickAmounts
         })
         this.validateForm()
       } else {
@@ -120,10 +119,8 @@ Page({
 
   // 选择快捷金额
   selectQuickAmount(e) {
-    const idx = e.currentTarget.dataset.index
-    const options = this.data.quickAmountOptions
-    if (options && options[idx]) {
-      const amount = options[idx].value
+    const amount = e.currentTarget.dataset.amount
+    if (amount) {
       this.setData({
         amount: amount.toString(),
         amountError: ''
@@ -141,12 +138,61 @@ Page({
     this.validateForm()
   },
 
-  // 收款信息输入
-  onContactInfoInput(e) {
-    this.setData({
-      contactInfo: e.detail.value
+  // 上传微信收款码
+  async uploadPaymentQrcode() {
+    wx.chooseImage({
+      count: 1,
+      sizeType: ['compressed'],
+      sourceType: ['album', 'camera'],
+      success: async (res) => {
+        const tempFilePath = res.tempFilePaths[0]
+        wx.showLoading({ title: '上传中...' })
+        try {
+          // 上传到云存储
+          const cloudPath = `payment-qrcodes/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`
+          const uploadRes = await wx.cloud.uploadFile({
+            cloudPath: cloudPath,
+            filePath: tempFilePath
+          })
+          
+          wx.hideLoading()
+          if (uploadRes.fileID) {
+            this.setData({
+              paymentQrcode: uploadRes.fileID,
+              paymentQrcodeLocal: tempFilePath
+            })
+            this.validateForm()
+            wx.showToast({ title: '上传成功', icon: 'success' })
+          } else {
+            wx.showToast({ title: '上传失败', icon: 'none' })
+          }
+        } catch (e) {
+          wx.hideLoading()
+          console.error('上传收款码失败', e)
+          wx.showToast({ title: '上传失败', icon: 'none' })
+        }
+      },
+      fail: () => {
+        // 用户取消选择
+      }
     })
-    this.validateForm()
+  },
+
+  // 删除收款码
+  deletePaymentQrcode() {
+    wx.showModal({
+      title: '提示',
+      content: '确定要删除收款码吗？',
+      success: (res) => {
+        if (res.confirm) {
+          this.setData({
+            paymentQrcode: '',
+            paymentQrcodeLocal: ''
+          })
+          this.validateForm()
+        }
+      }
+    })
   },
 
   // 备注输入
@@ -158,7 +204,7 @@ Page({
 
   // 验证表单
   validateForm() {
-    const { amount, contactInfo, withdrawalThreshold, availableAmount, maxWithdrawalAmount, withdrawalFeeRate } = this.data
+    const { amount, paymentQrcode, withdrawalThreshold, availableAmount, maxWithdrawalAmount, withdrawalFeeRate } = this.data
     let amountError = ''
     let canSubmit = false
     let feeAmount = 0
@@ -184,16 +230,15 @@ Page({
       }
     }
 
-    // 验证收款信息
-    if (!contactInfo.trim()) {
-      // 金额验证通过但收款信息为空时，才显示错误
+    // 验证收款码
+    if (!paymentQrcode) {
       if (!amountError && amount) {
-        amountError = '请输入收款账户信息'
+        amountError = '请上传微信收款码'
       }
     }
 
     // 判断是否可以提交
-    canSubmit = !amountError && amount && contactInfo.trim()
+    canSubmit = !amountError && amount && paymentQrcode
 
     this.setData({
       amountError,
@@ -211,7 +256,7 @@ Page({
       return
     }
 
-    const { amount, contactInfo, remark } = this.data
+    const { amount, paymentQrcode, remark } = this.data
     const amountNum = parseFloat(amount)
 
     // 最终验证
@@ -230,13 +275,18 @@ Page({
       return
     }
 
+    if (!paymentQrcode) {
+      toast('请上传微信收款码', 'error')
+      return
+    }
+
     this.setData({ loading: true })
 
     try {
       const res = await callCloud('paymentMgr', {
         action: 'submitWithdrawalApply',
         amount: amountNum,
-        contactInfo: contactInfo.trim(),
+        paymentQrcode: paymentQrcode,
         remark: remark.trim()
       })
 

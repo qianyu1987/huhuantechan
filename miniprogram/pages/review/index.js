@@ -2,6 +2,7 @@
 const { callCloud, toast, showLoading, hideLoading, processImageUrl } = require('../../utils/util')
 const { MYSTERY_EMOJIS } = require('../../utils/constants')
 const imageOptimizer = require('../../utils/imageOptimizer')
+const subscribeMsg = require('../../utils/subscribeMessage')
 
 Page({
   data: {
@@ -178,6 +179,11 @@ Page({
       if (result.success) {
         // 震动反馈
         wx.vibrateShort({ type: 'heavy' })
+
+        // 请求积分到账通知订阅（好评会获得积分）
+        if (rating >= 4) {
+          subscribeMsg.subscribeForPoints()
+        }
 
         // 显示成功动画
         this.setData({ showSuccess: true })

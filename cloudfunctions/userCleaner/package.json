@@ -1,0 +1,9 @@
+{
+  "name": "userCleaner",
+  "version": "1.0.0",
+  "description": "清理无效用户和重新排列序号",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

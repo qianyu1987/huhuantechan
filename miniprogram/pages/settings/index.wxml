@@ -1,5 +1,5 @@
 <!-- pages/settings/index.wxml - 设置 -->
-<view class="settings-page">
+<view class="settings-page theme-{{currentTheme}}">
   <view class="bg-gradient"></view>
 
   <!-- 毛玻璃导航栏 -->
@@ -12,6 +12,47 @@
   </view>
 
   <scroll-view scroll-y class="settings-scroll">
+    <!-- 系统设置 - 独立区块 -->
+    <view class="section">
+      <view class="section-title">系统设置</view>
+      <view class="menu-list">
+        <view class="menu-item" bindtap="toggleTheme">
+          <view class="menu-left">
+            <text class="menu-icon">🎨</text>
+            <text class="menu-text">主题切换</text>
+          </view>
+          <view class="menu-right">
+            <text class="theme-name">{{currentThemeName}}</text>
+            <text class="menu-arrow">›</text>
+          </view>
+        </view>
+        <view class="menu-item" bindtap="clearCache">
+          <view class="menu-left">
+            <text class="menu-icon">🗑</text>
+            <text class="menu-text">清理缓存</text>
+          </view>
+          <view class="menu-right">
+            <text class="cache-size">{{cacheSize}}</text>
+            <text class="menu-arrow">›</text>
+          </view>
+        </view>
+        <view class="menu-item" bindtap="goToNetworkTest">
+          <view class="menu-left">
+            <text class="menu-icon">🔧</text>
+            <text class="menu-text">网络诊断</text>
+          </view>
+          <text class="menu-arrow">›</text>
+        </view>
+        <view class="menu-item">
+          <view class="menu-left">
+            <text class="menu-icon">📱</text>
+            <text class="menu-text">版本信息</text>
+          </view>
+          <text class="version-text">v1.0.0</text>
+        </view>
+      </view>
+    </view>
+
     <!-- 账号设置 -->
     <view class="section">
       <view class="section-title">账号设置</view>
@@ -61,37 +102,6 @@
       </view>
     </view>
 
-    <!-- 通用设置 -->
-    <view class="section">
-      <view class="section-title">通用设置</view>
-      <view class="menu-list">
-        <view class="menu-item">
-          <view class="menu-left">
-            <text class="menu-icon">🌙</text>
-            <text class="menu-text">深色模式</text>
-          </view>
-          <switch class="menu-switch" checked="{{darkMode}}" bindchange="toggleDarkMode"/>
-        </view>
-        <view class="menu-item" bindtap="clearCache">
-          <view class="menu-left">
-            <text class="menu-icon">🗑</text>
-            <text class="menu-text">清理缓存</text>
-          </view>
-          <view class="menu-right">
-            <text class="cache-size">{{cacheSize}}</text>
-            <text class="menu-arrow">›</text>
-          </view>
-        </view>
-        <view class="menu-item" bindtap="goToNetworkTest">
-          <view class="menu-left">
-            <text class="menu-icon">🔧</text>
-            <text class="menu-text">网络诊断</text>
-          </view>
-          <text class="menu-arrow">›</text>
-        </view>
-      </view>
-    </view>
-
     <!-- 账号操作 -->
     <view class="section">
       <view class="section-title">账号</view>
@@ -108,4 +118,28 @@
 
     <view style="height: 60rpx"/>
   </scroll-view>
+
+  <!-- 主题选择弹窗 -->
+  <view class="theme-modal {{showThemeModal ? 'show' : ''}}" bindtap="closeThemeModal">
+    <view class="theme-modal-content" catchtap="preventBubble">
+      <view class="theme-modal-header">
+        <text class="theme-modal-title">选择主题</text>
+        <text class="theme-modal-close" bindtap="closeThemeModal">✕</text>
+      </view>
+      <view class="theme-list">
+        <block wx:for="{{themes}}" wx:key="id">
+          <view class="theme-item {{item.id === currentTheme ? 'active' : ''}}" bindtap="selectTheme" data-theme="{{item.id}}">
+            <view class="theme-preview theme-preview-{{item.id}}">
+              <view class="theme-preview-inner"></view>
+            </view>
+            <view class="theme-info">
+              <text class="theme-item-name">{{item.name}}</text>
+              <text class="theme-item-desc">{{item.desc}}</text>
+            </view>
+            <view class="theme-check" wx:if="{{item.id === currentTheme}}">✓</view>
+          </view>
+        </block>
+      </view>
+    </view>
+  </view>
 </view>

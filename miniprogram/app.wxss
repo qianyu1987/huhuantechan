@@ -879,6 +879,238 @@ button {
 }
 
 /* ============================================
+   27. 主题支持类
+   ============================================ */
+
+/* 主题变量应用于页面根元素 */
+.theme-root {
+  --color-primary: #0A84FF;
+  --color-primary-light: #64D2FF;
+  --color-primary-gradient: linear-gradient(135deg, #0A84FF 0%, #5AC8FA 100%);
+  --color-secondary: #30D158;
+  --color-secondary-gradient: linear-gradient(135deg, #30D158 0%, #34C759 100%);
+  --color-warning: #FF9F0A;
+  --color-warning-gradient: linear-gradient(135deg, #FF9F0A 0%, #FF9500 100%);
+  --color-danger: #FF453A;
+  --color-danger-gradient: linear-gradient(135deg, #FF453A 0%, #FF3B30 100%);
+  --color-purple: #BF5AF2;
+  --color-purple-gradient: linear-gradient(135deg, #BF5AF2 0%, #AF52DE 100%);
+  --color-indigo: #5E5CE6;
+  --color-pink: #FF375F;
+  --color-pink-gradient: linear-gradient(135deg, #FF375F 0%, #FF2D55 100%);
+  --color-teal: #64D2FF;
+  --color-yellow: #FFD60A;
+  --color-bg: #000000;
+  --color-bg-secondary: #0D0D0F;
+  --color-bg-tertiary: #161619;
+  --color-bg-elevated: #1C1C1E;
+  --liquid-surface: rgba(255, 255, 255, 0.08);
+  --liquid-surface-hover: rgba(255, 255, 255, 0.12);
+  --liquid-surface-active: rgba(255, 255, 255, 0.16);
+  --liquid-surface-solid: rgba(30, 30, 32, 0.95);
+  --glass-primary: rgba(10, 132, 255, 0.15);
+  --glass-secondary: rgba(48, 209, 88, 0.12);
+  --glass-purple: rgba(191, 90, 242, 0.12);
+  --glass-pink: rgba(255, 55, 95, 0.12);
+  --glass-orange: rgba(255, 159, 10, 0.12);
+  --glass-teal: rgba(100, 210, 255, 0.12);
+  --color-text: #FFFFFF;
+  --color-text-secondary: rgba(255, 255, 255, 0.8);
+  --color-text-tertiary: rgba(255, 255, 255, 0.5);
+  --color-text-quaternary: rgba(255, 255, 255, 0.3);
+  --color-text-light: #8E8E93;
+  --color-text-inverse: #000000;
+  --color-divider: rgba(255, 255, 255, 0.08);
+  --color-divider-strong: rgba(255, 255, 255, 0.15);
+}
+
+/* 纯净白主题 */
+.theme-light {
+  --color-primary: #007AFF;
+  --color-primary-light: #64D2FF;
+  --color-primary-gradient: linear-gradient(135deg, #007AFF 0%, #5AC8FA 100%);
+  --color-secondary: #34C759;
+  --color-secondary-gradient: linear-gradient(135deg, #34C759 0%, #30D158 100%);
+  --color-warning: #FF9500;
+  --color-warning-gradient: linear-gradient(135deg, #FF9500 0%, #FF9F0A 100%);
+  --color-danger: #FF3B30;
+  --color-danger-gradient: linear-gradient(135deg, #FF3B30 0%, #FF453A 100%);
+  --color-purple: #AF52DE;
+  --color-purple-gradient: linear-gradient(135deg, #AF52DE 0%, #BF5AF2 100%);
+  --color-indigo: #5856D6;
+  --color-pink: #FF2D55;
+  --color-pink-gradient: linear-gradient(135deg, #FF2D55 0%, #FF375F 100%);
+  --color-teal: #5AC8FA;
+  --color-yellow: #FFCC00;
+  --color-bg: #F2F2F7;
+  --color-bg-secondary: #FFFFFF;
+  --color-bg-tertiary: #EFEFF4;
+  --color-bg-elevated: #FFFFFF;
+  --liquid-surface: rgba(255, 255, 255, 0.8);
+  --liquid-surface-hover: rgba(255, 255, 255, 0.9);
+  --liquid-surface-active: rgba(240, 240, 245, 0.95);
+  --liquid-surface-solid: rgba(255, 255, 255, 0.95);
+  --glass-primary: rgba(0, 122, 255, 0.12);
+  --glass-secondary: rgba(52, 199, 89, 0.1);
+  --glass-purple: rgba(175, 82, 222, 0.1);
+  --glass-pink: rgba(255, 45, 85, 0.1);
+  --glass-orange: rgba(255, 149, 0, 0.1);
+  --glass-teal: rgba(90, 200, 250, 0.1);
+  --color-text: #000000;
+  --color-text-secondary: rgba(0, 0, 0, 0.6);
+  --color-text-tertiary: rgba(0, 0, 0, 0.4);
+  --color-text-quaternary: rgba(0, 0, 0, 0.2);
+  --color-text-light: #8E8E93;
+  --color-text-inverse: #FFFFFF;
+  --color-divider: rgba(0, 0, 0, 0.08);
+  --color-divider-strong: rgba(0, 0, 0, 0.15);
+}
+
+/* 玫瑰红主题 - iOS 18 Rose */
+.theme-rose {
+  --color-primary: #FF3B54;
+  --color-primary-light: #FF6B7F;
+  --color-primary-gradient: linear-gradient(135deg, #FF3B54 0%, #FF6B7F 100%);
+  --color-secondary: #34C759;
+  --color-secondary-gradient: linear-gradient(135deg, #34C759 0%, #30D158 100%);
+  --color-warning: #FF9F0A;
+  --color-warning-gradient: linear-gradient(135deg, #FF9F0A 0%, #FF9500 100%);
+  --color-danger: #FF453A;
+  --color-danger-gradient: linear-gradient(135deg, #FF453A 0%, #FF3B30 100%);
+  --color-purple: #BF5AF2;
+  --color-purple-gradient: linear-gradient(135deg, #BF5AF2 0%, #AF52DE 100%);
+  --color-indigo: #5E5CE6;
+  --color-pink: #FF375F;
+  --color-pink-gradient: linear-gradient(135deg, #FF375F 0%, #FF2D55 100%);
+  --color-teal: #64D2FF;
+  --color-yellow: #FFD60A;
+  --color-bg: #1A0008;
+  --color-bg-secondary: #2D0010;
+  --color-bg-tertiary: #3D0015;
+  --color-bg-elevated: #4D001A;
+  --liquid-surface: rgba(255, 59, 84, 0.12);
+  --liquid-surface-hover: rgba(255, 59, 84, 0.18);
+  --liquid-surface-active: rgba(255, 59, 84, 0.24);
+  --liquid-surface-solid: rgba(45, 0, 16, 0.95);
+  --glass-primary: rgba(255, 59, 84, 0.2);
+  --glass-secondary: rgba(48, 209, 88, 0.12);
+  --glass-purple: rgba(191, 90, 242, 0.12);
+  --glass-pink: rgba(255, 59, 84, 0.25);
+  --glass-orange: rgba(255, 159, 10, 0.12);
+  --glass-teal: rgba(100, 210, 255, 0.12);
+  --color-text: #FFFFFF;
+  --color-text-secondary: rgba(255, 255, 255, 0.8);
+  --color-text-tertiary: rgba(255, 255, 255, 0.5);
+  --color-text-quaternary: rgba(255, 255, 255, 0.3);
+  --color-text-light: #FFB3C1;
+  --color-text-inverse: #FFFFFF;
+  --color-divider: rgba(255, 59, 84, 0.15);
+  --color-divider-strong: rgba(255, 59, 84, 0.25);
+}
+
+/* 玫瑰红主题特殊效果 */
+.theme-rose .liquid-btn-primary {
+  background: var(--color-pink-gradient);
+  border: 1rpx solid rgba(255, 255, 255, 0.25);
+  box-shadow: var(--shadow-liquid), 0 0 40rpx rgba(255, 59, 84, 0.4);
+}
+
+.theme-rose .btn-primary {
+  background: var(--color-pink-gradient);
+  color: #fff;
+  box-shadow: var(--shadow-liquid), 0 0 40rpx rgba(255, 59, 84, 0.3);
+}
+
+.theme-rose .gradient-text {
+  background: linear-gradient(135deg, #FF3B54 0%, #FF6B7F 50%, #FFB3C1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.theme-rose .gradient-text-warm {
+  background: linear-gradient(135deg, #FF3B54 0%, #FF6B7F 50%, #BF5AF2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.theme-rose .glow-blue {
+  box-shadow: 0 0 40rpx rgba(255, 59, 84, 0.3);
+}
+
+.theme-rose .tab-item.active .tab-icon::after {
+  background: var(--color-primary);
+  box-shadow: 0 0 12rpx var(--color-primary);
+}
+
+.theme-rose .tag-blue {
+  background: var(--glass-pink);
+  color: var(--color-pink);
+  border-color: rgba(255, 59, 84, 0.25);
+}
+
+.theme-rose .glass-primary {
+  background: var(--glass-pink);
+}
+
+/* 玫瑰红主题导航栏 */
+.theme-rose .nav-bar,
+.theme-rose .glass-nav,
+.theme-rose .tab-bar {
+  background: var(--liquid-surface);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-color: var(--color-divider);
+}
+
+/* 玫瑰红主题卡片 */
+.theme-rose .card {
+  background: linear-gradient(135deg, rgba(255, 59, 84, 0.12) 0%, rgba(255, 59, 84, 0.04) 100%);
+  border-color: rgba(255, 59, 84, 0.15);
+}
+
+/* 玫瑰红主题液态玻璃 */
+.theme-rose .liquid {
+  background: rgba(255, 59, 84, 0.1);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-color: rgba(255, 59, 84, 0.2);
+}
+
+.theme-rose .liquid-card {
+  background: linear-gradient(135deg, rgba(255, 59, 84, 0.15) 0%, rgba(255, 59, 84, 0.05) 100%);
+  border-color: rgba(255, 59, 84, 0.2);
+}
+
+/* 玫瑰红主题底部标签栏 */
+.theme-rose .tab-bar {
+  background: linear-gradient(180deg, rgba(45, 0, 16, 0.85) 0%, rgba(26, 0, 8, 0.95) 100%);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-top-color: rgba(255, 59, 84, 0.2);
+}
+
+/* 玫瑰红主题发光效果 */
+.theme-rose .glow-pink {
+  box-shadow: 0 0 40rpx rgba(255, 59, 84, 0.4);
+}
+
+.theme-rose .badge {
+  background: var(--color-pink-gradient);
+  box-shadow: 0 2rpx 8rpx rgba(255, 59, 84, 0.3);
+}
+
+.theme-rose .progress-bar {
+  background: var(--color-pink-gradient);
+}
+
+.theme-rose .menu-switch .wx-switch-input.wx-switch-input-checked {
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+}
+
+/* ============================================
    17. 导航栏 - 液态玻璃
    ============================================ */
 .nav-bar {

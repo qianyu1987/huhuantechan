@@ -195,14 +195,6 @@
 
     <!-- ══ 底部提交栏 ══ -->
     <view class="bottom-bar glass">
-      <view class="bottom-price-wrap">
-        <text class="bottom-label">实付</text>
-        <view class="bottom-price">
-          <text class="bottom-sym">¥</text>
-          <text class="bottom-num">{{actualPrice}}</text>
-        </view>
-        <text wx:if="{{usePoints}}" class="bottom-points-tag">已用{{pointsDeductible}}积分</text>
-      </view>
       <button
         class="submit-btn"
         bindtap="submitOrder"

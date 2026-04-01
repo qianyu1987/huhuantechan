@@ -105,7 +105,11 @@
           bindtap="goToDetail"
           data-id="{{item._id}}"
         >
-          <image class="product-img" src="{{item.coverUrl || item.images[0]}}" mode="aspectFill" lazy-load/>
+          <view class="product-img-wrap">
+            <image class="product-img" src="{{item.coverUrl || item.images[0]}}" mode="aspectFill" lazy-load/>
+            <!-- 代购标签 -->
+            <view class="daigou-badge" wx:if="{{item.daigou}}">代购</view>
+          </view>
           <view class="product-info">
             <view class="product-name">{{item.name}}</view>
             <view class="product-meta">

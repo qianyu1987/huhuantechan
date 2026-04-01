@@ -10,10 +10,78 @@
         <view class="status-desc">{{depositStatus === 'active' ? '您已完成押金缴纳，可以正常开展代购业务' : '请联系客服缴纳押金后再开展代购业务'}}</view>
       </view>
     </view>
-    
+
     <view class="deposit-amount">
       <view class="amount-label">当前押金</view>
       <view class="amount-value">¥{{depositAmount || 0}}</view>
+    </view>
+
+    <!-- 押金操作按钮 -->
+    <view class="deposit-actions" wx:if="{{depositStatus === 'active'}}">
+      <view class="deposit-action-btn refund" bindtap="openRefundModal">
+        <text class="btn-icon">💰</text>
+        <text>退押金</text>
+      </view>
+      <view class="deposit-action-btn add" bindtap="openAddModal">
+        <text class="btn-icon">➕</text>
+        <text>补押金</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 退押金申请弹窗 -->
+  <view wx:if="{{refundModalVisible}}" catchtap="closeRefundModal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:999999;display:flex;align-items:center;justify-content:center;">
+    <view catchtap="stopPropagation" style="width:88%;max-width:680rpx;max-height:80vh;background:#fff;border-radius:32rpx;box-shadow:0 20rpx 60rpx rgba(0,0,0,0.3);display:flex;flex-direction:column;overflow:hidden;">
+      <view style="padding:40rpx 32rpx;border-bottom:2rpx solid #f0f0f0;">
+        <view style="font-size:36rpx;font-weight:700;color:#1C1C1E;text-align:center;">申请退押金</view>
+      </view>
+      <view style="padding:32rpx;flex:1;overflow-y:auto;">
+        <view style="margin-bottom:32rpx;">
+          <view style="font-size:28rpx;color:#8E8E93;margin-bottom:12rpx;">当前押金余额</view>
+          <view style="font-size:48rpx;font-weight:700;color:#FF9500;">¥{{depositAmount}}</view>
+        </view>
+        <view style="margin-bottom:32rpx;">
+          <view style="font-size:28rpx;color:#1C1C1E;font-weight:500;margin-bottom:12rpx;">退款金额（元）</view>
+          <input type="digit" placeholder="请输入退款金额" placeholder-style="color:#C7C7CC;" value="{{refundAmount}}" bindinput="onRefundAmountInput" style="width:100%;height:96rpx;background:#F5F5F7;border-radius:20rpx;padding:0 28rpx;font-size:32rpx;color:#1C1C1E;box-sizing:border-box;" />
+        </view>
+        <view style="margin-bottom:32rpx;">
+          <view style="font-size:28rpx;color:#1C1C1E;font-weight:500;margin-bottom:12rpx;">备注说明</view>
+          <textarea placeholder="请说明退款原因（选填）" placeholder-style="color:#C7C7CC;" value="{{refundRemark}}" bindinput="onRefundRemarkInput" maxlength="200" style="width:100%;height:180rpx;background:#F5F5F7;border-radius:20rpx;padding:24rpx;font-size:30rpx;color:#1C1C1E;box-sizing:border-box;" />
+        </view>
+        <view style="font-size:26rpx;color:#FF3B30;line-height:1.6;padding:20rpx;background:#FFF5F5;border-radius:16rpx;">⚠️ 退款申请提交后需管理员审核，审核通过后押金将退还。</view>
+      </view>
+      <view style="display:flex;border-top:2rpx solid #f0f0f0;">
+        <view catchtap="closeRefundModal" style="flex:1;height:110rpx;display:flex;align-items:center;justify-content:center;font-size:32rpx;color:#8E8E93;border-right:2rpx solid #f0f0f0;">取消</view>
+        <view catchtap="submitRefund" style="flex:1;height:110rpx;display:flex;align-items:center;justify-content:center;font-size:32rpx;font-weight:600;color:#FF3B30;">提交申请</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 补押金申请弹窗 -->
+  <view wx:if="{{addModalVisible}}" catchtap="closeAddModal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:999999;display:flex;align-items:center;justify-content:center;">
+    <view catchtap="stopPropagation" style="width:88%;max-width:680rpx;max-height:80vh;background:#fff;border-radius:32rpx;box-shadow:0 20rpx 60rpx rgba(0,0,0,0.3);display:flex;flex-direction:column;overflow:hidden;">
+      <view style="padding:40rpx 32rpx;border-bottom:2rpx solid #f0f0f0;">
+        <view style="font-size:36rpx;font-weight:700;color:#1C1C1E;text-align:center;">申请补押金</view>
+      </view>
+      <view style="padding:32rpx;flex:1;overflow-y:auto;">
+        <view style="margin-bottom:32rpx;">
+          <view style="font-size:28rpx;color:#8E8E93;margin-bottom:12rpx;">当前押金余额</view>
+          <view style="font-size:48rpx;font-weight:700;color:#FF9500;">¥{{depositAmount}}</view>
+        </view>
+        <view style="margin-bottom:32rpx;">
+          <view style="font-size:28rpx;color:#1C1C1E;font-weight:500;margin-bottom:12rpx;">补缴金额（元）</view>
+          <input type="digit" placeholder="请输入补缴金额" placeholder-style="color:#C7C7CC;" value="{{addAmount}}" bindinput="onAddAmountInput" style="width:100%;height:96rpx;background:#F5F5F7;border-radius:20rpx;padding:0 28rpx;font-size:32rpx;color:#1C1C1E;box-sizing:border-box;" />
+        </view>
+        <view style="margin-bottom:32rpx;">
+          <view style="font-size:28rpx;color:#1C1C1E;font-weight:500;margin-bottom:12rpx;">备注说明</view>
+          <textarea placeholder="请说明补缴原因或凭证（选填）" placeholder-style="color:#C7C7CC;" value="{{addRemark}}" bindinput="onAddRemarkInput" maxlength="200" style="width:100%;height:180rpx;background:#F5F5F7;border-radius:20rpx;padding:24rpx;font-size:30rpx;color:#1C1C1E;box-sizing:border-box;" />
+        </view>
+        <view style="font-size:26rpx;color:#34C759;line-height:1.6;padding:20rpx;background:#F0FFF4;border-radius:16rpx;">💡 补缴申请提交后需管理员审核，审核通过后押金将增加。</view>
+      </view>
+      <view style="display:flex;border-top:2rpx solid #f0f0f0;">
+        <view catchtap="closeAddModal" style="flex:1;height:110rpx;display:flex;align-items:center;justify-content:center;font-size:32rpx;color:#8E8E93;border-right:2rpx solid #f0f0f0;">取消</view>
+        <view catchtap="submitAdd" style="flex:1;height:110rpx;display:flex;align-items:center;justify-content:center;font-size:32rpx;font-weight:600;color:#34C759;">提交申请</view>
+      </view>
     </view>
   </view>
 
@@ -34,13 +102,13 @@
     <view class="contact-info">
       <view class="contact-item">
         <view class="contact-label">客服微信</view>
-        <view class="contact-value">xiaoqiange12315</view>
-        <button class="copy-btn" bindtap="copyWechat">复制</button>
+        <view class="contact-value">{{serviceWechat || '未配置'}}</view>
+        <button class="copy-btn" bindtap="copyWechat" wx:if="{{serviceWechat}}">复制</button>
       </view>
       <view class="contact-item">
         <view class="contact-label">客服电话</view>
-        <view class="contact-value">400-123-4567</view>
-        <button class="call-btn" bindtap="makeCall">拨打</button>
+        <view class="contact-value">{{servicePhone || '未配置'}}</view>
+        <button class="call-btn" bindtap="makeCall" wx:if="{{servicePhone}}">拨打</button>
       </view>
     </view>
     <view class="contact-tips">

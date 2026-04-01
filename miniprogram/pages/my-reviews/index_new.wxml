@@ -1,0 +1,354 @@
+<!-- pages/my-reviews/index_new.wxml - 我的评价（全新设计） -->
+<view class="reviews-page">
+  <!-- 顶部安全区 -->
+  <view class="safe-top"></view>
+
+  <!-- 头部导航栏 -->
+  <view class="header">
+    <view class="header-left" bindtap="goBack">
+      <text class="back-icon">‹</text>
+      <text class="back-text">返回</text>
+    </view>
+    <view class="header-center">
+      <text class="header-title">我的评价</text>
+      <text class="header-subtitle">记录与信誉</text>
+    </view>
+    <view class="header-right">
+      <view class="header-action" bindtap="exportReviews">
+        <text class="action-icon">📤</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 统计数据卡片 -->
+  <view class="stats-card">
+    <view class="stats-grid">
+      <view class="stat-item">
+        <text class="stat-value">{{stats.sentCount}}</text>
+        <text class="stat-label">发出的评价</text>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <text class="stat-value">{{stats.receivedCount}}</text>
+        <text class="stat-label">收到的评价</text>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <text class="stat-value">{{stats.avgRating}}</text>
+        <text class="stat-label">平均评分</text>
+      </view>
+    </view>
+    
+    <view class="stats-footer" wx:if="{{stats.excellentCount > 0}}" bindtap="viewExcellentReviews">
+      <text class="stats-footer-text">🌟 {{stats.excellentCount}}个超级满意评价</text>
+      <text class="stats-footer-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- Tab切换 -->
+  <view class="tabs-container">
+    <view class="tabs">
+      <view 
+        class="tab-item {{activeTab === 'sent' ? 'tab-item-active' : ''}}" 
+        bindtap="switchTab" 
+        data-tab="sent"
+      >
+        <text class="tab-text">我发出的</text>
+        <view class="tab-indicator" wx:if="{{activeTab === 'sent'}}"></view>
+      </view>
+      <view 
+        class="tab-item {{activeTab === 'received' ? 'tab-item-active' : ''}}" 
+        bindtap="switchTab" 
+        data-tab="received"
+      >
+        <text class="tab-text">我收到的</text>
+        <view class="tab-indicator" wx:if="{{activeTab === 'received'}}"></view>
+      </view>
+    </view>
+  </view>
+
+  <!-- Tab 1: 我发出的评价 -->
+  <scroll-view 
+    scroll-y 
+    class="content-scroll" 
+    hidden="{{activeTab !== 'sent'}}"
+    refresher-enabled="{{true}}"
+    bindrefresherrefresh="refreshSent"
+    refresher-triggered="{{sentRefreshing}}"
+    refresher-background="transparent"
+    bindscrolltolower="loadMoreSent"
+  >
+    <!-- 空状态 -->
+    <view wx:if="{{sentReviews.length === 0 && !sentLoading}}" class="empty-container">
+      <view class="empty-illustration">
+        <text class="empty-emoji">📝</text>
+      </view>
+      <text class="empty-title">还没有发出评价</text>
+      <text class="empty-desc">完成分享后可以发表评价哦</text>
+      <view class="empty-actions">
+        <view class="empty-btn" bindtap="goToOrders">
+          <text>查看订单</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 评价列表 -->
+    <view class="reviews-list" wx:else>
+      <block wx:for="{{sentReviews}}" wx:key="_id">
+        <view 
+          class="review-card sent-card" 
+          bindtap="goToOrderDetail" 
+          data-orderid="{{item.orderId}}"
+          bindlongpress="onReviewLongPress"
+          data-review="{{item}}"
+          data-type="sent"
+        >
+          <!-- 卡片头部 -->
+          <view class="card-header">
+            <view class="header-left">
+              <text class="review-type">发出的评价</text>
+              <text class="review-time">{{item.createTimeText}}</text>
+            </view>
+            <view class="header-right">
+              <text class="review-status">已评价</text>
+            </view>
+          </view>
+
+          <!-- 被评价用户信息 -->
+          <view class="user-info" bindtap="goToUserProfile" data-openid="{{item.revieweeOpenid}}">
+            <image 
+              class="user-avatar" 
+              src="{{item.reviewee ? item.reviewee.avatarUrl : ''}}" 
+              mode="aspectFill"
+              wx:if="{{item.reviewee && item.reviewee.avatarUrl}}"
+            />
+            <view class="user-avatar-placeholder" wx:else>
+              <text>👤</text>
+            </view>
+            <view class="user-details">
+              <text class="user-name">{{item.reviewee ? item.reviewee.nickName : '用户'}}</text>
+              <text class="user-role">分享用户</text>
+            </view>
+          </view>
+
+          <!-- 产品信息 -->
+          <view class="product-info">
+            <image 
+              class="product-image" 
+              src="{{item.coverUrl}}" 
+              mode="aspectFill"
+              lazy-load="{{true}}"
+              wx:if="{{item.coverUrl}}"
+            />
+            <view class="product-image-placeholder" wx:else>
+              <text>📦</text>
+            </view>
+            <view class="product-details">
+              <text class="product-name">{{item.productName || '特产'}}</text>
+              <text class="product-tip">分享的特产</text>
+            </view>
+          </view>
+
+          <!-- 评分区域 -->
+          <view class="rating-section">
+            <view class="rating-stars">
+              <text wx:for="{{5}}" wx:for-item="i" wx:key="i" class="star {{i < item.rating ? 'star-active' : ''}}">
+                {{i < item.rating ? '★' : '☆'}}
+              </text>
+            </view>
+            <view class="rating-info">
+              <text class="rating-text {{item.ratingInfo.class}}">
+                {{item.ratingInfo.emoji}} {{item.ratingInfo.text}}
+              </text>
+            </view>
+          </view>
+
+          <!-- 评价内容 -->
+          <view class="review-content" wx:if="{{item.comment}}">
+            <text class="content-text">{{item.comment}}</text>
+          </view>
+
+          <!-- 标签 -->
+          <view class="review-tags" wx:if="{{item.tags && item.tags.length > 0}}">
+            <text class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">
+              #{{tag}}
+            </text>
+          </view>
+
+          <!-- 卡片底部 -->
+          <view class="card-footer">
+            <view class="footer-actions">
+              <view class="action-btn" catchtap="shareReview" data-review="{{item}}">
+                <text class="action-icon">↗️</text>
+                <text class="action-text">分享</text>
+              </view>
+            </view>
+            <text class="footer-hint">长按卡片查看更多操作</text>
+          </view>
+        </view>
+      </block>
+
+      <!-- 加载更多 -->
+      <view class="load-more" wx:if="{{sentLoading}}">
+        <view class="loading-spinner">
+          <view class="spinner-dot"></view>
+          <view class="spinner-dot"></view>
+          <view class="spinner-dot"></view>
+        </view>
+        <text class="loading-text">加载中...</text>
+      </view>
+      
+      <view class="no-more" wx:if="{{sentNoMore && sentReviews.length > 0}}">
+        <text>没有更多评价了</text>
+      </view>
+    </view>
+
+    <view class="safe-bottom-placeholder"></view>
+  </scroll-view>
+
+  <!-- Tab 2: 我收到的评价 -->
+  <scroll-view 
+    scroll-y 
+    class="content-scroll" 
+    hidden="{{activeTab !== 'received'}}"
+    refresher-enabled="{{true}}"
+    bindrefresherrefresh="refreshReceived"
+    refresher-triggered="{{receivedRefreshing}}"
+    refresher-background="transparent"
+    bindscrolltolower="loadMoreReceived"
+  >
+    <!-- 空状态 -->
+    <view wx:if="{{receivedReviews.length === 0 && !receivedLoading}}" class="empty-container">
+      <view class="empty-illustration">
+        <text class="empty-emoji">💌</text>
+      </view>
+      <text class="empty-title">还没收到评价</text>
+      <text class="empty-desc">完成分享后等待对方评价吧</text>
+      <view class="empty-actions">
+        <view class="empty-btn" bindtap="goToOrders">
+          <text>查看订单</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 评价列表 -->
+    <view class="reviews-list" wx:else>
+      <block wx:for="{{receivedReviews}}" wx:key="_id">
+        <view 
+          class="review-card received-card" 
+          bindtap="goToOrderDetail" 
+          data-orderid="{{item.orderId}}"
+          bindlongpress="onReviewLongPress"
+          data-review="{{item}}"
+          data-type="received"
+        >
+          <!-- 卡片头部 -->
+          <view class="card-header">
+            <view class="header-left">
+              <text class="review-type">收到的评价</text>
+              <text class="review-time">{{item.createTimeText}}</text>
+            </view>
+            <view class="header-right">
+              <text class="review-badge {{item.ratingInfo.class}}">
+                {{item.ratingInfo.emoji}}
+              </text>
+            </view>
+          </view>
+
+          <!-- 评价者信息 -->
+          <view class="reviewer-info" bindtap="goToUserProfile" data-openid="{{item.reviewerOpenid}}">
+            <image 
+              class="reviewer-avatar" 
+              src="{{item.reviewerAvatar}}" 
+              mode="aspectFill"
+              wx:if="{{item.reviewerAvatar}}"
+            />
+            <view class="reviewer-avatar-placeholder" wx:else>
+              <text>👤</text>
+            </view>
+            <view class="reviewer-details">
+              <view class="reviewer-name-row">
+                <text class="reviewer-name">{{item.reviewerName}}</text>
+                <text class="reviewer-action">评价了你</text>
+              </view>
+              <text class="reviewer-rating {{item.ratingInfo.class}}">
+                {{item.ratingInfo.text}}
+              </text>
+            </view>
+          </view>
+
+          <!-- 评分区域 -->
+          <view class="rating-section">
+            <view class="rating-stars">
+              <text wx:for="{{5}}" wx:for-item="i" wx:key="i" class="star {{i < item.rating ? 'star-active' : ''}}">
+                {{i < item.rating ? '★' : '☆'}}
+              </text>
+            </view>
+          </view>
+
+          <!-- 评价内容 -->
+          <view class="review-content" wx:if="{{item.comment}}">
+            <text class="content-text">{{item.comment}}</text>
+          </view>
+
+          <!-- 标签 -->
+          <view class="review-tags" wx:if="{{item.tags && item.tags.length > 0}}">
+            <text class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">
+              #{{tag}}
+            </text>
+          </view>
+
+          <!-- 产品信息（小尺寸） -->
+          <view class="product-mini" wx:if="{{item.productName}}">
+            <image 
+              class="product-mini-image" 
+              src="{{item.coverUrl}}" 
+              mode="aspectFill"
+              lazy-load="{{true}}"
+              wx:if="{{item.coverUrl}}"
+            />
+            <view class="product-mini-image-placeholder" wx:else>
+              <text>📦</text>
+            </view>
+            <text class="product-mini-name">分享特产: {{item.productName}}</text>
+          </view>
+
+          <!-- 卡片底部 -->
+          <view class="card-footer">
+            <view class="footer-actions">
+              <view class="action-btn" catchtap="thankReviewer" data-review="{{item}}">
+                <text class="action-icon">🙏</text>
+                <text class="action-text">感谢</text>
+              </view>
+              <view class="action-divider"></view>
+              <view class="action-btn" catchtap="replyToReview" data-review="{{item}}">
+                <text class="action-icon">💬</text>
+                <text class="action-text">回复</text>
+              </view>
+            </view>
+            <text class="footer-hint">长按卡片查看更多操作</text>
+          </view>
+        </view>
+      </block>
+
+      <!-- 加载更多 -->
+      <view class="load-more" wx:if="{{receivedLoading}}">
+        <view class="loading-spinner">
+          <view class="spinner-dot"></view>
+          <view class="spinner-dot"></view>
+          <view class="spinner-dot"></view>
+        </view>
+        <text class="loading-text">加载中...</text>
+      </view>
+      
+      <view class="no-more" wx:if="{{receivedNoMore && receivedReviews.length > 0}}">
+        <text>没有更多评价了</text>
+      </view>
+    </view>
+
+    <view class="safe-bottom-placeholder"></view>
+  </scroll-view>
+
+  <!-- 底部安全区 -->
+  <view class="safe-bottom"></view>
+</view>

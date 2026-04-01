@@ -6,6 +6,7 @@
     "pages/order/index",
     "pages/mine/index",
     "pages/detail/index",
+    "pages/report/index",
     "pages/order-detail/index",
     "pages/my-products/index",
     "pages/search/index",
@@ -38,7 +39,8 @@
     "pages/daigou-deposit/index",
     "pages/deposit-apply/index",
     "pages/withdrawal/index",
-    "pages/withdrawal-history/index"
+    "pages/withdrawal-history/index",
+    "pages/product-list/index"
   ],
   "window": {
     "backgroundTextStyle": "light",
