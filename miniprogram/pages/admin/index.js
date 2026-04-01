@@ -3517,22 +3517,45 @@ Page({
 
   // ===== 消息测试（Tab=19）=====
 
+  // 所有订阅消息模板 ID（与云函数 TEMPLATES 保持一致）
+  MSG_TEMPLATE_IDS: {
+    shipment:    'nxMqu8AQ1vopTH6XpBPOvaaIEmDji-JbqqME7SVc-cU',
+    points:      'FWbxKYQhjUpEYE57OKho-MA5F3WOsbMF9OMkh-1zGqM',
+    orderCancel: 'lDm2YCwMBRurC0R5kEMacOAk8nyfQXLI_AXHHBjty7k',
+    withdrawal:  'yotyAzNdqwckEt87CfFq8PoLMtOMMZ-xSZR3MkqlI7k',
+    activity:    'qkNEkQTj0waYSCgdJC7dSe9L5_gqfAQqme-J0IEFA_c',
+    swapRequest: 'qkNEkQTj0waYSCgdJC7dSe9L5_gqfAQqme-J0IEFA_c',
+    swapAccept:  'qkNEkQTj0waYSCgdJC7dSe9L5_gqfAQqme-J0IEFA_c',
+    swapReject:  'qkNEkQTj0waYSCgdJC7dSe9L5_gqfAQqme-J0IEFA_c',
+  },
+
   // 测试发送订阅消息
   async testSendMsg(e) {
     const action = e.currentTarget.dataset.action
-    const TEMPLATE_ID = 'qkNEkQTj0waYSCgdJC7dSe9L5_gqfAQqme-J0IEFA_c' // 活动通知（用于授权）
 
-    // 先请求订阅授权
+    // 找到该 action 对应的模板 ID
+    const templateId = this.MSG_TEMPLATE_IDS[action]
+    if (!templateId) {
+      toast('未知消息类型', 'none')
+      return
+    }
+
+    // 请求该模板的订阅授权
     const authRes = await new Promise(resolve => {
       wx.requestSubscribeMessage({
-        tmplIds: [TEMPLATE_ID],
+        tmplIds: [templateId],
         success: res => resolve(res),
-        fail: err => resolve({ err })
+        fail: err => {
+          console.error('[订阅授权] 失败:', err)
+          resolve({})
+        }
       })
     })
 
-    if (authRes.err || authRes[TEMPLATE_ID] !== 'accept') {
-      toast('请先授权订阅消息', 'none')
+    // 检查是否授权
+    if (authRes[templateId] !== 'accept') {
+      const status = authRes[templateId] || '未知'
+      toast(`授权状态: ${status}，无法发送`, 'none')
       return
     }
 
@@ -3540,6 +3563,12 @@ Page({
 
     const today = new Date().toISOString().slice(0, 10)
     const openid = getApp().globalData.openid
+
+    if (!openid) {
+      toast('获取 openid 失败，请重新登录', 'none')
+      this.setData({ msgTestLoading: '' })
+      return
+    }
 
     // 各类型测试数据
     const TEST_PARAMS = {
@@ -3562,23 +3591,27 @@ Page({
 
       const log = {
         action,
-        success: res && res.success,
+        success: !!(res && res.success),
         error: res?.error || '',
         time: new Date().toLocaleTimeString()
       }
-
-      const logs = [log, ...this.data.msgTestLogs].slice(0, 20)
-      this.setData({ msgTestLogs: logs, msgTestLoading: '' })
+      this.setData({
+        msgTestLogs: [log, ...this.data.msgTestLogs].slice(0, 20),
+        msgTestLoading: ''
+      })
 
       if (res && res.success) {
-        toast(`${action} 发送成功 ✅`, 'success')
+        toast(`${action} ✅ 发送成功`, 'success')
       } else {
-        toast(`失败: ${res?.error || '未知错误'}`, 'none')
+        toast(`❌ ${res?.error || '发送失败'}`, 'none')
       }
     } catch (err) {
-      const logs = [{ action, success: false, error: err.message, time: new Date().toLocaleTimeString() }, ...this.data.msgTestLogs].slice(0, 20)
-      this.setData({ msgTestLogs: logs, msgTestLoading: '' })
-      toast('发送异常: ' + err.message, 'none')
+      const log = { action, success: false, error: err.message, time: new Date().toLocaleTimeString() }
+      this.setData({
+        msgTestLogs: [log, ...this.data.msgTestLogs].slice(0, 20),
+        msgTestLoading: ''
+      })
+      toast('异常: ' + err.message, 'none')
     }
   }
 
