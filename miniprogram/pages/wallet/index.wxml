@@ -32,7 +32,7 @@
       </view>
 
       <!-- 提现按钮 -->
-      <view class="withdrawal-quick-btn" bindtap="goToWithdrawal" wx:if="{{walletBalance > 0}}">
+      <view class="withdrawal-quick-btn" bindtap="goToWithdrawal">
         <text class="withdrawal-quick-icon">💸</text>
         <text class="withdrawal-quick-text">申请提现</text>
         <text class="withdrawal-quick-arrow">›</text>
@@ -132,7 +132,7 @@
           </view>
           <text class="wallet-quick-label">信用中心</text>
         </view>
-        <view class="wallet-quick-item" bindtap="goToWithdraw">
+        <view class="wallet-quick-item" bindtap="goToWithdrawal">
           <view class="wallet-quick-icon qg-green">
             <text class="icon-emoji">💸</text>
           </view>
@@ -155,17 +155,27 @@
       </view>
       <view class="customer-service">
         <view class="service-item">
+          <text class="service-icon">📞</text>
+          <view class="service-info">
+            <text class="service-label">客服电话</text>
+            <text class="service-value">{{servicePhone || '未配置'}}</text>
+          </view>
+          <view class="service-action" bindtap="callCustomerService" wx:if="{{servicePhone}}">
+            <text class="action-text">拨打</text>
+          </view>
+        </view>
+        <view class="service-item">
           <text class="service-icon">💬</text>
           <view class="service-info">
             <text class="service-label">客服微信</text>
-            <text class="service-value">xiaoqiange12315</text>
+            <text class="service-value">{{serviceWechat || '未配置'}}</text>
           </view>
-          <view class="service-action" bindtap="copyWechat">
+          <view class="service-action" bindtap="copyWechat" wx:if="{{serviceWechat}}">
             <text class="action-text">复制</text>
           </view>
         </view>
         <view class="service-item">
-          <text class="service-icon">📱</text>
+          <text class="service-icon">⏰</text>
           <view class="service-info">
             <text class="service-label">服务时间</text>
             <text class="service-value">9:00-21:00</text>
