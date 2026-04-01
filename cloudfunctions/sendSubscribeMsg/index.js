@@ -162,8 +162,7 @@ async function sendOrderCancel(openid, params = {}) {
 }
 
 /** 提现结果通知
- * 字段：提现状态(thing1)、提现金额(?)、提现账号(?)
- * thing1 已由错误信息确认（不是 phrase1）
+ * 字段：提现状态(thing1)、提现金额(amount2)、提现账号(thing3)、日期(date4)
  */
 async function sendWithdrawalResult(openid, params = {}) {
   const { status, amount, account, page } = params;
@@ -171,6 +170,7 @@ async function sendWithdrawalResult(openid, params = {}) {
     thing1:  { value: fmtThing(status, 20) },
     amount2: { value: String(Number(amount) || 0) },
     thing3:  { value: fmtThing(account, 20) },
+    date4:   { value: fmtDate() },
   }, page);
 }
 
