@@ -124,30 +124,33 @@ async function doSend(touser, templateId, data, page) {
 // ======================
 
 /** 发货通知
- * 模板实际字段（根据错误信息 phrase12 推断，需对照公众平台确认）
- * 先用 queryTemplate 查出真实字段再填
+ * 字段：发货状态(phrase12)、配送方式(?)、运单号(?)
+ * phrase12 已由错误信息确认，其余字段待 getTemplateList 确认
  */
 async function sendShipmentNotify(openid, params = {}) {
   const { status, deliveryMethod, trackingNumber, page } = params;
-  // phrase12 是模板里的字段，说明模板字段编号较大，需查询确认
-  // 暂时用 queryTemplate 返回的字段名填充
   return doSend(openid, TEMPLATES.SHIPMENT_NOTIFY, {
-    phrase12: { value: fmtPhrase(status) },
+    phrase12:          { value: fmtPhrase(status) },
+    thing13:           { value: fmtThing(deliveryMethod, 20) },
+    character_string14:{ value: fmtChar(trackingNumber, 32) },
   }, page);
 }
 
 /** 积分到账提醒
- * 模板实际字段：number5（根据错误信息推断）
+ * 字段：获得积分(number5)、积分说明(?)
+ * number5 已由错误信息确认
  */
 async function sendPointsArrival(openid, params = {}) {
   const { points, reason, page } = params;
   return doSend(openid, TEMPLATES.POINTS_ARRIVAL, {
     number5: { value: String(Number(points) || 0) },
+    thing6:  { value: fmtThing(reason, 20) },
   }, page);
 }
 
 /** 订单取消通知
- * 模板实际字段：thing1 + date2 + thing3（根据错误信息推断）
+ * 字段：取消原因(thing1)、取消时间(date2)、第3字段(thing3)
+ * thing3 已由错误信息确认
  */
 async function sendOrderCancel(openid, params = {}) {
   const { cancelReason, cancelTime, page } = params;
@@ -159,7 +162,8 @@ async function sendOrderCancel(openid, params = {}) {
 }
 
 /** 提现结果通知
- * 模板实际字段：thing1 开头（根据错误信息推断，不是 phrase1）
+ * 字段：提现状态(thing1)、提现金额(?)、提现账号(?)
+ * thing1 已由错误信息确认（不是 phrase1）
  */
 async function sendWithdrawalResult(openid, params = {}) {
   const { status, amount, account, page } = params;
