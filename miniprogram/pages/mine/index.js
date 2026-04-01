@@ -118,6 +118,28 @@ Page({
     points: 0,
     featureFlags: {},
     isAdmin: false,
+    // 管理员待处理通知
+    adminNotifications: {
+      pendingReview: 0,      // 待审核特产
+      daigouVerify: 0,       // 待实名认证
+      depositApply: 0,       // 待押金审批
+      rechargeApply: 0,      // 待充值审批
+      // 新增待处理事项
+      newUsers: 0,           // 新增用户
+      newProducts: 0,        // 新增特产
+      newShares: 0,         // 新增分享
+      withdrawApply: 0,     // 提现申请
+      productDelete: 0,      // 特产删除
+      swapSuccess: 0,       // 互换成功
+      newFavorites: 0,      // 新增收藏
+      newRecharges: 0,      // 充值申请（当天）
+      todayWithdrawals: 0,  // 提现申请（当天）
+      userDisputes: 0,       // 用户纠纷
+      productReports: 0,    // 产品举报
+      userReports: 0,       // 用户举报
+      totalCount: 0          // 总待处理数
+    },
+    todayDate: '',  // 当天日期
     showServicePanel: false,
     serviceMessages: [],
     serviceInput: '',
@@ -158,7 +180,26 @@ Page({
     }
   },
 
-  // 轻量刷新关键数据（积分、订单数）
+  // 下拉刷新
+  onPullDownRefresh() {
+    console.log('[mine] 下拉刷新')
+    // 重置刷新时间限制，强制刷新
+    this._lastRefreshTime = 0
+    // 执行完整数据加载
+    this.loadUserData().then(() => {
+      // 停止下拉刷新动画
+      wx.stopPullDownRefresh()
+    }).catch(err => {
+      console.error('[mine] 下拉刷新失败', err)
+      wx.stopPullDownRefresh()
+      wx.showToast({
+        title: '刷新失败',
+        icon: 'none'
+      })
+    })
+  },
+
+  // 轻量刷新关键数据（积分、订单数、代购等级等）
   _refreshKeyDataIfNeeded() {
     // 节流：距离上次刷新少于 30 秒不刷新
     if (this._lastRefreshTime && Date.now() - this._lastRefreshTime < 30000) {
@@ -166,16 +207,45 @@ Page({
     }
     this._lastRefreshTime = Date.now()
     
-    // 只获取统计数据，不重新获取用户信息
-    callCloud('userInit', { action: 'getStats' }).then(res => {
-      if (res) {
+    // 并行获取统计数据和用户信息（包含代购等级）
+    Promise.all([
+      callCloud('userInit', { action: 'getStats' }),
+      callCloud('userInit', { action: 'init' })
+    ]).then(([statsRes, userRes]) => {
+      if (statsRes) {
         this.setData({
-          publishCount: res.publishCount || 0,
-          swapCount: res.swapCount || 0,
-          badgeCount: res.badgeCount || 0,
-          pendingCount: res.pendingCount || 0,
-          points: res.points || this.data.points
+          publishCount: statsRes.publishCount || 0,
+          swapCount: statsRes.swapCount || 0,
+          badgeCount: statsRes.badgeCount || 0,
+          pendingCount: statsRes.pendingCount || 0,
+          points: statsRes.points || this.data.points
         })
+      }
+      
+      // 更新代购等级等用户信息
+      if (userRes && userRes.userInfo) {
+        const LEVEL_NAMES = { 0: '新人', 1: '初级', 2: '进阶', 3: '资深', 4: '金牌', 5: '钻石', 6: '官方认证' }
+        const LEVEL_RATES = { 0: 8.0, 1: 7.0, 2: 6.5, 3: 6.0, 4: 5.5, 5: 5.0, 6: 4.0 }
+        const LEVEL_EMOJIS = { 0: '🌱', 1: '⭐', 2: '🌟', 3: '💫', 4: '🥇', 5: '💎', 6: '👑' }
+        
+        const dlv = userRes.userInfo.daigouLevel !== undefined ? userRes.userInfo.daigouLevel : 0
+        
+        // 更新 userInfo 中的代购等级
+        const userInfo = this.data.userInfo || {}
+        userInfo.daigouLevel = dlv
+        userInfo.daigouStats = userRes.userInfo.daigouStats || null
+        userInfo.isDaigouVerified = userRes.userInfo.isDaigouVerified || false
+        
+        this.setData({
+          userInfo,
+          daigouLevelName: LEVEL_NAMES[dlv] || '新人',
+          daigouLevelEmoji: LEVEL_EMOJIS[dlv] || '🌱',
+          daigouFeeRate: LEVEL_RATES[dlv] || 8.0
+        })
+        
+        // 更新 globalData
+        const app = getApp()
+        app.globalData.userInfo = { ...app.globalData.userInfo, ...userInfo }
       }
     }).catch(() => {})
   },
@@ -346,7 +416,11 @@ Page({
     
     // 使用缓存
     if (cachedAdmin !== '' && adminCacheTime && (Date.now() - adminCacheTime < CACHE_TTL)) {
-      this.setData({ isAdmin: cachedAdmin === 'true' })
+      const isAdmin = cachedAdmin === 'true'
+      this.setData({ isAdmin })
+      if (isAdmin) {
+        this._loadAdminNotifications()
+      }
       return
     }
     
@@ -357,13 +431,109 @@ Page({
       this.setData({ isAdmin })
       wx.setStorageSync('isAdmin', isAdmin ? 'true' : 'false')
       wx.setStorageSync('adminCacheTime', Date.now())
+      
+      // 如果是管理员，加载待处理通知
+      if (isAdmin) {
+        this._loadAdminNotifications()
+      }
     } catch (e) {
       console.error('[mine] 检查管理员失败:', e)
       // 请求失败时，尝试使用缓存（即使过期）
       if (cachedAdmin !== '') {
-        this.setData({ isAdmin: cachedAdmin === 'true' })
+        const isAdmin = cachedAdmin === 'true'
+        this.setData({ isAdmin })
+        if (isAdmin) {
+          this._loadAdminNotifications()
+        }
       }
     }
+  },
+
+  // 加载管理员待处理通知
+  async _loadAdminNotifications() {
+    try {
+      const [depositRes, rechargeRes, daigouVerifyRes, statsRes, pendingStatsRes] = await Promise.all([
+        callCloud('adminMgr', { 
+          action: 'getDepositApplyList',
+          page: 1,
+          pageSize: 1,
+          filter: 'pending'
+        }),
+        callCloud('paymentMgr', {
+          action: 'adminGetRechargeApplies',
+          page: 1,
+          pageSize: 1,
+          status: 'pending'
+        }),
+        callCloud('daigouMgr', {
+          action: 'getVerifyList',
+          page: 1,
+          pageSize: 1,
+          filter: 'pending'
+        }),
+        callCloud('adminMgr', { action: 'getStats' }),
+        callCloud('adminMgr', { action: 'getPendingStats' })
+      ])
+      
+      const pendingReview = statsRes?.pendingReviews || 0
+      const daigouVerify = daigouVerifyRes?.list?.length || 0
+      const depositApply = depositRes?.stats?.pending || 0
+      const rechargeApply = rechargeRes?.total || 0
+      
+      // 新增统计数据
+      const newUsers = pendingStatsRes?.stats?.newUsers || 0
+      const newProducts = pendingStatsRes?.stats?.newProducts || 0
+      const newShares = pendingStatsRes?.stats?.newShares || 0
+      const withdrawApply = pendingStatsRes?.stats?.withdrawApply || 0
+      const productDelete = pendingStatsRes?.stats?.productDelete || 0
+      const swapSuccess = pendingStatsRes?.stats?.swapSuccess || 0
+      const newFavorites = pendingStatsRes?.stats?.newFavorites || 0
+      const newRecharges = pendingStatsRes?.stats?.newRecharges || 0
+      const todayWithdrawals = pendingStatsRes?.stats?.todayWithdrawals || 0
+      const userDisputes = pendingStatsRes?.stats?.userDisputes || 0
+      const productReports = pendingStatsRes?.stats?.productReports || 0
+      const userReports = pendingStatsRes?.stats?.userReports || 0
+      
+      // 总待处理数（只计算需要处理的）
+      const totalPending = withdrawApply + userDisputes + productReports + userReports
+      // 加上其他待审核项
+      const totalCount = totalPending + pendingReview + daigouVerify + depositApply + rechargeApply
+      
+      this.setData({
+        adminNotifications: {
+          pendingReview,
+          daigouVerify,
+          depositApply,
+          rechargeApply,
+          newUsers,
+          newProducts,
+          newShares,
+          withdrawApply,
+          productDelete,
+          swapSuccess,
+          newFavorites,
+          newRecharges,
+          todayWithdrawals,
+          userDisputes,
+          productReports,
+          userReports,
+          totalCount
+        },
+        todayDate: this._getTodayDate()
+      })
+    } catch (e) {
+      console.error('[mine] 加载管理员通知失败:', e)
+    }
+  },
+
+  // 获取当天日期格式化字符串
+  _getTodayDate() {
+    const now = new Date()
+    const month = now.getMonth() + 1
+    const day = now.getDate()
+    const weekDays = ['日', '一', '二', '三', '四', '五', '六']
+    const weekDay = weekDays[now.getDay()]
+    return `${month}月${day}日 周${weekDay}`
   },
 
   // 加载我的特产预览（独立，不阻塞）
@@ -741,8 +911,10 @@ Page({
   },
 
   // 跳转管理员入口
-  goToAdmin() {
-    wx.navigateTo({ url: '/pages/admin/index' })
+  goToAdmin(e) {
+    const tab = e.currentTarget.dataset.tab
+    const url = tab !== undefined ? `/pages/admin/index?tab=${tab}` : '/pages/admin/index'
+    wx.navigateTo({ url })
   },
 
   goToSettings() {
@@ -795,7 +967,7 @@ Page({
     wx.navigateTo({ url: '/pages/wallet/index' })
   },
 
-  // 押金管理（保留旧方法，作为备用）
+  // 押金管理
   goToDaigouDeposit() {
     wx.navigateTo({ url: '/pages/daigou-deposit/index' })
   },
@@ -835,7 +1007,7 @@ Page({
   onPhoneVerified(e) {
     console.log('手机号验证成功:', e.detail)
     const { phoneNumber, creditScore } = e.detail
-    
+
     // 更新页面数据
     this.setData({
       phoneNumber: phoneNumber,
@@ -847,10 +1019,74 @@ Page({
     // 更新全局数据
     const app = getApp()
     app.globalData.creditScore = creditScore
-    
+
     console.log('[mine] 更新后的数据:', {
       phoneNumber: this.data.phoneNumber,
       phoneVerified: this.data.phoneVerified
     })
+  },
+
+  // 测试订阅消息
+  async testSubscribeMessage() {
+    const TEMPLATE_ID = 'qkNEkQTj0waYSCgdJC7dSe9L5_gqfAQqme-J0IEFA_c' // 活动通知
+
+    // 第1步：请求用户订阅授权
+    const authRes = await new Promise((resolve) => {
+      wx.requestSubscribeMessage({
+        tmplIds: [TEMPLATE_ID],
+        success: (res) => {
+          console.log('[订阅授权] 成功:', res)
+          resolve(res)
+        },
+        fail: (err) => {
+          console.error('[订阅授权] 失败:', err)
+          wx.showToast({ title: '授权失败', icon: 'none' })
+          resolve({ err })
+        }
+      })
+    })
+
+    // 检查用户是否允许
+    const acceptKey = TEMPLATE_ID
+    if (authRes[acceptKey] === 'accept') {
+      wx.showLoading({ title: '发送中...' })
+      try {
+        const openid = getApp().globalData.openid
+        if (!openid) {
+          wx.hideLoading()
+          wx.showToast({ title: '当前用户未登录', icon: 'none' })
+          return
+        }
+
+        // 第2步：发送订阅消息（通过云函数）
+        const sendRes = await callCloud('sendSubscribeMsg', {
+          action: 'activity',
+          openid: openid,
+          params: {
+            content: '🔔 测试消息：您的特产互换订单有新动态，请留意查看！',
+            startTime: new Date().toLocaleString(),
+            endTime: '长期有效',
+            remark: '这是一条来自互换特产小程序的测试消息',
+            page: '/pages/order/index'
+          }
+        })
+
+        wx.hideLoading()
+        if (sendRes && sendRes.success) {
+          wx.showToast({ title: '发送成功，请在微信服务通知中查看', icon: 'none', duration: 3000 })
+        } else {
+          console.error('[发送订阅消息] 失败:', JSON.stringify(sendRes))
+          wx.showToast({ title: '发送失败：' + (sendRes?.error?.message || sendRes?.error?.errMsg || JSON.stringify(sendRes?.error) || '未知错误'), icon: 'none', duration: 4000 })
+        }
+      } catch (e) {
+        wx.hideLoading()
+        console.error('[发送订阅消息] 异常:', e)
+        wx.showToast({ title: '发送异常：' + e.message, icon: 'none' })
+      }
+    } else if (authRes[acceptKey] === 'reject') {
+      wx.showToast({ title: '您拒绝了授权，无法收到消息', icon: 'none' })
+    } else {
+      wx.showToast({ title: '授权结果未知', icon: 'none' })
+    }
   }
 })

@@ -1,124 +1,200 @@
-<!-- pages/mine/index.wxml - 个人中心 -->
+<!-- pages/mine/index.wxml - 个人中心 - iOS 风格 -->
 <view class="mine-page">
 
-  <!-- 顶部用户卡片 -->
-  <view class="user-hero">
-    <view class="user-hero-bg"/>
-    <view class="user-hero-content">
-      <view class="user-info-row">
-        <block wx:if="{{userInfo && userInfo.avatarUrl && userInfo.nickName}}">
-          <image class="user-avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill" binderror="onAvatarError"/>
-          <view class="user-info-text">
-            <view class="user-name-row">
-              <view class="user-name">{{userInfo.nickName || '特产达人'}}</view>
-              <view class="admin-badge" wx:if="{{isAdmin}}" bindtap="goToAdmin">
-                <text class="admin-badge-icon">🔑</text>
-                <text class="admin-badge-text">管理员</text>
-              </view>
+  <!-- 用户信息 + 统计 合并卡片 -->
+  <view class="profile-card">
+    <!-- 用户信息 -->
+    <view class="profile-header">
+      <block wx:if="{{userInfo && userInfo.avatarUrl && userInfo.nickName}}">
+        <image class="profile-avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill" binderror="onAvatarError"/>
+        <view class="profile-info">
+          <view class="profile-name-row">
+            <text class="profile-name">{{userInfo.nickName || '特产达人'}}</text>
+            <view class="admin-tag" wx:if="{{isAdmin}}" bindtap="goToAdmin">管理</view>
+          </view>
+          <view class="profile-meta">
+            <view class="location-tag" bindtap="editProfile">
+              <text class="location-icon">📍</text>
+              <text>{{provinceName || '设置城市'}}</text>
             </view>
-            <!-- 省份 + 代购等级并排 -->
-            <view class="user-meta-row">
-              <view class="user-province-pill" bindtap="editProfile">
-                <text class="province-pin">📍</text>
-                <text class="province-text">{{provinceName || '点击设置城市'}}</text>
-
-
-              </view>
-              <!-- 代购等级（已认证代购者） -->
-              <view class="level-badge-pill daigou-pill {{'dlv-'+userInfo.daigouLevel}}" wx:if="{{userInfo && userInfo.isDaigouVerified}}">
-                <text class="level-pill-icon">{{daigouLevelEmoji}}</text>
-                <text class="level-pill-name">{{daigouLevelName}}</text>
-                <view class="level-pill-divider"/>
-                <text class="level-pill-tag">代购</text>
-              </view>
+            <view class="level-tag daigou" wx:if="{{userInfo && userInfo.isDaigouVerified}}">
+              <text>{{daigouLevelEmoji}} {{daigouLevelName}}</text>
             </view>
-            <!-- 互换达人等级（独立一行） -->
-            <view class="user-level-strip">
-              <view class="level-badge-pill swap-pill {{'slv-'+swapLevelIdx}}">
-                <text class="level-pill-icon">{{swapLevelEmoji}}</text>
-                <text class="level-pill-name">{{swapLevelName}}</text>
-              </view>
+            <view class="level-tag swap">
+              <text>{{swapLevelEmoji}} {{swapLevelName}}</text>
             </view>
           </view>
-        </block>
-        <block wx:else>
-          <!-- 新版头像昵称填写组件 -->
-          <button class="avatar-nickname-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
-            <image class="user-avatar" src="{{userInfo.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill" binderror="onAvatarError"/>
-            <view class="avatar-mask">
-              <view class="icon-camera-w"></view>
-            </view>
-          </button>
-          <view class="user-info-text">
-            <input class="nickname-input" type="nickname" placeholder="点击设置昵称" placeholder-class="nickname-placeholder" value="{{userInfo.nickName || ''}}" bindinput="onNicknameInput" bindblur="saveUserProfile"/>
-            <view class="nickname-tip" wx:if="{{!userInfo.nickName}}">点击头像和昵称完成设置</view>
-            <view class="user-province-pill" wx:else>
-              <text class="province-pin">📍</text>
-              <text class="province-text">{{provinceName || '点击设置城市'}}</text>
-            </view>
-          </view>
-        </block>
-        <!-- 编辑资料入口 -->
-        <view class="edit-btn" bindtap="editProfile">
-          <text class="edit-icon">✏️</text>
+        </view>
+      </block>
+      <block wx:else>
+        <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+          <image class="profile-avatar" src="{{userInfo.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"/>
+        </button>
+        <view class="profile-info">
+          <input class="nickname-input" type="nickname" placeholder="点击设置昵称" value="{{userInfo.nickName}}" bindinput="onNicknameInput" bindblur="saveUserProfile"/>
+          <view class="profile-tip" wx:if="{{!userInfo.nickName}}">点击头像和昵称完成设置</view>
+        </view>
+      </block>
+      <view class="edit-btn" bindtap="editProfile">✏️</view>
+    </view>
+
+    <!-- 分割线 -->
+    <view class="divider"/>
+
+    <!-- 统计数据 -->
+    <view class="stats-row">
+      <view class="stat-item" bindtap="goToCredit">
+        <text class="stat-value credit {{creditClass}}">{{creditScore}}</text>
+        <text class="stat-label">信用分</text>
+      </view>
+      <view class="stat-item" bindtap="goToPoints">
+        <text class="stat-value points">{{points || 0}}</text>
+        <text class="stat-label">积分</text>
+      </view>
+      <view class="stat-item" bindtap="goToMyProducts" wx:if="{{featureFlags.tab_publish !== false}}">
+        <text class="stat-value">{{publishCount}}</text>
+        <text class="stat-label">发布</text>
+      </view>
+      <view class="stat-item" bindtap="goToOrders" wx:if="{{featureFlags.feature_swap !== false}}">
+        <text class="stat-value">{{swapCount}}</text>
+        <text class="stat-label">互换</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{badgeCount}}</text>
+        <text class="stat-label">集章</text>
+      </view>
+    </view>
+
+    <!-- 代购押金（已认证显示） -->
+    <view class="deposit-bar" wx:if="{{userInfo.isDaigouVerified}}" bindtap="goToDaigouDeposit">
+      <view class="deposit-left">
+        <text class="deposit-icon">💰</text>
+        <view>
+          <text class="deposit-title">代购押金余额</text>
+          <text class="deposit-sub">{{daigouLevelName}} · 费率 {{daigouFeeRate}}%</text>
         </view>
       </view>
-
-      <!-- 信用分+统计 -->
-      <view class="stats-row">
-        <view class="stat-item credit-stat" bindtap="goToCredit">
-          <view class="credit-score-big {{creditClass}}">{{creditScore}}</view>
-          <view class="stat-label">信用分</view>
-        </view>
-        <view class="stat-divider"/>
-        <view class="stat-item points-stat" bindtap="goToPoints">
-          <view class="stat-num points-num">{{points || 0}}</view>
-          <view class="stat-label">积分</view>
-        </view>
-        <view class="stat-divider"/>
-        <view wx:if="{{featureFlags.tab_publish !== false}}" class="stat-item" bindtap="goToMyProducts">
-          <view class="stat-num">{{publishCount}}</view>
-          <view class="stat-label">发布</view>
-        </view>
-        <view wx:if="{{featureFlags.tab_publish !== false}}" class="stat-divider"/>
-        <view wx:if="{{featureFlags.feature_swap !== false}}" class="stat-item" bindtap="goToOrders">
-          <view class="stat-num">{{swapCount}}</view>
-          <view class="stat-label">分享次数</view>
-        </view>
-        <view wx:if="{{featureFlags.feature_swap !== false}}" class="stat-divider"/>
-        <view class="stat-item">
-          <view class="stat-num">{{badgeCount}}</view>
-          <view class="stat-label">集章数</view>
-        </view>
-      </view>
-
-      <!-- 代购押金余额（仅代购者显示） -->
-      <view class="deposit-balance-bar" wx:if="{{userInfo.daigouStats && userInfo.daigouStats.depositPaid > 0}}" bindtap="goToDaigouDeposit">
-        <view class="deposit-balance-left">
-          <text class="deposit-icon">💰</text>
-          <view class="deposit-text">
-            <text class="deposit-label">代购押金余额</text>
-            <text class="deposit-level">{{daigouLevelName}} · 费率 {{daigouFeeRate}}%</text>
-          </view>
-        </view>
-        <view class="deposit-right">
-          <text class="deposit-balance-amount deposit-balance-{{userInfo.daigouStats.depositBalance > 0 ? 'ok' : 'low'}}">¥{{userInfo.daigouStats.depositBalance || 0}}</text>
-          <text class="deposit-balance-total"> / ¥{{userInfo.daigouStats.depositPaid || 0}}</text>
-          <text style="color:#8E8E93;font-size:28rpx;margin-left:8rpx">›</text>
-        </view>
+      <view class="deposit-right">
+        <text class="deposit-amount {{userInfo.daigouStats.depositBalance > 0 ? 'ok' : 'low'}}">¥{{userInfo.daigouStats.depositBalance || 0}}</text>
+        <text class="deposit-total">/¥{{userInfo.daigouStats.depositPaid || 0}}</text>
+        <text class="arrow">›</text>
       </view>
     </view>
   </view>
 
-  <scroll-view scroll-y class="mine-scroll">
+  <!-- 管理员通知 -->
+  <view class="admin-notify" wx:if="{{isAdmin}}" bindtap="goToAdmin">
+    <view class="notify-header">
+      <text class="notify-icon">🔔</text>
+      <text class="notify-title">运营数据</text>
+      <text class="notify-count" wx:if="{{adminNotifications.totalCount > 0}}">{{adminNotifications.totalCount}} 待处理</text>
+    </view>
+    <view class="notify-items">
+      <view class="notify-item">
+        <text class="notify-num">{{adminNotifications.newUsers}}</text>
+        <text class="notify-label">新增用户</text>
+      </view>
+      <view class="notify-item">
+        <text class="notify-num">{{adminNotifications.newProducts}}</text>
+        <text class="notify-label">新增特产</text>
+      </view>
+      <view class="notify-item">
+        <text class="notify-num">{{adminNotifications.pendingReview}}</text>
+        <text class="notify-label">待审核</text>
+      </view>
+      <view class="notify-item">
+        <text class="notify-num">{{adminNotifications.withdrawApply}}</text>
+        <text class="notify-label">提现申请</text>
+      </view>
+    </view>
+  </view>
 
-    <!-- 省份集章 - 折叠设计 -->
-    <view class="section card glass-card mx-md mt-md">
-      <view class="section-hd" bindtap="toggleBadgeExpand">
-        <text class="section-emoji">🏅</text>
+  <!-- 页面内容 -->
+  <view class="mine-content">
+
+    <!-- 我的内容 -->
+    <view class="section">
+      <view class="section-title">我的内容</view>
+      <view class="menu-list">
+        <view class="menu-item" bindtap="goToMyProducts">
+          <view class="menu-icon icon-gift">🎁</view>
+          <view class="menu-content">
+            <text class="menu-title">我的特产</text>
+            <text class="menu-sub">{{publishCount || 0}} 个已发布</text>
+          </view>
+          <text class="arrow">›</text>
+        </view>
+        <view class="menu-item" bindtap="goToFavorites">
+          <view class="menu-icon icon-heart">❤️</view>
+          <view class="menu-content">
+            <text class="menu-title">我的收藏</text>
+            <text class="menu-sub">收藏的特产</text>
+          </view>
+          <text class="arrow">›</text>
+        </view>
+        <view class="menu-item" bindtap="goToOrders" wx:if="{{featureFlags.feature_swap !== false}}">
+          <view class="menu-icon icon-swap">🔄</view>
+          <view class="menu-content">
+            <text class="menu-title">互换记录</text>
+            <text class="menu-sub">分享 {{swapCount || 0}} 次</text>
+          </view>
+          <text class="arrow">›</text>
+        </view>
+        <view class="menu-item" bindtap="goToReview" wx:if="{{featureFlags.feature_swap !== false}}">
+          <view class="menu-icon icon-star">⭐</view>
+          <view class="menu-content">
+            <text class="menu-title">我的评价</text>
+            <text class="menu-sub">收到的评价</text>
+          </view>
+          <text class="arrow">›</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 代购服务 -->
+    <view class="section" wx:if="{{userInfo.isDaigouVerified || featureFlags.feature_daigou !== false}}">
+      <view class="section-title">代购服务</view>
+      <view class="menu-list">
+        <view class="menu-item" bindtap="goToDaigouOrders">
+          <view class="menu-icon icon-box">📦</view>
+          <view class="menu-content">
+            <text class="menu-title">代购订单</text>
+            <text class="menu-sub">{{userInfo.isDaigouVerified ? '查看代购记录' : '申请成为代购'}}</text>
+          </view>
+          <text class="arrow">›</text>
+        </view>
+        <view class="menu-item" bindtap="goDaigouVerify">
+          <view class="menu-icon icon-verify">✅</view>
+          <view class="menu-content">
+            <text class="menu-title">代购认证</text>
+            <text class="menu-sub">{{userInfo.isDaigouVerified ? '已认证 · ' + daigouLevelName : '申请代购资质'}}</text>
+          </view>
+          <text class="arrow">›</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 我的资产 -->
+    <view class="section">
+      <view class="section-title">我的资产</view>
+      <view class="menu-list">
+        <view class="menu-item highlight" bindtap="goToWallet">
+          <view class="menu-icon icon-wallet">💳</view>
+          <view class="menu-content">
+            <text class="menu-title">我的钱包</text>
+            <text class="menu-sub">押金 · 余额 · 交易记录</text>
+          </view>
+          <text class="arrow">›</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 省份集章 -->
+    <view class="section">
+      <view class="section-header" bindtap="toggleBadgeExpand">
         <text class="section-title">省份集章</text>
-        <view class="badge-header-right">
-          <text class="section-sub-text">{{badgeCount}}/34</text>
+        <view class="section-right">
+          <text class="badge-count">{{badgeCount}}/34</text>
           <text class="expand-icon">{{badgeExpanded ? '⬆️' : '⬇️'}}</text>
         </view>
       </view>
@@ -131,258 +207,105 @@
           </view>
         </block>
       </view>
-      <view class="badge-collapse-hint" wx:if="{{!badgeExpanded && badgeCount > 0}}" bindtap="toggleBadgeExpand">
+      <view class="badge-hint" wx:if="{{!badgeExpanded && badgeCount > 0}}" bindtap="toggleBadgeExpand">
         <text>已收集 {{badgeCount}} 个省份，点击展开全部</text>
       </view>
     </view>
 
-    <!-- 手机号验证 -->
-    <view class="section card glass-card mx-md mt-md">
-      <view class="section-hd">
-        <text class="section-emoji">🔐</text>
-        <text class="section-title">账号安全</text>
-      </view>
-      <phone-verify 
-        id="phoneVerify"
-        phone="{{phoneNumber}}" 
-        verified="{{phoneVerified}}" 
-        bind:verified="onPhoneVerified"
-      />
-    </view>
-
-    <!-- 代购订单（独立一行） -->
-    <view class="section card glass-card mx-md mt-md daigou-order-card" bindtap="goToDaigouOrders">
-      <view class="daigou-order-row">
-        <view class="daigou-order-left">
-          <view class="daigou-order-icon-wrap">
-            <text class="daigou-order-emoji">🛒</text>
-          </view>
-          <view class="daigou-order-info">
-            <text class="daigou-order-title">代购订单</text>
-            <text class="daigou-order-sub">查看我的代购记录</text>
-          </view>
+    <!-- 常用工具 -->
+    <view class="section">
+      <view class="section-title">常用工具</view>
+      <view class="tool-grid">
+        <view class="tool-item" bindtap="goToAddress" wx:if="{{featureFlags.feature_swap !== false}}">
+          <view class="tool-icon icon-teal">📍</view>
+          <text class="tool-label">收货地址</text>
         </view>
-        <view class="icon-arrow-r-sm"></view>
-      </view>
-    </view>
-
-    <!-- 我的特产 -->
-    <view wx:if="{{featureFlags.tab_publish !== false}}" class="section card glass-card mx-md mt-md">
-      <view class="section-hd" bindtap="goToMyProducts">
-        <text class="section-emoji">🎁</text>
-        <text class="section-title">我的特产</text>
-        <view class="more-btn">
-          <text class="text-light text-sm">查看全部</text>
-          <view class="icon-arrow-r-sm"></view>
+        <view class="tool-item" bindtap="goToMystery" wx:if="{{featureFlags.feature_mystery !== false}}">
+          <view class="tool-icon icon-purple">🎁</view>
+          <text class="tool-label">神秘特产</text>
         </view>
-      </view>
-      <scroll-view scroll-x enable-flex class="my-product-preview">
-        <view wx:if="{{myProducts.length === 0}}" class="empty-inline">
-          <text class="text-light text-sm">还没有发布特产</text>
+        <view class="tool-item" bindtap="showService">
+          <view class="tool-icon icon-blue">🤖</view>
+          <text class="tool-label">智能客服</text>
         </view>
-        <block wx:for="{{myProducts}}" wx:key="_id">
-          <view class="preview-item" bindtap="goToDetail" data-id="{{item._id}}">
-            <view class="preview-cover">
-              <block wx:if="{{item.isMystery}}">
-                <view class="preview-mystery-card {{item.colorClass}}">
-                  <text class="mystery-emoji">{{item.emoji}}</text>
-                  <text class="mystery-province">{{item.provinceName}}</text>
-                </view>
-              </block>
-              <block wx:else>
-                <image class="preview-img" src="{{item.coverUrl}}" mode="aspectFill" binderror="onImageError" data-index="{{index}}"/>
-              </block>
-            </view>
-            <view class="preview-name">{{item.isMystery ? '神秘特产' : item.name}}</view>
-            <view class="preview-status {{item.statusClass}}">{{item.statusLabel}}</view>
-          </view>
-        </block>
-      </scroll-view>
-    </view>
-
-    <!-- 快捷功能 - 宫格布局 -->
-    <view class="section card glass-card mx-md mt-md">
-      <view class="section-hd">
-        <text class="section-emoji">⚡</text>
-        <text class="section-title">快捷服务</text>
-      </view>
-      <view class="quick-grid">
-        <view class="quick-grid-item" bindtap="goToWallet">
-          <view class="quick-grid-icon qg-green">
-            <text class="icon-emoji">💳</text>
-          </view>
-          <text class="quick-grid-label">我的钱包</text>
+        <view class="tool-item" bindtap="goToSettings">
+          <view class="tool-icon icon-gray">⚙️</view>
+          <text class="tool-label">系统设置</text>
         </view>
-        <view wx:if="{{featureFlags.feature_swap !== false}}" class="quick-grid-item" bindtap="goToAddress">
-          <view class="quick-grid-icon qg-teal">
-            <text class="icon-emoji">📍</text>
-          </view>
-          <text class="quick-grid-label">收货地址</text>
-        </view>
-        <view class="quick-grid-item" bindtap="goToFavorites">
-          <view class="quick-grid-icon qg-pink">
-            <text class="icon-emoji">❤️</text>
-          </view>
-          <text class="quick-grid-label">我的收藏</text>
-        </view>
-        <view wx:if="{{featureFlags.feature_mystery !== false}}" class="quick-grid-item" bindtap="goToMystery">
-          <view class="quick-grid-icon qg-purple">
-            <text class="icon-emoji">🎁</text>
-          </view>
-          <text class="quick-grid-label">神秘特产</text>
-        </view>
-        <view class="quick-grid-item" bindtap="goToInvite">
-          <view class="quick-grid-icon qg-orange">
-            <text class="icon-emoji">👥</text>
-          </view>
-          <text class="quick-grid-label">邀请好友</text>
-        </view>
-        <view wx:if="{{featureFlags.feature_swap !== false}}" class="quick-grid-item" bindtap="goToOrders">
-          <view class="quick-grid-icon qg-blue">
-            <text class="icon-emoji">🔄</text>
-          </view>
-          <text class="quick-grid-label">我的记录</text>
-        </view>
-        <view wx:if="{{featureFlags.feature_swap !== false}}" class="quick-grid-item" bindtap="goToReview">
-          <view class="quick-grid-icon qg-green">
-            <text class="icon-emoji">⭐</text>
-          </view>
-          <text class="quick-grid-label">我的评价</text>
+        <view class="tool-item" bindtap="testSubscribeMessage">
+          <view class="tool-icon icon-orange">🔔</view>
+          <text class="tool-label">测试订阅</text>
         </view>
       </view>
     </view>
 
-    <!-- 功能菜单 -->
-    <view class="section card glass-card mx-md mt-md">
-      <view class="section-hd">
-        <text class="section-emoji">📋</text>
-        <text class="section-title">更多服务</text>
-      </view>
-      <view class="menu-pills">
-        <view class="menu-pill" bindtap="goToCredit">
-          <text class="pill-emoji">💎</text>
-          <text class="pill-label">信用中心</text>
-        </view>
-        <view class="menu-pill" bindtap="showService">
-          <text class="pill-emoji">🤖</text>
-          <text class="pill-label">智能客服</text>
-        </view>
-        <view class="menu-pill" bindtap="goToSettings">
-          <text class="pill-emoji">⚙️</text>
-          <text class="pill-label">系统设置</text>
-        </view>
-        <view class="menu-pill" bindtap="goToAbout">
-          <text class="pill-emoji">ℹ️</text>
-          <text class="pill-label">关于我们</text>
-        </view>
-        <view class="menu-pill" bindtap="goDaigouVerify">
-          <text class="pill-emoji">✅</text>
-          <text class="pill-label">代购认证</text>
-        </view>
+    <!-- 账号与安全 -->
+    <view class="section">
+      <view class="section-title">账号与安全</view>
+      <view class="menu-list">
+        <phone-verify 
+          id="phoneVerify"
+          phone="{{phoneNumber}}" 
+          verified="{{phoneVerified}}" 
+          bind:verified="onPhoneVerified"
+        />
       </view>
     </view>
 
-    <view style="height: calc(180rpx + env(safe-area-inset-bottom))"/>
-  </scroll-view>
+    <!-- 底部间距 -->
+    <view class="bottom-safe"/>
+
+  </view>
 
   <!-- 底部导航 -->
   <tab-bar active="mine" />
 
-  <!-- AI 客服底部弹窗 -->
-  <view class="service-overlay {{showServicePanel ? 'show' : ''}}" bindtap="hideService">
-    <view class="service-sheet" catchtap="noop" style="bottom: {{keyboardHeight}}px;">
-      <!-- 拖拽条 -->
-      <view class="service-handle"><view class="service-handle-bar"/></view>
-      <!-- 头部 -->
+  <!-- 客服面板 -->
+  <view class="service-panel {{showServicePanel ? 'show' : ''}}">
+    <view class="service-mask" bindtap="hideService"/>
+    <view class="service-content">
       <view class="service-header">
-        <view class="service-header-left">
-          <view class="service-ai-dot"></view>
-          <text class="service-title">智能客服</text>
-        </view>
-        <view class="service-close" bindtap="hideService">
-          <text class="service-close-icon">×</text>
-        </view>
+        <text class="service-title">智能客服</text>
+        <view class="service-close" bindtap="hideService">✕</view>
       </view>
-
-      <!-- 消息区域 -->
-      <scroll-view scroll-y class="service-msg-list" style="height: {{keyboardHeight ? '360rpx' : '680rpx'}};" scroll-into-view="{{scrollToView}}" scroll-with-animation>
-        <block wx:for="{{serviceMessages}}" wx:key="index">
-          <view class="msg-row {{item.type}}" id="msg-{{index}}">
-            <view class="msg-avatar-wrap" wx:if="{{item.type === 'ai'}}">
-              <view class="msg-avatar ai-avatar">
-                <text class="avatar-icon">🤖</text>
-              </view>
-            </view>
-            <view class="msg-bubble {{item.type}}">
-              <text class="msg-text">{{item.content}}</text>
-              <view class="human-service-btn" wx:if="{{item.showHumanBtn}}" bindtap="contactHuman">
-                <text>联系人工客服</text>
-              </view>
-            </view>
+      <scroll-view scroll-y class="service-messages">
+        <view class="message bot">
+          <text class="message-text">👋 您好！我是特产互换小助手，请问有什么可以帮您？</text>
+        </view>
+        <view class="message bot" wx:for="{{serviceFaqs}}" wx:key="index">
+          <view class="faq-item" bindtap="sendFaq" data-index="{{index}}">
+            <text class="faq-num">{{index + 1}}</text>
+            <text class="faq-text">{{item.q}}</text>
           </view>
-        </block>
-        <view style="height:20rpx"/>
+        </view>
       </scroll-view>
-
-      <!-- 快捷问题 - 键盘弹出时隐藏 -->
-      <scroll-view scroll-x enable-flex class="service-quick-wrap" wx:if="{{!keyboardHeight}}">
-        <block wx:for="{{quickQuestions}}" wx:key="index">
-          <view class="quick-chip" bindtap="selectQuickQuestion" data-index="{{index}}">
-            <text>{{item}}</text>
-          </view>
-        </block>
-      </scroll-view>
-
-      <!-- 输入区 -->
+      <view class="service-quick">
+        <text class="quick-tag" wx:for="{{serviceQuick}}" wx:key="index" bindtap="sendQuick" data-text="{{item}}">{{item}}</text>
+      </view>
       <view class="service-input-bar">
-        <input class="service-input" placeholder="输入你的问题..." value="{{serviceInput}}" bindinput="onServiceInput" bindconfirm="sendMessage" confirm-type="send" adjust-position="{{false}}"/>
-        <view class="service-send-btn {{serviceInput ? 'active' : ''}}" bindtap="sendMessage">
-          <text class="send-icon">↑</text>
-        </view>
+        <input class="service-input" placeholder="输入问题..." value="{{serviceInput}}" bindinput="onServiceInput" confirm-type="send" bindconfirm="sendServiceMessage"/>
+        <view class="service-send {{serviceInput ? 'active' : ''}}" bindtap="sendServiceMessage">发送</view>
       </view>
-      <view class="service-safe-area" wx:if="{{!keyboardHeight}}"/>
     </view>
   </view>
 
-</view>
-
-<!-- 授权引导弹窗：首次进入/未完善信息时自动弹出 -->
-<view class="guide-overlay {{showProfileGuide ? 'show' : ''}}" catchtap="noop">
-  <view class="guide-sheet">
-    <view class="guide-title">完善个人信息</view>
-    <view class="guide-subtitle">一键获取微信头像和昵称，让大家认识你</view>
-
-    <!-- 头像选择 -->
-    <view class="guide-avatar-wrap">
-      <button class="guide-avatar-btn" open-type="chooseAvatar" bindchooseavatar="onGuideChooseAvatar">
-        <image
-          class="guide-avatar-img"
-          src="{{guideAvatarUrl || '/images/default-avatar.png'}}"
-          mode="aspectFill"
-        />
-        <view class="guide-avatar-mask">
-          <text class="guide-camera-icon">📷</text>
-        </view>
+  <!-- 授权引导弹窗 -->
+  <view class="guide-modal {{showProfileGuide ? 'show' : ''}}">
+    <view class="guide-mask" bindtap="skipProfileGuide"/>
+    <view class="guide-content">
+      <view class="guide-title">完善个人信息</view>
+      <view class="guide-subtitle">设置头像和昵称，让更多人认识你</view>
+      <button class="guide-avatar" open-type="chooseAvatar" bindchooseavatar="onGuideAvatar">
+        <image src="{{guideAvatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"/>
+        <view class="guide-avatar-mask">📷</view>
       </button>
       <view class="guide-avatar-tip">{{guideAvatarUrl ? '✅ 头像已获取' : '点击获取微信头像'}}</view>
-    </view>
-
-    <!-- 昵称输入 -->
-    <view class="guide-input-wrap">
-      <input
-        class="guide-nickname-input"
-        type="nickname"
-        placeholder="点击自动填入微信昵称"
-        placeholder-class="guide-placeholder"
-        value="{{guideNickName}}"
-        bindinput="onGuideNickNameInput"
-      />
-    </view>
-
-    <!-- 按钮区 -->
-    <view class="guide-btn-row">
-      <view class="guide-skip-btn" bindtap="skipProfileGuide">稍后设置</view>
-      <view class="guide-save-btn {{guideAvatarUrl && guideNickName ? 'active' : ''}}" bindtap="saveGuideProfile">完成设置</view>
+      <input class="guide-input" type="nickname" placeholder="点击自动填入微信昵称" value="{{guideNickName}}" bindinput="onGuideNickNameInput"/>
+      <view class="guide-btns">
+        <view class="guide-btn skip" bindtap="skipProfileGuide">稍后设置</view>
+        <view class="guide-btn save {{guideAvatarUrl && guideNickName ? 'active' : ''}}" bindtap="saveGuideProfile">完成设置</view>
+      </view>
     </view>
   </view>
+
 </view>
