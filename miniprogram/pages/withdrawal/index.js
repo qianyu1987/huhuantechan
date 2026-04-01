@@ -1,5 +1,6 @@
 // pages/withdrawal/index.js - 提现页面
 const { callCloud, toast } = require('../../utils/util')
+const subscribeMsg = require('../../utils/subscribeMessage')
 
 // 辅助函数：安全地格式化金额
 function formatAmount(value) {
@@ -11,8 +12,11 @@ Page({
   data: {
     // 提现配置
     withdrawalThreshold: 30,
+    withdrawalThresholdText: '30.00',
     walletBalance: 0,
+    walletBalanceText: '0.00',
     availableAmount: 0,
+    availableAmountText: '0.00',
     maxWithdrawalAmount: 0, // 单次最大提现金额（钱包余额的50%）
     withdrawalFeeRate: 0.05, // 提现手续费率5%
     canWithdraw: false,
@@ -25,17 +29,20 @@ Page({
     
     // 计算金额
     feeAmount: 0,    // 手续费金额
+    feeAmountText: '0.00',
     actualAmount: 0, // 实际到账金额
+    actualAmountText: '0.00',
     
     // 快捷金额选项（根据可提现金额动态计算）
     quickAmountOptions: [],
+    quickAmountOptionsText: [],
     
     // 提交状态
     canSubmit: false,
     loading: false
   },
   
-  // 在页面中暴露formatAmount函数
+  // 在页面中暴露formatAmount函数（用于JS内部调用）
   formatAmount: formatAmount,
 
   onLoad() {
@@ -62,15 +69,24 @@ Page({
         // 动态计算快捷金额选项：只显示小于等于可提现金额的选项
         const presetAmounts = [50, 100, 200, 500]
         const quickAmountOptions = presetAmounts.filter(amount => amount <= availableAmount)
+        // 生成格式化后的文本
+        const quickAmountOptionsText = quickAmountOptions.map(v => ({
+          value: v,
+          text: formatAmount(v)
+        }))
         
         this.setData({
           withdrawalThreshold: withdrawalThreshold,
+          withdrawalThresholdText: formatAmount(withdrawalThreshold),
           walletBalance: walletBalance,
+          walletBalanceText: formatAmount(walletBalance),
           availableAmount: availableAmount,
+          availableAmountText: formatAmount(availableAmount),
           maxWithdrawalAmount: maxWithdrawalAmount,
           withdrawalFeeRate: withdrawalFeeRate,
           canWithdraw: res.canWithdraw || false,
-          quickAmountOptions: quickAmountOptions
+          quickAmountOptions: quickAmountOptions.map(v => ({ value: v })),
+          quickAmountOptionsText: quickAmountOptionsText
         })
         this.validateForm()
       } else {
@@ -82,7 +98,12 @@ Page({
     }
   },
 
-  // 返回上一页
+  // 跳转充值页面
+  goToRecharge() {
+    wx.navigateTo({ url: '/pages/recharge/index' })
+  },
+
+  // 返回钱包
   goBack() {
     wx.navigateBack()
   },
@@ -99,8 +120,10 @@ Page({
 
   // 选择快捷金额
   selectQuickAmount(e) {
-    const amount = parseFloat(e.currentTarget.dataset.amount)
-    if (!isNaN(amount)) {
+    const idx = e.currentTarget.dataset.index
+    const options = this.data.quickAmountOptions
+    if (options && options[idx]) {
+      const amount = options[idx].value
       this.setData({
         amount: amount.toString(),
         amountError: ''
@@ -149,11 +172,11 @@ Page({
       if (isNaN(amountNum) || amountNum <= 0) {
         amountError = '提现金额必须大于0'
       } else if (amountNum < withdrawalThreshold) {
-        amountError = `提现金额不能低于 ¥${(withdrawalThreshold || 0).toFixed(2)}`
+        amountError = `提现金额不能低于 ¥${formatAmount(withdrawalThreshold)}`
       } else if (amountNum > availableAmount) {
-        amountError = `提现金额不能超过可提现金额 ¥${(availableAmount || 0).toFixed(2)}`
+        amountError = `提现金额不能超过可提现金额 ¥${formatAmount(availableAmount)}`
       } else if (amountNum > maxWithdrawalAmount) {
-        amountError = `单次提现金额不能超过钱包余额的50%（最多 ¥${(maxWithdrawalAmount || 0).toFixed(2)}）`
+        amountError = `单次提现金额不能超过钱包余额的50%（最多 ¥${formatAmount(maxWithdrawalAmount)}）`
       } else {
         // 计算手续费和实际到账金额
         feeAmount = parseFloat((amountNum * withdrawalFeeRate).toFixed(2))
@@ -175,7 +198,9 @@ Page({
     this.setData({
       amountError,
       feeAmount,
+      feeAmountText: formatAmount(feeAmount),
       actualAmount,
+      actualAmountText: formatAmount(actualAmount),
       canSubmit
     })
   },
@@ -218,6 +243,8 @@ Page({
       this.setData({ loading: false })
 
       if (res && res.success) {
+        // 请求提现结果通知订阅
+        subscribeMsg.subscribeForWithdrawal()
         // 显示成功提示
         wx.showModal({
           title: '提交成功',

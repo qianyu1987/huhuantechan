@@ -19,21 +19,37 @@
       
       <view class="balance-display">
         <text class="balance-label">可提现金额</text>
-        <text class="balance-amount">¥{{formatAmount(availableAmount)}}</text>
-        <text class="balance-total">钱包总额 ¥{{formatAmount(walletBalance)}}（最多提现50%）</text>
+        <text class="balance-amount">¥{{availableAmountText}}</text>
+        <text class="balance-total">钱包总额 ¥{{walletBalanceText}}（最多提现50%）</text>
       </view>
 
       <view class="threshold-info" wx:if="{{withdrawalThreshold > 0}}">
         <text class="threshold-icon">📊</text>
-        <text class="threshold-text">提现门槛：¥{{formatAmount(withdrawalThreshold)}}</text>
+        <text class="threshold-text">提现门槛：¥{{withdrawalThresholdText}}</text>
       </view>
     </view>
   </view>
 
   <scroll-view scroll-y class="withdrawal-scroll">
 
+    <!-- 余额不足提示 -->
+    <view class="section card glass-card mx-lg mt-lg" wx:if="{{availableAmount <= 0}}">
+      <view class="section-hd">
+        <text class="section-emoji">⚠️</text>
+        <text class="section-title">余额不足</text>
+      </view>
+      <view class="no-balance-tip">
+        <text class="tip-text">当前钱包余额为 ¥{{walletBalanceText}}，可提现金额为 ¥{{availableAmountText}}</text>
+        <text class="tip-text">请先充值或完成订单获得收入后再来提现</text>
+        <view class="tip-actions">
+          <button class="tip-btn" bindtap="goToRecharge">去充值</button>
+          <button class="tip-btn secondary" bindtap="goBack">返回钱包</button>
+        </view>
+      </view>
+    </view>
+
     <!-- 提现表单 -->
-    <view class="section card glass-card mx-lg mt-lg">
+    <view class="section card glass-card mx-lg mt-lg" wx:if="{{availableAmount > 0}}">
       <view class="section-hd">
         <text class="section-emoji">💸</text>
         <text class="section-title">提现金额</text>
@@ -60,11 +76,11 @@
           <view class="fee-display" wx:if="{{amount && !amountError && feeAmount > 0}}">
             <view class="fee-row">
               <text class="fee-label">手续费（5%）：</text>
-              <text class="fee-value">-¥{{formatAmount(feeAmount)}}</text>
+              <text class="fee-value">-¥{{feeAmountText}}</text>
             </view>
             <view class="fee-row">
               <text class="fee-label">实际到账：</text>
-              <text class="fee-value actual-amount">¥{{formatAmount(actualAmount)}}</text>
+              <text class="fee-value actual-amount">¥{{actualAmountText}}</text>
             </view>
           </view>
         </view>
@@ -75,12 +91,12 @@
           <view class="quick-amounts-grid">
             <view 
               class="quick-amount-btn {{item == amount ? 'quick-amount-active' : ''}}" 
-              wx:for="{{quickAmountOptions}}" 
+              wx:for="{{quickAmountOptionsText}}" 
               wx:key="index"
               bindtap="selectQuickAmount"
-              data-amount="{{item}}"
+              data-amount="{{quickAmountOptions[index].value}}"
             >
-              <text>¥{{formatAmount(item)}}</text>
+              <text>¥{{item.text}}</text>
             </view>
             <view 
               class="quick-amount-btn {{amount == availableAmount ? 'quick-amount-active' : ''}}" 
@@ -122,7 +138,7 @@
         <view class="withdrawal-tips">
           <text class="tips-title">📝 提现说明</text>
           <view class="tips-list">
-            <text class="tips-item">1. 提现门槛：¥{{formatAmount(withdrawalThreshold)}}起提</text>
+            <text class="tips-item">1. 提现门槛：¥{{withdrawalThresholdText}}起提</text>
             <text class="tips-item">2. 单次提现最多钱包余额的50%</text>
             <text class="tips-item">3. 提现手续费：5%（从提现金额中扣除）</text>
             <text class="tips-item">4. 提现申请提交后，资金将被冻结</text>
