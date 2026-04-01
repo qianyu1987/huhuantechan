@@ -149,8 +149,7 @@ async function sendPointsArrival(openid, params = {}) {
 }
 
 /** 订单取消通知
- * 字段：取消原因(thing1)、取消时间(date2)、第3字段(thing3)
- * thing3 已由错误信息确认
+ * 字段：取消原因(thing1)、取消时间(date2)、thing3、thing6
  */
 async function sendOrderCancel(openid, params = {}) {
   const { cancelReason, cancelTime, page } = params;
@@ -158,6 +157,7 @@ async function sendOrderCancel(openid, params = {}) {
     thing1: { value: fmtThing(cancelReason, 20) },
     date2:  { value: fmtDate(cancelTime) },
     thing3: { value: '特产互换平台' },
+    thing6: { value: '点击查看订单详情' },
   }, page);
 }
 
