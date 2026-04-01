@@ -397,6 +397,7 @@ onLaunch() {
   },
 
   // 强制刷新功能开关（admin修改后调用）
+  async refreshFeatureFlags() {
     try {
       wx.removeStorageSync('featureFlags')
       wx.removeStorageSync('featureFlagsTTL')
