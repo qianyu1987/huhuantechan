@@ -5,6 +5,33 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
+// 引入工具模块
+const { success, error, wrapHandler } = require('./utils/errorHandler')
+const openidHelper = require('./utils/openidHelper')
+
+// 分类映射（id -> 中文名称）
+const CATEGORY_MAP = {
+  'food': '零食小吃',
+  'dried': '干货腊味',
+  'tea': '茶叶酒水',
+  'sauce': '酱料调味',
+  'fruit': '水果生鲜',
+  'craft': '手工文创',
+  'grain': '粮油米面',
+  'candy': '糖果蜜饯',
+  'nut': '坚果炒货',
+  'herb': '滋补药材',
+  'pastry': '地方糕点',
+  'costume': '民族服饰',
+  'farm': '土特农产',
+  'other': '其他'
+}
+
+// 反向映射（中文名称 -> id）
+const CATEGORY_NAME_TO_ID = Object.fromEntries(
+  Object.entries(CATEGORY_MAP).map(([id, name]) => [name, id])
+)
+
 // 简单的内存缓存
 const _cache = new Map()
 const simpleCache = {
@@ -174,23 +201,13 @@ async function checkImage(fileId) {
       const PUBLISH_COST = isMystery ? 10 : 5  // 神秘特产消耗更多
       const MIN_POINTS_TO_PUBLISH = 5  // 最低保留积分
 
-      // 获取用户当前积分（支持 _openid 和 openid 两种字段）
-      let userRes = await db.collection('users').where({ _openid: openid }).get()
-      let user = userRes.data && userRes.data[0]
-      
-      // 如果没找到，尝试用 openid 字段查询（兼容旧数据）
-      if (!user) {
-        userRes = await db.collection('users').where({ openid: openid }).get()
-        user = userRes.data && userRes.data[0]
-      }
+      // 获取用户当前积分（使用统一工具函数）
+      const { data: user, error: userError } = await openidHelper.getUserByOpenid(db, openid)
       
       // 如果用户不存在，返回错误
-      if (!user || !user._id) {
-        console.log('[productMgr/create] 用户不存在:', { openid })
-        return { 
-          success: false, 
-          message: '用户不存在，请先完善个人资料'
-        }
+      if (userError || !user) {
+        console.log('[productMgr/create] 用户不存在:', { openid, error: userError })
+        return error('用户不存在，请先完善个人资料', 'USER_NOT_FOUND')
       }
       
       // 确保积分和发布数是数字类型
@@ -212,11 +229,7 @@ async function checkImage(fileId) {
           currentPoints,
           required: PUBLISH_COST
         })
-        return { 
-          success: false, 
-          message: `积分不足，发布${isMystery ? '神秘特产' : '特产'}需要${PUBLISH_COST}积分，当前积分${currentPoints}`,
-          needPoints: PUBLISH_COST - currentPoints
-        }
+        return error(`积分不足，发布${isMystery ? '神秘特产' : '特产'}需要${PUBLISH_COST}积分，当前积分${currentPoints}`, 'INSUFFICIENT_POINTS')
       }
 
       // ========== 发布频率限制 ==========
@@ -246,38 +259,47 @@ async function checkImage(fileId) {
       // ========== 自动审核 ==========
       let auditPass = true
       let auditReason = ''
+      let auditType = 'auto'  // auto=自动审核通过, manual=需人工审核, rejected=自动拒绝
 
-      // 神秘特产也需要审核（不能直接上线）
-      if (isMystery) {
-        // 神秘特产直接进入待审核状态
-        auditPass = false
-        auditReason = '神秘特产需人工审核'
-      } else {
-        // 1. 文本检测（名称 + 描述标签）
-        const textToCheck = data.name + ' ' + (data.descTags || []).join(' ')
-        if (textToCheck.trim()) {
-          const textResult = await checkTextContent(textToCheck)
-          if (!textResult.pass) {
+      // 1. 神秘特产：自动审核通过（无需人工审核）
+      // 2. 普通特产：需要自动审核
+      
+      // 文本检测（名称 + 描述标签）- 所有特产都需要检测
+      const textToCheck = data.name + ' ' + (data.descTags || []).join(' ')
+      if (textToCheck.trim()) {
+        const textResult = await checkTextContent(textToCheck)
+        if (!textResult.pass) {
+          auditPass = false
+          auditReason = textResult.reason
+          auditType = 'rejected'
+        }
+      }
+      
+      // 图片检测（逐张检测）- 所有特产都需要检测
+      if (auditPass && data.images && data.images.length > 0) {
+        for (const img of data.images) {
+          // 跳过已经是 http/https 的图片（已经是临时链接）
+          if (img.startsWith('http://') || img.startsWith('https://')) {
+            continue
+          }
+          const imgResult = await checkImage(img)
+          if (!imgResult.pass) {
             auditPass = false
-            auditReason = textResult.reason
+            auditReason = imgResult.reason
+            auditType = 'rejected'
+            break
           }
         }
-        
-        // 2. 图片检测（逐张检测）
-        if (auditPass && data.images && data.images.length > 0) {
-          for (const img of data.images) {
-            // 跳过已经是 http/https 的图片（已经是临时链接）
-            if (img.startsWith('http://') || img.startsWith('https://')) {
-              continue
-            }
-            const imgResult = await checkImage(img)
-            if (!imgResult.pass) {
-              auditPass = false
-              auditReason = imgResult.reason
-              break
-            }
-          }
-        }
+      }
+      
+      // 神秘特产自动通过（只要内容安全检测通过）
+      if (isMystery && auditPass) {
+        auditType = 'auto'
+      } else if (!isMystery && auditPass) {
+        // 普通特产通过自动审核后，进入待人工审核状态
+        auditPass = false
+        auditReason = '普通特产需人工审核'
+        auditType = 'manual'
       }
 
       // 3. 根据审核结果设置状态
@@ -320,6 +342,7 @@ async function checkImage(fileId) {
           daigou: daigouData,         // 代购信息（null 表示不支持代购）
           status: status,
           auditReason: auditReason,  // 审核不通过原因
+          auditType: auditType,      // 审核类型：auto/manual/rejected
           viewCount: 0,
           swapRequestCount: 0,
           createTime: db.serverDate(),
@@ -347,14 +370,51 @@ async function checkImage(fileId) {
         }
       })
 
-      return { 
-        success: true, 
+      // 记录用户操作日志
+      try {
+        await cloud.callFunction({
+          name: 'adminMgr',
+          data: {
+            action: 'logUserAction',
+            actionType: 'publish_product',  // 记录为发布特产
+            targetType: 'product',
+            targetId: productId._id,
+            userInfo: {
+              openid: openid,
+              nickName: user.nickName || ''
+            },
+            detail: {
+              name: data.name || '神秘特产',
+              province: data.province,
+              isMystery: isMystery,
+              status: status
+            }
+          }
+        })
+      } catch (e) {
+        console.log('[productMgr] 记录发布日志失败', e)
+      }
+
+      // 根据审核类型返回不同的提示信息
+      let message = '发布成功'
+      if (auditType === 'rejected') {
+        message = '发布失败：' + auditReason
+      } else if (auditType === 'manual') {
+        message = '已提交，等待人工审核'
+      } else if (isMystery && auditType === 'auto') {
+        message = '神秘特产发布成功'
+      }
+
+      return {
+        success: true,
         productId: productId._id,
         auditPass: auditPass,  // 返回审核结果，供前端提示
-        message: auditPass ? '发布成功' : '已提交，系统审核中'
+        auditType: auditType,  // 返回审核类型
+        message: message
       }
     } catch (e) {
-      return { success: false, message: e.message }
+      console.error('[productMgr/create] 错误:', e)
+      return error(e.message, 'CREATE_FAILED')
     }
   }
 
@@ -385,19 +445,21 @@ async function checkImage(fileId) {
       // 如果是编辑被拒绝的产品，需要重新审核
       let auditPass = true
       let auditReason = ''
+      let auditType = 'auto'
       
-      if (needReAudit && !isMystery) {
-        // 重新检测文本
+      if (needReAudit) {
+        // 重新检测文本（所有类型都需要）
         const textToCheck = data.name + ' ' + (data.descTags || []).join(' ')
         if (textToCheck.trim()) {
           const textResult = await checkTextContent(textToCheck)
           if (!textResult.pass) {
             auditPass = false
             auditReason = textResult.reason
+            auditType = 'rejected'
           }
         }
         
-        // 重新检测图片
+        // 重新检测图片（所有类型都需要）
         if (auditPass && data.images && data.images.length > 0) {
           for (const img of data.images) {
             if (img.startsWith('http://') || img.startsWith('https://')) {
@@ -407,8 +469,22 @@ async function checkImage(fileId) {
             if (!imgResult.pass) {
               auditPass = false
               auditReason = imgResult.reason
+              auditType = 'rejected'
               break
             }
+          }
+        }
+        
+        // 根据类型设置审核状态
+        if (auditPass) {
+          if (isMystery) {
+            // 神秘特产自动通过
+            auditType = 'auto'
+          } else {
+            // 普通特产进入人工审核
+            auditPass = false
+            auditReason = '普通特产需人工审核'
+            auditType = 'manual'
           }
         }
       }
@@ -456,16 +532,30 @@ async function checkImage(fileId) {
       if (needReAudit) {
         updateData.status = auditPass ? 'active' : 'pending_review'
         updateData.auditReason = auditPass ? '' : auditReason
+        updateData.auditType = auditType
       }
 
       await db.collection('products').doc(productId).update({
         data: updateData
       })
 
+      // 根据审核类型返回不同的提示信息
+      let message = '保存成功'
+      if (needReAudit) {
+        if (auditType === 'rejected') {
+          message = '保存失败：' + auditReason
+        } else if (auditType === 'manual') {
+          message = '已提交，等待人工审核'
+        } else if (isMystery && auditType === 'auto') {
+          message = '神秘特产保存成功'
+        }
+      }
+
       return { 
         success: true,
         auditPass: needReAudit ? auditPass : true,
-        message: needReAudit ? (auditPass ? '保存成功' : '已提交，系统审核中') : '保存成功'
+        auditType: needReAudit ? auditType : 'auto',
+        message: message
       }
     } catch (e) {
       return { success: false, message: e.message }
@@ -475,7 +565,9 @@ async function checkImage(fileId) {
   // ========== 获取特产列表（发现页）==========
   if (action === 'list') {
     try {
-      const { province, status, page = 1, pageSize = 20, isMystery, random } = event
+      const { province, status, page = 1, pageSize = 20, isMystery, random, category } = event
+      
+      console.log('[productMgr/list] 查询参数:', { province, status, isMystery, category, page, pageSize })
       
       // 构建查询条件（无指定状态时只显示有效状态：active/swapped/in_swap）
       // 使用 _.in() 比 _.nin() 更安全，避免 status 为 null/undefined 的数据通过
@@ -484,6 +576,22 @@ async function checkImage(fileId) {
         ...(province ? { province } : {}),
         ...(isMystery !== undefined ? { isMystery } : {})
       }
+      
+      // 处理分类查询：支持 id 或中文名称
+      if (category) {
+        const categoryName = CATEGORY_MAP[category]  // id -> 中文名称
+        if (categoryName) {
+          // 如果传入的是 id，同时查询 id 和中文名称（兼容旧数据）
+          whereClause.category = _.in([category, categoryName])
+          console.log('[productMgr/list] 分类查询:', category, '->', categoryName)
+        } else {
+          // 传入的可能是中文名称，直接查询
+          whereClause.category = category
+          console.log('[productMgr/list] 分类查询(中文):', category)
+        }
+      }
+      
+      console.log('[productMgr/list] 查询条件:', JSON.stringify(whereClause))
       
       let query = db.collection('products').where(whereClause)
 
@@ -573,6 +681,14 @@ async function checkImage(fileId) {
         })
       }
 
+      console.log('[productMgr/list] 返回结果:', list.length, '条产品')
+      if (list.length > 0) {
+        console.log('[productMgr/list] 第一条产品:', { name: list[0].name, category: list[0].category })
+        // 打印所有产品的分类，用于调试
+        const categories = [...new Set(list.map(p => p.category))]
+        console.log('[productMgr/list] 产品分类分布:', categories)
+      }
+
       return { success: true, list, total: total.total }
     } catch (e) {
       return { success: false, message: e.message, list: [] }
@@ -583,21 +699,41 @@ async function checkImage(fileId) {
   if (action === 'myList') {
     try {
       const { page = 1, pageSize = 20, status, isMystery } = event
-      let whereClause = { openid }
-      if (status) whereClause.status = status
-      if (isMystery !== undefined) whereClause.isMystery = isMystery
-
-      const totalRes = await db.collection('products').where(whereClause).count()
       
-      const res = await db.collection('products')
-        .where(whereClause)
-        .orderBy('createTime', 'desc')
-        .skip((page - 1) * pageSize)
-        .limit(pageSize)
-        .get()
+      console.log('[productMgr/myList] 查询用户特产:', { openid, status, isMystery, page })
+      
+      // 使用统一工具函数查询用户数据（兼容 _openid 和 openid）
+      const res = await openidHelper.queryByOpenid(
+        db,
+        'products',
+        openid
+      )
+      let list = res.data || []
+      
+      // 按时间排序
+      list.sort((a, b) => new Date(b.createTime) - new Date(a.createTime))
+      
+      // 应用状态筛选
+      if (status) {
+        list = list.filter(p => p.status === status)
+      }
+      
+      // 应用 isMystery 筛选
+      if (isMystery !== undefined) {
+        list = list.filter(p => (p.isMystery || false) === isMystery)
+      }
+      
+      let total = list.length
+      
+      // 分页
+      const start = (page - 1) * pageSize
+      const end = start + pageSize
+      list = list.slice(start, end)
+      
+      console.log('[productMgr/myList] 最终返回:', { total, listLength: list.length })
 
       // 处理图片URL（非神秘的才处理）
-      let list = res.data.map(p => ({
+      list = list.map(p => ({
         ...p,
         isMystery: p.isMystery || false
       }))
@@ -616,9 +752,10 @@ async function checkImage(fileId) {
         })
       }
 
-      return { success: true, list, total: totalRes.total }
+      return { success: true, list, total }
     } catch (e) {
-      return { success: false, list: [], total: 0, message: e.message }
+      console.error('[productMgr/myList] 错误:', e)
+      return error(e.message, 'QUERY_FAILED', { list: [], total: 0 })
     }
   }
 
@@ -1045,12 +1182,30 @@ async function checkImage(fileId) {
       }
 
       // 删除特产
+      const productName = product.data.name
       await db.collection('products').doc(productId).remove()
 
       // 减少用户发布数（使用 _openid 精准定位）
       await db.collection('users').where({ _openid: openid }).update({
         data: { publishCount: _.inc(-1) }
       })
+
+      // 记录删除日志
+      try {
+        await cloud.callFunction({
+          name: 'adminMgr',
+          data: {
+            action: 'logUserAction',
+            actionType: 'delete_product',  // 记录为删除特产
+            targetType: 'product',
+            targetId: productId,
+            userInfo: { openid },
+            detail: { productName }
+          }
+        })
+      } catch (e) {
+        console.log('[productMgr] 记录删除日志失败', e)
+      }
 
       return { success: true, message: '删除成功' }
     } catch (e) {
@@ -1090,6 +1245,22 @@ async function checkImage(fileId) {
         }
       })
 
+      // 记录收藏日志
+      try {
+        await db.collection('user_operation_logs').add({
+          data: {
+            action: 'favorite_add',
+            targetType: 'product',
+            targetId: productId,
+            userOpenid: openid,
+            detail: { productName: product.data.name },
+            createTime: db.serverDate()
+          }
+        })
+      } catch (e) {
+        console.log('[productMgr] 记录收藏日志失败', e)
+      }
+
       return { success: true }
     } catch (e) {
       return { success: false, message: e.message }
@@ -1105,6 +1276,21 @@ async function checkImage(fileId) {
       await db.collection('favorites')
         .where({ openid, productId })
         .remove()
+
+      // 记录取消收藏日志
+      try {
+        await db.collection('user_operation_logs').add({
+          data: {
+            action: 'favorite_remove',
+            targetType: 'product',
+            targetId: productId,
+            userOpenid: openid,
+            createTime: db.serverDate()
+          }
+        })
+      } catch (e) {
+        console.log('[productMgr] 记录取消收藏日志失败', e)
+      }
 
       return { success: true }
     } catch (e) {
@@ -1184,15 +1370,7 @@ async function checkImage(fileId) {
       }
 
       const cleaned = keyword.trim()
-
-      // 判断是否按省份搜索
-      let whereClause = { status: 'active' }
-
-      // 先尝试匹配省份名称
-      const provincesRes = await db.collection('products')
-        .where({ status: 'active' })
-        .limit(1)
-        .get()
+      console.log('[productMgr/search] 搜索关键词:', cleaned)
 
       // 省份编码映射（从 constants 中的省份列表）
       const PROVINCE_MAP = {
@@ -1205,7 +1383,7 @@ async function checkImage(fileId) {
         '新疆': 'XJ', '台湾': 'TW', '香港': 'HK', '澳门': 'MO'
       }
 
-      // 检查关键词是否包含省份名
+      // 检查关键词是否匹配省份名
       let matchedProvince = null
       for (const [name, code] of Object.entries(PROVINCE_MAP)) {
         if (cleaned.includes(name) || name.includes(cleaned)) {
@@ -1214,32 +1392,53 @@ async function checkImage(fileId) {
         }
       }
 
+      let res
+      let totalRes
+
       if (matchedProvince) {
         // 按省份搜索
-        whereClause.province = matchedProvince
+        console.log('[productMgr/search] 按省份搜索:', matchedProvince)
+        const whereClause = { status: 'active', province: matchedProvince }
+        
+        totalRes = await db.collection('products').where(whereClause).count()
+        
+        let query = db.collection('products').where(whereClause).orderBy('createTime', 'desc')
+        res = await query.skip((page - 1) * pageSize).limit(pageSize).get()
       } else {
-        // 按名称模糊搜索
-        whereClause.name = db.RegExp({
+        // 多字段模糊搜索：使用 where + _.or 实现
+        console.log('[productMgr/search] 多字段模糊搜索')
+        
+        const regex = db.RegExp({
           regexp: cleaned,
           options: 'i'
         })
+        
+        // 构建查询条件：状态为 active 且（多个字段匹配关键词）
+        const whereClause = _.and([
+          { status: 'active' },
+          _.or([
+            { name: regex },
+            { description: regex },
+            { category: regex },
+            { province: regex },
+            { city: regex },
+            { wantProvince: regex },
+            { wantCategory: regex },
+            { descTags: regex } // 数组字段也可以用正则匹配
+          ])
+        ])
+        
+        // 获取总数
+        totalRes = await db.collection('products').where(whereClause).count()
+        
+        // 获取分页数据
+        res = await db.collection('products')
+          .where(whereClause)
+          .orderBy('createTime', 'desc')
+          .skip((page - 1) * pageSize)
+          .limit(pageSize)
+          .get()
       }
-
-      // 查询总数
-      const totalRes = await db.collection('products').where(whereClause).count()
-
-      // 排序
-      let query = db.collection('products').where(whereClause)
-      if (sort === 'newest') {
-        query = query.orderBy('createTime', 'desc')
-      } else {
-        query = query.orderBy('createTime', 'desc')
-      }
-
-      const res = await query
-        .skip((page - 1) * pageSize)
-        .limit(pageSize)
-        .get()
 
       // 补充用户信息
       const openids = [...new Set(res.data.map(p => p.openid || p._openid))]
@@ -1283,6 +1482,41 @@ async function checkImage(fileId) {
       return { success: true, list, total: totalRes.total }
     } catch (e) {
       return { success: false, message: e.message, list: [], total: 0 }
+    }
+  }
+
+  // 获取平台统计数据
+  if (action === 'getPlatformStats') {
+    try {
+      // 获取特产总数
+      const productRes = await db.collection('products').count()
+      const productCount = productRes.total || 0
+
+      // 获取互换成功总数
+      const swapRes = await db.collection('orders').where({
+        status: _.in(['completed', 'swapped'])
+      }).count()
+      const swapCount = swapRes.total || 0
+
+      // 获取用户总数
+      const userRes = await db.collection('users').count()
+      const userCount = userRes.total || 0
+
+      return {
+        success: true,
+        productCount,
+        swapCount,
+        userCount
+      }
+    } catch (e) {
+      console.error('[getPlatformStats] 获取平台统计失败:', e)
+      return {
+        success: false,
+        message: e.message,
+        productCount: 0,
+        swapCount: 0,
+        userCount: 0
+      }
     }
   }
 

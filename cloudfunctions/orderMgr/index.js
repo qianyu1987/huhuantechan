@@ -5,6 +5,10 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
+// 引入工具模块
+const { success, error, wrapHandler } = require('./utils/errorHandler')
+const openidHelper = require('./utils/openidHelper')
+
 // 信用分变化规则
 const CREDIT_DELTA = {
   complete: +5,
@@ -137,12 +141,47 @@ exports.main = async (event, context) => {
         db.collection('products').doc(targetProductId).update({ data: { status: 'in_swap', swapRequestCount: _.inc(1) } })
       ])
 
-      // 发送订阅消息通知对方（TODO：配置模板ID后启用）
-      // await sendNotification(targetProduct.data.openid, '有人想和你互换特产！')
+      // 发送订阅消息通知对方有新的互换申请
+      try {
+        await cloud.callFunction({
+          name: 'sendSubscribeMsg',
+          data: {
+            action: 'swapRequest',
+            openid: targetProduct.data.openid,
+            params: {
+              requesterName: '有用户',  // 可以获取发起者昵称
+              productName: targetProduct.data.name,
+              requestTime: new Date().toLocaleString(),
+              page: `pages/order-detail/index?id=${orderId._id}`
+            }
+          }
+        })
+      } catch (e) { console.log('[orderMgr/create] 发送互换申请通知失败', e) }
+
+      // 记录订单创建日志
+      try {
+        await cloud.callFunction({
+          name: 'adminMgr',
+          data: {
+            action: 'logUserAction',
+            targetType: 'order',
+            targetId: orderId._id,
+            userInfo: { openid },
+            detail: {
+              myProductName: myProduct.data.name,
+              targetProductName: targetProduct.data.name,
+              isMysterySwap
+            }
+          }
+        })
+      } catch (e) {
+        console.log('[orderMgr] 记录订单创建日志失败', e)
+      }
 
       return { success: true, orderId: orderId._id }
     } catch (e) {
-      return { success: false, message: e.message }
+      console.error('[orderMgr/create] 错误:', e)
+      return error(e.message, 'CREATE_FAILED')
     }
   }
 
@@ -243,15 +282,20 @@ exports.main = async (event, context) => {
         // cancelled 订单不计入任何tab，只在"全部"中显示
       })
 
-      // 确保返回数据格式正确
-      return { 
-        success: true, 
-        list: orders || [], 
+      // 确保返回数据格式正确（不用 success() 包装，避免嵌套 data 字段）
+      return {
+        success: true,
+        list: orders || [],
         tabCounts: tabCounts || { all: 0, pending: 0, ongoing: 0, completed: 0 }
       }
     } catch (e) {
-      console.error('list order error:', e)
-      return { success: false, list: [], tabCounts: { all: 0, pending: 0, ongoing: 0, completed: 0 }, message: e.message }
+      console.error('[orderMgr/list] 错误:', e)
+      return {
+        success: false,
+        message: e.message,
+        list: [],
+        tabCounts: { all: 0, pending: 0, ongoing: 0, completed: 0 }
+      }
     }
   }
 
@@ -325,8 +369,8 @@ exports.main = async (event, context) => {
 
       return { success: true, list }
     } catch (e) {
-      console.error('mysteryList error:', e)
-      return { success: false, list: [], message: e.message }
+      console.error('[orderMgr/mysteryList] 错误:', e)
+      return error(e.message, 'QUERY_FAILED', { list: [] })
     }
   }
 
@@ -344,9 +388,41 @@ exports.main = async (event, context) => {
           updateTime: db.serverDate() 
         }
       })
-      return { success: true, message: '已接受互换请求' }
+      
+      // 记录接受订单日志
+      try {
+        await cloud.callFunction({
+          name: 'adminMgr',
+          data: {
+            action: 'logUserAction',
+            targetType: 'order',
+            targetId: event.orderId,
+            userInfo: { openid },
+            detail: { status: 'confirmed' }
+          }
+        })
+      } catch (e) { console.log('[orderMgr] 记录日志失败', e) }
+
+      // 发送订阅消息通知发起者对方已同意
+      try {
+        await cloud.callFunction({
+          name: 'sendSubscribeMsg',
+          data: {
+            action: 'swapAccept',
+            openid: order.data.initiatorOpenid,
+            params: {
+              accepterName: '对方用户',
+              productName: '您的特产',
+              acceptTime: new Date().toLocaleString(),
+              page: `pages/order-detail/index?id=${event.orderId}`
+            }
+          }
+        })
+      } catch (e) { console.log('[orderMgr/accept] 发送接受通知失败', e) }
+      
+      return success({ message: '已接受互换请求' })
     } catch (e) {
-      return { success: false, message: e.message }
+      return error(e.message, 'ACCEPT_FAILED')
     }
   }
 
@@ -379,6 +455,37 @@ exports.main = async (event, context) => {
           data: { status: 'active', updateTime: db.serverDate() } 
         })
       ])
+      
+      // 记录拒绝订单日志
+      try {
+        await cloud.callFunction({
+          name: 'adminMgr',
+          data: {
+            action: 'logUserAction',
+            targetType: 'order',
+            targetId: event.orderId,
+            userInfo: { openid },
+            detail: { reason: 'rejected' }
+          }
+        })
+      } catch (e) { console.log('[orderMgr] 记录日志失败', e) }
+
+      // 发送订阅消息通知发起者对方已拒绝
+      try {
+        await cloud.callFunction({
+          name: 'sendSubscribeMsg',
+          data: {
+            action: 'swapReject',
+            openid: o.initiatorOpenid,
+            params: {
+              rejecterName: '对方用户',
+              productName: '您的特产',
+              rejectTime: new Date().toLocaleString(),
+              page: `pages/order-detail/index?id=${event.orderId}`
+            }
+          }
+        })
+      } catch (e) { console.log('[orderMgr/reject] 发送拒绝通知失败', e) }
       
       return { success: true, message: '已拒绝互换请求' }
     } catch (e) {
@@ -418,6 +525,23 @@ exports.main = async (event, context) => {
           data: { openid, delta: creditDelta, reason: '取消已确认的互换', orderId: event.orderId, createTime: db.serverDate() }
         })
       }
+
+      // 发送订单取消通知给对方
+      try {
+        const otherOpenid = o.initiatorOpenid === openid ? o.receiverOpenid : o.initiatorOpenid
+        await cloud.callFunction({
+          name: 'sendSubscribeMsg',
+          data: {
+            action: 'orderCancel',
+            openid: otherOpenid,
+            params: {
+              reason: creditDelta !== 0 ? '对方取消已确认的订单（已扣信用分）' : '对方取消了订单',
+              cancelTime: new Date().toLocaleString(),
+              page: `pages/order-detail/index?id=${event.orderId}`
+            }
+          }
+        })
+      } catch (e) { console.log('[orderMgr] 发送取消通知失败', e) }
 
       return { success: true, message: '订单已取消' }
     } catch (e) {
@@ -494,6 +618,38 @@ exports.main = async (event, context) => {
           updateTime: db.serverDate()
         }
       })
+
+      // 记录发货日志
+      try {
+        await cloud.callFunction({
+          name: 'adminMgr',
+          data: {
+            action: 'logUserAction',
+            targetType: 'order',
+            targetId: orderId,
+            userInfo: { openid },
+            detail: { company: finalCompany, trackingNo: finalNumber, newStatus }
+          }
+        })
+      } catch (e) { console.log('[orderMgr] 记录日志失败', e) }
+
+      // 发送发货通知给收件人
+      try {
+        const recipientOpenid = isInitiator ? o.receiverOpenid : o.initiatorOpenid
+        await cloud.callFunction({
+          name: 'sendSubscribeMsg',
+          data: {
+            action: 'shipment',
+            openid: recipientOpenid,
+            params: {
+              status: '已发货',
+              deliveryMethod: finalCompany || '快递配送',
+              trackingNumber: finalNumber || '暂无',
+              page: `pages/order-detail/index?id=${orderId}`
+            }
+          }
+        })
+      } catch (e) { console.log('[orderMgr] 发送发货通知失败', e) }
 
       return { success: true, message: '发货信息已记录', newStatus }
     } catch (e) {
@@ -715,6 +871,22 @@ exports.main = async (event, context) => {
           // 奖励失败不影响主流程
         }
       }
+
+      // 记录收货日志
+      const logAction = newStatus === 'completed' ? 'swap_success' : 'receive_order'
+      try {
+        await cloud.callFunction({
+          name: 'adminMgr',
+          data: {
+            action: 'logUserAction',
+            actionType: logAction,  // 使用 actionType 而不是重复定义 action
+            targetType: 'order',
+            targetId: event.orderId,
+            userInfo: { openid },
+            detail: { newStatus, isCompleted: newStatus === 'completed' }
+          }
+        })
+      } catch (e) { console.log('[orderMgr] 记录日志失败', e) }
 
       return { success: true, message: newStatus === 'completed' ? '互换完成！' : '已确认收货', newStatus }
     } catch (e) {
@@ -1111,6 +1283,129 @@ exports.main = async (event, context) => {
 
       return { success: true, message: '收货地址已更新' }
     } catch (e) {
+      return { success: false, message: e.message }
+    }
+  }
+
+  // ========== 创建纠纷申请 ==========
+  if (action === 'createDispute') {
+    try {
+      const { orderId, type, description, images } = event
+      
+      // 获取订单信息
+      const orderRes = await db.collection('orders').doc(orderId).get()
+      if (!orderRes.data) {
+        return { success: false, message: '订单不存在' }
+      }
+      const order = orderRes.data
+      
+      // 检查权限
+      if (order.initiatorOpenid !== openid && order.receiverOpenid !== openid) {
+        return { success: false, message: '无权操作' }
+      }
+      
+      // 检查订单状态是否允许申请纠纷
+      if (!['confirmed', 'shipped_a', 'shipped_b', 'shipped', 'received_a', 'received_b', 'completed'].includes(order.status)) {
+        return { success: false, message: '当前订单状态不能申请纠纷' }
+      }
+      
+      // 检查是否已存在纠纷
+      const existingDispute = await db.collection('disputes').where({ orderId }).get()
+      if (existingDispute.data && existingDispute.data.length > 0) {
+        return { success: false, message: '该订单已存在纠纷申请' }
+      }
+      
+      // 创建纠纷记录
+      const disputeData = {
+        orderId,
+        initiatorOpenid: openid,
+        type,
+        description,
+        images: images || [],
+        status: 'pending',
+        createTime: db.serverDate(),
+        updateTime: db.serverDate()
+      }
+      
+      const disputeRes = await db.collection('disputes').add({ data: disputeData })
+      
+      // 更新订单状态为纠纷中
+      await db.collection('orders').doc(orderId).update({
+        data: {
+          status: 'disputed',
+          disputeId: disputeRes._id,
+          updateTime: db.serverDate()
+        }
+      })
+      
+      // 记录纠纷日志
+      try {
+        await cloud.callFunction({
+          name: 'adminMgr',
+          data: {
+            action: 'logUserAction',
+            actionType: 'create_dispute',
+            targetType: 'order',
+            targetId: orderId,
+            userInfo: { openid },
+            detail: { type, description: description.substring(0, 100) }
+          }
+        })
+      } catch (e) { console.log('[orderMgr] 记录纠纷日志失败', e) }
+      
+      return { success: true, message: '纠纷申请已提交', disputeId: disputeRes._id }
+    } catch (e) {
+      console.error('createDispute error:', e)
+      return { success: false, message: e.message }
+    }
+  }
+
+  // ========== 获取纠纷信息 ==========
+  if (action === 'getDispute') {
+    try {
+      const { orderId } = event
+      
+      // 获取订单信息
+      const orderRes = await db.collection('orders').doc(orderId).get()
+      if (!orderRes.data) {
+        return { success: false, message: '订单不存在' }
+      }
+      const order = orderRes.data
+      
+      // 检查权限
+      if (order.initiatorOpenid !== openid && order.receiverOpenid !== openid) {
+        return { success: false, message: '无权查看' }
+      }
+      
+      // 获取纠纷记录
+      const disputeRes = await db.collection('disputes').where({ orderId }).get()
+      if (!disputeRes.data || disputeRes.data.length === 0) {
+        return { success: false, message: '未找到纠纷记录' }
+      }
+      
+      const dispute = disputeRes.data[0]
+      
+      // 处理图片URL
+      if (dispute.images && dispute.images.length > 0) {
+        const processedImages = []
+        for (const img of dispute.images) {
+          if (img.startsWith('cloud://')) {
+            try {
+              const tempRes = await cloud.getTempFileURL({ fileList: [img] })
+              processedImages.push(tempRes.fileList[0]?.tempFileURL || img)
+            } catch (e) {
+              processedImages.push(img)
+            }
+          } else {
+            processedImages.push(img)
+          }
+        }
+        dispute.images = processedImages
+      }
+      
+      return { success: true, dispute }
+    } catch (e) {
+      console.error('getDispute error:', e)
       return { success: false, message: e.message }
     }
   }
