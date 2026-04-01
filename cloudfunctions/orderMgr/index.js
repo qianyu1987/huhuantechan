@@ -18,6 +18,14 @@ const CREDIT_DELTA = {
   dispute_lose: -15
 }
 
+// 工具：YYYY-MM-DD 格式
+function fmtDate(d) {
+  if (!d) d = new Date()
+  if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}/.test(d)) return d.slice(0, 10)
+  const dt = new Date(d)
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`
+}
+
 // 将单个 cloud:// fileID 转为 https 临时链接
 async function resolveCloudUrl(url) {
   if (!url || !url.startsWith('cloud://')) return url
@@ -143,15 +151,18 @@ exports.main = async (event, context) => {
 
       // 发送订阅消息通知对方有新的互换申请
       try {
+        // 获取发起者昵称
+        const reqUser = await db.collection('users').where({ _openid: openid }).field({ nickName: true }).get()
+        const requesterName = reqUser.data?.[0]?.nickName || '有用户'
         await cloud.callFunction({
           name: 'sendSubscribeMsg',
           data: {
             action: 'swapRequest',
             openid: targetProduct.data.openid,
             params: {
-              requesterName: '有用户',  // 可以获取发起者昵称
+              requesterName,
               productName: targetProduct.data.name,
-              requestTime: new Date().toLocaleString(),
+              requestTime: fmtDate(),
               page: `pages/order-detail/index?id=${orderId._id}`
             }
           }
@@ -405,15 +416,22 @@ exports.main = async (event, context) => {
 
       // 发送订阅消息通知发起者对方已同意
       try {
+        // 获取接收方（当前用户）昵称和对方的特产名
+        const [receiverUserRes, initiatorProductRes] = await Promise.all([
+          db.collection('users').where({ _openid: openid }).field({ nickName: true }).get(),
+          db.collection('products').doc(order.data.initiatorProductId).field({ name: true }).get(),
+        ])
+        const accepterName = receiverUserRes.data?.[0]?.nickName || '对方用户'
+        const productName = initiatorProductRes.data?.name || '互换特产'
         await cloud.callFunction({
           name: 'sendSubscribeMsg',
           data: {
             action: 'swapAccept',
             openid: order.data.initiatorOpenid,
             params: {
-              accepterName: '对方用户',
-              productName: '您的特产',
-              acceptTime: new Date().toLocaleString(),
+              accepterName,
+              productName,
+              acceptTime: fmtDate(),
               page: `pages/order-detail/index?id=${event.orderId}`
             }
           }
@@ -472,15 +490,22 @@ exports.main = async (event, context) => {
 
       // 发送订阅消息通知发起者对方已拒绝
       try {
+        // 获取接收方（当前用户）昵称和对方的特产名
+        const [receiverUserRes, initiatorProductRes] = await Promise.all([
+          db.collection('users').where({ _openid: openid }).field({ nickName: true }).get(),
+          db.collection('products').doc(o.initiatorProductId).field({ name: true }).get(),
+        ])
+        const rejecterName = receiverUserRes.data?.[0]?.nickName || '对方用户'
+        const productName = initiatorProductRes.data?.name || '互换特产'
         await cloud.callFunction({
           name: 'sendSubscribeMsg',
           data: {
             action: 'swapReject',
             openid: o.initiatorOpenid,
             params: {
-              rejecterName: '对方用户',
-              productName: '您的特产',
-              rejectTime: new Date().toLocaleString(),
+              rejecterName,
+              productName,
+              rejectTime: fmtDate(),
               page: `pages/order-detail/index?id=${event.orderId}`
             }
           }
@@ -535,8 +560,8 @@ exports.main = async (event, context) => {
             action: 'orderCancel',
             openid: otherOpenid,
             params: {
-              reason: creditDelta !== 0 ? '对方取消已确认的订单（已扣信用分）' : '对方取消了订单',
-              cancelTime: new Date().toLocaleString(),
+              cancelReason: creditDelta !== 0 ? '对方取消了已确认的订单（已扣信用分）' : '对方取消了订单',
+              cancelTime: fmtDate(),
               page: `pages/order-detail/index?id=${event.orderId}`
             }
           }

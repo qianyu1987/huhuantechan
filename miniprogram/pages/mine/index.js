@@ -1064,8 +1064,8 @@ Page({
           openid: openid,
           params: {
             content: '🔔 测试消息：您的特产互换订单有新动态，请留意查看！',
-            startTime: new Date().toLocaleString(),
-            endTime: '长期有效',
+            startTime: new Date().toISOString().slice(0, 10),
+            endTime: new Date().toISOString().replace('T', ' ').slice(0, 16),
             remark: '这是一条来自互换特产小程序的测试消息',
             page: '/pages/order/index'
           }

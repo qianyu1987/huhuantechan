@@ -33,14 +33,68 @@
       </view>
     </view>
 
-    <!-- 待处理提醒 -->
-    <view class="alert-bar" wx:if="{{stats.pendingReviews > 0 || daigouVerifyStats.pending > 0}}">
-      <text class="alert-icon">🔔</text>
-      <text class="alert-text">
-        {{stats.pendingReviews > 0 ? stats.pendingReviews + '个特产待审核' : ''}}
-        {{stats.pendingReviews > 0 && daigouVerifyStats.pending > 0 ? ' · ' : ''}}
-        {{daigouVerifyStats.pending > 0 ? daigouVerifyStats.pending + '个实名待审核' : ''}}
-      </text>
+    <!-- 统一待处理通知中心 -->
+    <view class="notification-center" wx:if="{{notifications.totalCount > 0}}">
+      <view class="nc-header">
+        <view class="nc-badge" wx:if="{{notifications.totalCount > 0}}">{{notifications.totalCount}}</view>
+        <text class="nc-title">待处理事项</text>
+        <text class="nc-subtitle">点击快速跳转处理</text>
+      </view>
+      
+      <view class="nc-grid">
+        <!-- 待审核特产 -->
+        <view class="nc-item nc-item-red" bindtap="goModule" data-tab="4" wx:if="{{notifications.pendingReview > 0}}">
+          <text class="nci-icon">📝</text>
+          <text class="nci-count">{{notifications.pendingReview}}</text>
+          <text class="nci-label">特产审核</text>
+        </view>
+        
+        <!-- 待实名认证 -->
+        <view class="nc-item nc-item-orange" bindtap="goModule" data-tab="5" wx:if="{{notifications.daigouVerify > 0}}">
+          <text class="nci-icon">🪪</text>
+          <text class="nci-count">{{notifications.daigouVerify}}</text>
+          <text class="nci-label">实名认证</text>
+        </view>
+        
+        <!-- 待押金审批 -->
+        <view class="nc-item nc-item-blue" bindtap="goModule" data-tab="10" wx:if="{{notifications.depositApply > 0}}">
+          <text class="nci-icon">💰</text>
+          <text class="nci-count">{{notifications.depositApply}}</text>
+          <text class="nci-label">押金审批</text>
+        </view>
+        
+        <!-- 待提现审批 -->
+        <view class="nc-item nc-item-purple" bindtap="goModule" data-tab="11" wx:if="{{notifications.withdrawalApply > 0}}">
+          <text class="nci-icon">🏧</text>
+          <text class="nci-count">{{notifications.withdrawalApply}}</text>
+          <text class="nci-label">提现审批</text>
+        </view>
+        
+        <!-- 待充值审批 -->
+        <view class="nc-item nc-item-green" bindtap="goModule" data-tab="12" wx:if="{{notifications.rechargeApply > 0}}">
+          <text class="nci-icon">💳</text>
+          <text class="nci-count">{{notifications.rechargeApply}}</text>
+          <text class="nci-label">充值审批</text>
+        </view>
+        
+        <!-- 待处理纠纷 -->
+        <view class="nc-item nc-item-red" bindtap="goModule" data-tab="17" wx:if="{{notifications.userDisputes > 0}}">
+          <text class="nci-icon">⚖️</text>
+          <text class="nci-count">{{notifications.userDisputes}}</text>
+          <text class="nci-label">纠纷处理</text>
+        </view>
+        
+        <!-- 待处理举报 -->
+        <view class="nc-item nc-item-pink" bindtap="goModule" data-tab="18" wx:if="{{notifications.reports > 0}}">
+          <text class="nci-icon">🚨</text>
+          <text class="nci-count">{{notifications.reports}}</text>
+          <text class="nci-label">举报管理</text>
+        </view>
+      </view>
+      
+      <view class="nc-footer" bindtap="refreshNotifications">
+        <text class="ncf-text">🔄 点击刷新</text>
+      </view>
     </view>
 
     <!-- 功能模块卡片网格 -->
@@ -54,6 +108,13 @@
         <text class="mc-name">用户管理</text>
         <text class="mc-desc">{{stats.totalUsers || 0}}人</text>
         <text class="mc-arrow">›</text>
+        <!-- 最新用户列表 -->
+        <view class="mc-latest-list" wx:if="{{stats.latestUsers && stats.latestUsers.length > 0}}">
+          <view class="mc-latest-item" wx:for="{{stats.latestUsers}}" wx:key="index">
+            <text class="mc-latest-name">{{item.nickName || '匿名用户'}}</text>
+            <text class="mc-latest-time">{{item.createTime}}</text>
+          </view>
+        </view>
       </view>
 
       <view class="module-card mc-green" bindtap="goModule" data-tab="2">
@@ -63,6 +124,13 @@
         <text class="mc-name">特产管理</text>
         <text class="mc-desc">{{stats.totalProducts || 0}}件</text>
         <text class="mc-arrow">›</text>
+        <!-- 最新特产列表 -->
+        <view class="mc-latest-list" wx:if="{{stats.latestProducts && stats.latestProducts.length > 0}}">
+          <view class="mc-latest-item" wx:for="{{stats.latestProducts}}" wx:key="index">
+            <text class="mc-latest-name">{{item.name || '未命名特产'}}</text>
+            <text class="mc-latest-time">{{item.createTime}}</text>
+          </view>
+        </view>
       </view>
 
       <view class="module-card mc-orange" bindtap="goModule" data-tab="3">
@@ -72,6 +140,13 @@
         <text class="mc-name">订单管理</text>
         <text class="mc-desc">{{stats.activeSwaps || 0}}进行中</text>
         <text class="mc-arrow">›</text>
+        <!-- 最新订单列表 -->
+        <view class="mc-latest-list" wx:if="{{stats.latestOrders && stats.latestOrders.length > 0}}">
+          <view class="mc-latest-item" wx:for="{{stats.latestOrders}}" wx:key="index">
+            <text class="mc-latest-name">订单{{item._id ? item._id.substr(-6) : ''}}</text>
+            <text class="mc-latest-time">{{item.createTime}}</text>
+          </view>
+        </view>
       </view>
 
       <view class="module-card mc-red {{stats.pendingReviews > 0 ? 'mc-badge-show' : ''}}" bindtap="goModule" data-tab="4">
@@ -146,16 +221,31 @@
         <text class="mc-arrow" wx:else>›</text>
       </view>
 
-      <view class="module-card mc-green" bindtap="goModule" data-tab="11">
+      <view class="module-card mc-purple" bindtap="goModule" data-tab="11">
+        <view class="mc-icon-wrap mc-icon-purple">
+          <text class="mc-icon">🏧</text>
+        </view>
+        <text class="mc-name">提现审批</text>
+        <text class="mc-desc {{withdrawalStats.pending > 0 ? 'mc-desc-alert' : ''}}">
+          {{withdrawalStats.pending > 0 ? withdrawalStats.pending + '待审批' : '无待审批'}}
+        </text>
+        <text class="mc-badge" wx:if="{{withdrawalStats.pending > 0}}">{{withdrawalStats.pending}}</text>
+        <text class="mc-arrow" wx:else>›</text>
+      </view>
+
+      <view class="module-card mc-green {{rechargeStats.pending > 0 ? 'mc-badge-show' : ''}}" bindtap="goModule" data-tab="12">
         <view class="mc-icon-wrap mc-icon-green">
           <text class="mc-icon">💳</text>
         </view>
         <text class="mc-name">充值审批</text>
-        <text class="mc-desc">钱包余额充值</text>
-        <text class="mc-arrow">›</text>
+        <text class="mc-desc {{rechargeStats.pending > 0 ? 'mc-desc-alert' : ''}}">
+          {{rechargeStats.pending > 0 ? rechargeStats.pending + '待审批' : '钱包余额充值'}}
+        </text>
+        <text class="mc-badge" wx:if="{{rechargeStats.pending > 0}}">{{rechargeStats.pending}}</text>
+        <text class="mc-arrow" wx:else>›</text>
       </view>
 
-      <view class="module-card mc-gray" bindtap="goModule" data-tab="12">
+      <view class="module-card mc-gray" bindtap="goModule" data-tab="13">
         <view class="mc-icon-wrap mc-icon-gray">
           <text class="mc-icon">⚙️</text>
         </view>
@@ -164,7 +254,7 @@
         <text class="mc-arrow">›</text>
       </view>
 
-      <view class="module-card mc-gold" bindtap="goModule" data-tab="13">
+      <view class="module-card mc-gold" bindtap="goModule" data-tab="14">
         <view class="mc-icon-wrap mc-icon-gold">
           <text class="mc-icon">🏅</text>
         </view>
@@ -173,12 +263,45 @@
         <text class="mc-arrow">›</text>
       </view>
 
-      <view class="module-card mc-cyan" bindtap="goModule" data-tab="14">
+      <view class="module-card mc-cyan" bindtap="goModule" data-tab="15">
         <view class="mc-icon-wrap mc-icon-cyan">
           <text class="mc-icon">🎯</text>
         </view>
         <text class="mc-name">邀请裂变</text>
         <text class="mc-desc">奖励配置</text>
+        <text class="mc-arrow">›</text>
+      </view>
+
+      <view class="module-card mc-red {{disputeStats.pending > 0 ? 'mc-badge-show' : ''}}" bindtap="goModule" data-tab="17">
+        <view class="mc-icon-wrap mc-icon-red">
+          <text class="mc-icon">⚖️</text>
+        </view>
+        <text class="mc-name">纠纷处理</text>
+        <text class="mc-desc {{disputeStats.pending > 0 ? 'mc-desc-alert' : ''}}">
+          {{disputeStats.pending > 0 ? disputeStats.pending + '待处理' : '无待处理'}}
+        </text>
+        <text class="mc-badge" wx:if="{{disputeStats.pending > 0}}">{{disputeStats.pending}}</text>
+        <text class="mc-arrow" wx:else>›</text>
+      </view>
+
+      <view class="module-card mc-pink {{reportStats.pending > 0 ? 'mc-badge-show' : ''}}" bindtap="goModule" data-tab="18">
+        <view class="mc-icon-wrap mc-icon-pink">
+          <text class="mc-icon">🚨</text>
+        </view>
+        <text class="mc-name">举报管理</text>
+        <text class="mc-desc {{reportStats.pending > 0 ? 'mc-desc-alert' : ''}}">
+          {{reportStats.pending > 0 ? reportStats.pending + '待处理' : '无待处理'}}
+        </text>
+        <text class="mc-badge" wx:if="{{reportStats.pending > 0}}">{{reportStats.pending}}</text>
+        <text class="mc-arrow" wx:else>›</text>
+      </view>
+
+      <view class="module-card mc-orange" bindtap="goModule" data-tab="19" wx:if="{{isSuperAdmin}}">
+        <view class="mc-icon-wrap mc-icon-orange">
+          <text class="mc-icon">🔔</text>
+        </view>
+        <text class="mc-name">消息测试</text>
+        <text class="mc-desc">订阅消息调试</text>
         <text class="mc-arrow">›</text>
       </view>
 
@@ -199,6 +322,7 @@
       <text class="perm-icon">🔐</text>
       <text class="perm-text">你当前不是超级管理员，部分功能不可用</text>
       <view class="perm-btn" bindtap="initSuperAdmin">设为超级管理员</view>
+      <view class="perm-btn perm-btn-secondary" bindtap="refreshAdminStatus" style="margin-top: 12rpx;">刷新权限状态</view>
     </view>
 
     <view class="safe-bottom"></view>
@@ -228,12 +352,16 @@
         <text class="empty-label">暂无用户数据</text>
       </view>
       <view class="list-card" wx:for="{{users}}" wx:key="_id" bindtap="goToUserDetail" data-openid="{{item._openid}}">
+        <view class="lc-index">{{item.userIndex}}</view>
         <image class="lc-avatar" src="{{item.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"/>
         <view class="lc-body">
-          <text class="lc-title">{{item.nickName || '未设置昵称'}}</text>
+          <text class="lc-title">{{item.nickName || '微信用户'}}</text>
           <view class="lc-sub-row">
             <text class="lc-sub-text">📍 {{item.province || '未设置'}}</text>
             <view class="status-pill pill-{{item.creditLevel.class}}">⭐ {{item.creditScore || 100}}</view>
+          </view>
+          <view class="lc-time-row">
+            <text class="lc-time-text">🕐 {{item.registerTime}}</text>
           </view>
         </view>
         <view class="lc-actions" wx:if="{{isSuperAdmin}}">
@@ -334,17 +462,73 @@
     <view wx:if="{{orderLoading}}" class="loading-row">⏳ 加载中...</view>
   </block>
 
-  <!-- ===== 审核管理（Tab=4）===== -->
+  <!-- ===== 用户操作日志（Tab=5）===== -->
+  <block wx:if="{{currentTab === 5}}">
+    <!-- 统计卡片 -->
+    <view class="logs-stats">
+      <view class="logs-stats-title">📊 实时操作统计（最近2小时）</view>
+      <view class="ls-grid">
+        <view class="ls-item" wx:for="{{logsStats}}" wx:key="key">
+          <text class="lsi-count">{{item}}</text>
+          <text class="lsi-label">{{item === 1 ? '次' : '次'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 操作日志列表 -->
+    <view class="logs-list">
+      <view class="logs-header">
+        <text>📋 最近操作记录</text>
+        <text class="logs-refresh" bindtap="loadUserOperationLogs">🔄 刷新</text>
+      </view>
+      
+      <view wx:if="{{logsLoading}}" class="loading-row">⏳ 加载中...</view>
+      
+      <view wx:elif="{{operationLogs.length === 0}}" class="empty-tip">
+        暂无操作记录
+      </view>
+      
+      <view class="log-item" wx:for="{{operationLogs}}" wx:key="index">
+        <view class="log-time">{{item.timeStr}}</view>
+        <view class="log-content">
+          <text class="log-action">{{item.actionText}}</text>
+          <text class="log-user" wx:if="{{item.userNickName}}">{{item.userNickName}}</text>
+          <text class="log-detail" wx:if="{{item.detail}}">{{item.detail.name || item.detail.productName || ''}}</text>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <!-- ===== 审核管理（Tab=6，原Tab=4）===== -->
   <block wx:if="{{currentTab === 4}}">
+    <!-- 押金申请审核入口 -->
+    <view class="deposit-requests-entry" bindtap="goToDepositRequests" wx:if="{{depositRequestCount > 0 || true}}">
+      <view class="dre-left">
+        <text class="dre-icon">💰</text>
+        <view class="dre-info">
+          <text class="dre-title">押金申请审核</text>
+          <text class="dre-desc">{{depositRequestCount > 0 ? '有 ' + depositRequestCount + ' 条待处理' : '暂无待处理申请'}}</text>
+        </view>
+      </view>
+      <view class="dre-right">
+        <view class="dre-badge" wx:if="{{depositRequestCount > 0}}">{{depositRequestCount}}</view>
+        <text class="dre-arrow">›</text>
+      </view>
+    </view>
     <view class="stats-row-card">
       <view class="src-item">
-        <text class="src-num src-red">{{pendingStats.autoBlocked || 0}}</text>
-        <text class="src-label">🔒 自动拦截</text>
+        <text class="src-num src-blue">{{pendingStats.total || 0}}</text>
+        <text class="src-label">📋 全部待审</text>
       </view>
       <view class="src-div"></view>
       <view class="src-item">
         <text class="src-num src-orange">{{pendingStats.manualReview || 0}}</text>
-        <text class="src-label">⏳ 待人工</text>
+        <text class="src-label">⏳ 需人工</text>
+      </view>
+      <view class="src-div"></view>
+      <view class="src-item">
+        <text class="src-num src-red">{{pendingStats.autoBlocked || 0}}</text>
+        <text class="src-label">🔒 自动拦截</text>
       </view>
     </view>
     <view class="chip-bar">
@@ -360,8 +544,8 @@
       <view class="order-card-v3" wx:for="{{pendingProducts}}" wx:key="_id">
         <view class="ocv3-header">
           <text class="ocv3-id">{{item._id}}</text>
-          <view class="status-pill {{item.auditReason ? 'pill-danger' : 'pill-warning'}}">
-            {{item.auditReason ? '🔒 已拦截' : '⏳ 待审核'}}
+          <view class="status-pill {{item.auditType === 'rejected' ? 'pill-danger' : 'pill-warning'}}">
+            {{item.auditType === 'rejected' ? '🔒 自动拦截' : (item.auditType === 'manual' ? '⏳ 需人工' : '📋 待审核')}}
           </view>
         </view>
         <view class="ocv3-body">
@@ -682,8 +866,10 @@
             </view>
           </view>
           <view class="vc-fields">
-            <text class="vc-field">💰 押金：¥{{item.depositAmount || 0}}</text>
+            <text class="vc-field vc-field-type-{{item.requestType || 'apply'}}">📋 {{item.typeLabel || '申请押金'}}：¥{{item.depositAmount || 0}}</text>
+            <text class="vc-field" wx:if="{{item.currentBalance > 0}}">💵 当前余额：¥{{item.currentBalance}}</text>
             <text class="vc-field">🕐 {{item.createTimeText || ''}}</text>
+            <text class="vc-field" wx:if="{{item.remark}}">📝 备注：{{item.remark}}</text>
             <text class="vc-field vc-field-danger" wx:if="{{item.rejectReason}}">拒绝原因：{{item.rejectReason}}</text>
           </view>
           <view class="vc-actions" wx:if="{{item.status === 'pending'}}">
@@ -696,8 +882,95 @@
     </block>
   </block>
 
-  <!-- ===== 充值审批（Tab=11）===== -->
+  <!-- ===== 提现审批（Tab=11）===== -->
   <block wx:if="{{currentTab === 11}}">
+    <view wx:if="{{!isSuperAdmin}}" class="empty-state">
+      <text class="empty-emoji">🔐</text>
+      <text class="empty-label">需要超级管理员权限</text>
+    </view>
+    <block wx:else>
+      <!-- 统计概览 -->
+      <view class="stats-row-card">
+        <view class="src-item"><text class="src-num src-orange">{{withdrawalTotal || 0}}</text><text class="src-label">共{{withdrawalFilter === 'all' ? '全部' : withdrawalFilter === 'pending' ? '待审核' : '已审批'}}</text></view>
+      </view>
+      <!-- 筛选chips -->
+      <view class="chip-bar">
+        <view class="chip {{withdrawalFilter === 'pending' ? 'chip-active' : ''}}" bindtap="changeWithdrawalFilter" data-filter="pending">⏳ 待审核</view>
+        <view class="chip {{withdrawalFilter === 'approved' ? 'chip-active' : ''}}" bindtap="changeWithdrawalFilter" data-filter="approved">✅ 已通过</view>
+        <view class="chip {{withdrawalFilter === 'rejected' ? 'chip-active' : ''}}" bindtap="changeWithdrawalFilter" data-filter="rejected">❌ 已拒绝</view>
+        <view class="chip {{withdrawalFilter === 'all' ? 'chip-active' : ''}}" bindtap="changeWithdrawalFilter" data-filter="all">全部</view>
+      </view>
+      <!-- 提现申请列表 -->
+      <view class="list-wrap">
+        <view wx:if="{{withdrawalList.length === 0 && !withdrawalLoading}}" class="empty-state">
+          <text class="empty-emoji">💰</text>
+          <text class="empty-label">暂无提现申请</text>
+        </view>
+        <view class="verify-card" wx:for="{{withdrawalList}}" wx:key="id">
+          <view class="vc-header">
+            <view class="vc-user-row">
+              <image class="vc-avatar" src="{{item.userInfo.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"/>
+              <text class="vc-name">{{item.userInfo.nickName || '用户'}}</text>
+            </view>
+            <view class="status-pill pill-withdrawal-{{item.status}}">
+              <text>{{item.statusText}}</text>
+            </view>
+          </view>
+          <view class="vc-body">
+            <view class="vc-row">
+              <text class="vc-label">申请提现</text>
+              <text class="vc-value vc-amount-highlight">¥{{item.amount}}</text>
+            </view>
+            <view class="vc-row">
+              <text class="vc-label">手续费</text>
+              <text class="vc-value">¥{{item.feeAmount || 0}} (5%)</text>
+            </view>
+            <view class="vc-row">
+              <text class="vc-label">实际到账</text>
+              <text class="vc-value vc-amount-highlight" style="color: #30D158;">¥{{item.actualAmount || item.amount}}</text>
+            </view>
+            <view class="vc-row">
+              <text class="vc-label">提现前余额</text>
+              <text class="vc-value">¥{{item.walletBalanceBefore || 0}}</text>
+            </view>
+            <view class="vc-row" wx:if="{{item.contactInfo}}">
+              <text class="vc-label">联系方式</text>
+              <text class="vc-value">{{item.contactInfo}}</text>
+            </view>
+            <view class="vc-row">
+              <text class="vc-label">申请单号</text>
+              <text class="vc-value vc-mono">{{item.applyNo}}</text>
+            </view>
+            <view class="vc-row" wx:if="{{item.remark}}">
+              <text class="vc-label">用户备注</text>
+              <text class="vc-value">{{item.remark}}</text>
+            </view>
+            <view class="vc-row" wx:if="{{item.adminNote}}">
+              <text class="vc-label">审批备注</text>
+              <text class="vc-value vc-admin-note">{{item.adminNote}}</text>
+            </view>
+            <view class="vc-row">
+              <text class="vc-label">申请时间</text>
+              <text class="vc-value vc-time">{{item.createTime}}</text>
+            </view>
+          </view>
+          <!-- 操作按钮（仅 pending 状态显示）-->
+          <view class="vc-actions" wx:if="{{item.status === 'pending'}}">
+            <view class="vc-btn vc-btn-approve" bindtap="approveWithdrawal" data-id="{{item.id}}" data-amount="{{item.amount}}">
+              <text>✅ 通过</text>
+            </view>
+            <view class="vc-btn vc-btn-reject" bindtap="rejectWithdrawal" data-id="{{item.id}}">
+              <text>❌ 拒绝</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view wx:if="{{withdrawalLoading}}" class="loading-row">⏳ 加载中...</view>
+    </block>
+  </block>
+
+  <!-- ===== 充值审批（Tab=12）===== -->
+  <block wx:if="{{currentTab === 12}}">
     <view wx:if="{{!isSuperAdmin}}" class="empty-state">
       <text class="empty-emoji">🔐</text>
       <text class="empty-label">需要超级管理员权限</text>
@@ -771,8 +1044,8 @@
     </block>
   </block>
 
-  <!-- ===== 功能开关（Tab=12）===== -->
-  <block wx:if="{{currentTab === 12}}">
+  <!-- ===== 功能开关（Tab=13）===== -->
+  <block wx:if="{{currentTab === 13}}">
     <view wx:if="{{!isSuperAdmin}}" class="empty-state">
       <text class="empty-emoji">🔐</text>
       <text class="empty-label">需要超级管理员权限</text>
@@ -799,11 +1072,28 @@
           <switch class="fic-switch" checked="{{featureFlags[item.key]}}" bindchange="toggleFlag" data-key="{{item.key}}" color="#30D158"/>
         </view>
       </view>
+
+      <!-- 客服配置 -->
+      <view style="margin:24rpx 0rpx 0;background:#fff;border-radius:24rpx;padding:32rpx;box-shadow:0 2rpx 12rpx rgba(0,0,0,0.06);">
+        <text style="font-size:32rpx;font-weight:700;color:#1C1C1E;display:block;margin-bottom:8rpx;">📞 客服联系方式</text>
+        <text style="font-size:24rpx;color:#8E8E93;display:block;margin-bottom:28rpx;">设置用户联系客服时显示的电话和微信号</text>
+        <view style="margin-bottom:20rpx;">
+          <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:10rpx;">客服电话</text>
+          <input style="width:100%;height:88rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;font-size:30rpx;color:#1C1C1E;box-sizing:border-box;" type="number" placeholder="请输入客服电话" bindinput="onServicePhoneInput" value="{{serviceConfig.phone}}" />
+        </view>
+        <view style="margin-bottom:28rpx;">
+          <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:10rpx;">客服微信号</text>
+          <input style="width:100%;height:88rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;font-size:30rpx;color:#1C1C1E;box-sizing:border-box;" type="text" placeholder="请输入客服微信号" bindinput="onServiceWechatInput" value="{{serviceConfig.wechat}}" />
+        </view>
+        <view catchtap="saveServiceConfig" style="height:88rpx;border-radius:44rpx;background:linear-gradient(135deg,#0A84FF 0%,#0066CC 100%);display:flex;align-items:center;justify-content:center;font-size:30rpx;font-weight:600;color:#fff;">
+          保存客服配置
+        </view>
+      </view>
     </block>
   </block>
 
-  <!-- ===== 等级管理（Tab=13）===== -->
-  <block wx:if="{{currentTab === 13}}">
+  <!-- ===== 等级管理（Tab=14）===== -->
+  <block wx:if="{{currentTab === 14}}">
     <view wx:if="{{!isSuperAdmin}}" class="empty-state">
       <text class="empty-emoji">🔐</text>
       <text class="empty-label">需要超级管理员权限</text>
@@ -845,7 +1135,7 @@
         <text class="empty-label">暂无用户数据</text>
       </view>
       <view class="list-wrap">
-        <view class="level-user-card-v3" wx:for="{{levelUsers}}" wx:key="openid">
+        <view class="level-user-card-v3" wx:for="{{levelUsers}}" wx:key="_id">
           <view class="luv3-header">
             <image class="luv3-avatar" src="{{item.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill" />
             <view class="luv3-info">
@@ -866,7 +1156,11 @@
           </view>
           <view class="luv3-deposit-row">
             <text class="luv3-deposit-label">💰 押金管理</text>
-            <view class="act-btn act-warning" catchtap="openDepositInputModal" data-openid="{{item.openid}}" data-index="{{index}}">录入/修改押金</view>
+            <view style="display:flex;gap:8rpx;flex-wrap:wrap;">
+              <view class="act-btn act-warning" catchtap="openDepositInputModal" data-openid="{{item.openid}}" data-index="{{index}}" data-mode="set">录入/修改</view>
+              <view class="act-btn act-green" catchtap="openDepositInputModal" data-openid="{{item.openid}}" data-index="{{index}}" data-mode="add">补押金</view>
+              <view class="act-btn act-danger" catchtap="openDepositInputModal" data-openid="{{item.openid}}" data-index="{{index}}" data-mode="refund">退押金</view>
+            </view>
           </view>
         </view>
       </view>
@@ -875,8 +1169,8 @@
     </block>
   </block>
 
-  <!-- ===== 邀请裂变配置（Tab=14）===== -->
-  <block wx:if="{{currentTab === 14}}">
+  <!-- ===== 邀请裂变配置（Tab=15）===== -->
+  <block wx:if="{{currentTab === 15}}">
     <view wx:if="{{!isSuperAdmin}}" class="empty-state">
       <text class="empty-emoji">🔐</text>
       <text class="empty-label">需要超级管理员权限</text>
@@ -885,11 +1179,11 @@
       <!-- 邀请裂变配置卡片 -->
       <view class="invite-config-card">
         <text class="invite-config-title">🎯 邀请裂变配置</text>
-        <text class="invite-config-desc">设置邀请好友的现金奖励金额和提现门槛</text>
+        <text class="invite-config-desc">设置邀请好友的现金奖励、积分奖励和提现门槛</text>
         
         <!-- 奖励金额配置 -->
         <view class="config-section">
-          <text class="config-section-title">💰 奖励金额</text>
+          <text class="config-section-title">💰 现金奖励</text>
           
           <view class="config-item">
             <view class="config-item-label">
@@ -910,6 +1204,33 @@
             <view class="config-input-group">
               <text class="config-input-prefix">¥</text>
               <input class="config-input" type="digit" value="{{inviteConfig.inviteeReward}}" placeholder="0.10" bindinput="onInviteeRewardInput" />
+            </view>
+          </view>
+        </view>
+
+        <!-- 积分奖励配置 -->
+        <view class="config-section">
+          <text class="config-section-title">⭐ 积分奖励</text>
+          
+          <view class="config-item">
+            <view class="config-item-label">
+              <text class="config-item-name">邀请人积分</text>
+              <text class="config-item-desc">邀请成功后邀请人获得积分</text>
+            </view>
+            <view class="config-input-group">
+              <text class="config-input-prefix">分</text>
+              <input class="config-input" type="number" value="{{inviteConfig.inviterPoints}}" placeholder="0" bindinput="onInviterPointsInput" />
+            </view>
+          </view>
+          
+          <view class="config-item">
+            <view class="config-item-label">
+              <text class="config-item-name">被邀请人积分</text>
+              <text class="config-item-desc">新用户注册后获得积分</text>
+            </view>
+            <view class="config-input-group">
+              <text class="config-input-prefix">分</text>
+              <input class="config-input" type="number" value="{{inviteConfig.inviteePoints}}" placeholder="0" bindinput="onInviteePointsInput" />
             </view>
           </view>
         </view>
@@ -940,11 +1261,271 @@
           <text class="config-tips-title">📝 配置说明</text>
           <view class="config-tips-list">
             <text class="config-tips-item">1. 奖励金额支持小数点后两位（如：0.30）</text>
-            <text class="config-tips-item">2. 修改后立即生效，新邀请将按新规则计算奖励</text>
-            <text class="config-tips-item">3. 历史邀请记录奖励金额保持不变</text>
-            <text class="config-tips-item">4. 提现门槛为最低可提现金额，低于此金额无法提现</text>
+            <text class="config-tips-item">2. 积分设为 0 表示不赠送积分</text>
+            <text class="config-tips-item">3. 修改后立即生效，新邀请按新规则计算</text>
+            <text class="config-tips-item">4. 历史邀请记录奖励保持不变</text>
+            <text class="config-tips-item">5. 提现门槛为最低可提现金额</text>
           </view>
         </view>
+      </view>
+    </block>
+  </block>
+
+  <!-- ===== 纠纷处理（Tab=17）===== -->
+  <block wx:if="{{currentTab === 17}}">
+    <view wx:if="{{!isSuperAdmin}}" class="empty-state">
+      <text class="empty-emoji">🔐</text>
+      <text class="empty-label">需要超级管理员权限</text>
+    </view>
+    <block wx:else>
+      <!-- 统计卡片 -->
+      <view class="stats-cards">
+        <view class="stats-card">
+          <text class="stats-card-num">{{disputeStats.pending}}</text>
+          <text class="stats-card-label">待处理</text>
+        </view>
+        <view class="stats-card">
+          <text class="stats-card-num">{{disputeStats.processing}}</text>
+          <text class="stats-card-label">处理中</text>
+        </view>
+        <view class="stats-card">
+          <text class="stats-card-num">{{disputeStats.resolved}}</text>
+          <text class="stats-card-label">已解决</text>
+        </view>
+        <view class="stats-card">
+          <text class="stats-card-num">{{disputeStats.closed}}</text>
+          <text class="stats-card-label">已关闭</text>
+        </view>
+      </view>
+
+      <!-- 筛选标签 -->
+      <view class="filter-tabs">
+        <view class="filter-tab {{disputeFilter === '' ? 'active' : ''}}" bindtap="switchDisputeFilter" data-filter="">全部</view>
+        <view class="filter-tab {{disputeFilter === 'pending' ? 'active' : ''}}" bindtap="switchDisputeFilter" data-filter="pending">待处理</view>
+        <view class="filter-tab {{disputeFilter === 'processing' ? 'active' : ''}}" bindtap="switchDisputeFilter" data-filter="processing">处理中</view>
+        <view class="filter-tab {{disputeFilter === 'resolved' ? 'active' : ''}}" bindtap="switchDisputeFilter" data-filter="resolved">已解决</view>
+        <view class="filter-tab {{disputeFilter === 'closed' ? 'active' : ''}}" bindtap="switchDisputeFilter" data-filter="closed">已关闭</view>
+      </view>
+
+      <!-- 纠纷列表 -->
+      <view class="dispute-list">
+        <view wx:for="{{disputeList}}" wx:key="_id" class="dispute-item">
+          <!-- 头部：状态和时间 -->
+          <view class="dispute-header">
+            <view class="dispute-header-left">
+              <text class="dispute-status {{item.status}}">{{item.statusLabel}}</text>
+              <text class="dispute-type" wx:if="{{item.type}}">{{item.type}}</text>
+            </view>
+            <text class="dispute-time">{{item.createTimeText}}</text>
+          </view>
+          
+          <!-- 用户信息 -->
+          <view class="dispute-user" wx:if="{{item.userInfo}}">
+            <image class="dispute-user-avatar" src="{{item.userInfo.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"/>
+            <view class="dispute-user-info">
+              <text class="dispute-user-name">{{item.userInfo.nickName || '未知用户'}}</text>
+              <text class="dispute-user-id" wx:if="{{item.userId}}">ID: {{item.userId}}</text>
+            </view>
+          </view>
+          
+          <!-- 纠纷内容 -->
+          <view class="dispute-content">
+            <view class="dispute-reason-wrap">
+              <text class="dispute-reason-label">纠纷原因：</text>
+              <text class="dispute-reason">{{item.reason}}</text>
+            </view>
+            <view class="dispute-desc-wrap" wx:if="{{item.description}}">
+              <text class="dispute-desc-label">详细描述：</text>
+              <text class="dispute-desc">{{item.description}}</text>
+            </view>
+          </view>
+          
+          <!-- 凭证图片 -->
+          <view class="dispute-images" wx:if="{{item.images && item.images.length > 0}}">
+            <text class="dispute-images-label">凭证图片：</text>
+            <view class="dispute-images-list">
+              <image wx:for="{{item.images}}" wx:for-item="img" wx:key="*this" 
+                     class="dispute-image" src="{{img}}" mode="aspectFill" 
+                     bindtap="previewDisputeImage" data-url="{{img}}"/>
+            </view>
+          </view>
+          
+          <!-- 关联订单 -->
+          <view class="dispute-order" wx:if="{{item.orderInfo}}">
+            <view class="dispute-order-header">
+              <text class="dispute-order-title">📦 关联订单</text>
+              <text class="dispute-order-status {{item.orderInfo.status}}">{{item.orderInfo.statusText || item.orderInfo.status}}</text>
+            </view>
+            <view class="dispute-order-products" wx:if="{{item.orderInfo.productA || item.orderInfo.productB}}">
+              <view class="dispute-product" wx:if="{{item.orderInfo.productA}}">
+                <image class="dispute-product-img" src="{{item.orderInfo.productA.images[0] || '/images/default-product.png'}}" mode="aspectFill"/>
+                <text class="dispute-product-name">{{item.orderInfo.productA.name || '特产A'}}</text>
+              </view>
+              <text class="dispute-product-exchange">⇄</text>
+              <view class="dispute-product" wx:if="{{item.orderInfo.productB}}">
+                <image class="dispute-product-img" src="{{item.orderInfo.productB.images[0] || '/images/default-product.png'}}" mode="aspectFill"/>
+                <text class="dispute-product-name">{{item.orderInfo.productB.name || '特产B'}}</text>
+              </view>
+            </view>
+            <view class="dispute-order-id-wrap">
+              <text class="dispute-order-id-label">订单编号：</text>
+              <text class="dispute-order-id">{{item.orderInfo._id}}</text>
+              <text class="dispute-order-copy" bindtap="copyOrderId" data-id="{{item.orderInfo._id}}">复制</text>
+            </view>
+          </view>
+          
+          <!-- 处理结果（已处理） -->
+          <view class="dispute-result" wx:if="{{item.result || item.note}}">
+            <view class="dispute-result-header">
+              <text class="dispute-result-title">✓ 处理结果</text>
+              <text class="dispute-handle-time" wx:if="{{item.handleTimeText}}">{{item.handleTimeText}}</text>
+            </view>
+            <text class="dispute-result-text" wx:if="{{item.result}}">{{item.result}}</text>
+            <text class="dispute-note" wx:if="{{item.note}}">备注：{{item.note}}</text>
+          </view>
+          
+          <!-- 操作按钮 -->
+          <view class="dispute-actions" wx:if="{{item.status === 'pending' || item.status === 'processing'}}">
+            <view class="dispute-btn close" bindtap="showDisputeModal" data-item="{{item}}" data-action="close">
+              <text class="dispute-btn-icon">✕</text>
+              <text>关闭纠纷</text>
+            </view>
+            <view class="dispute-btn resolve" bindtap="showDisputeModal" data-item="{{item}}" data-action="resolve">
+              <text class="dispute-btn-icon">✓</text>
+              <text>解决纠纷</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 加载更多 -->
+      <view class="load-more" wx:if="{{disputeLoading && disputeList.length > 0}}">
+        <view class="loading-spinner"></view>
+        <text>加载中...</text>
+      </view>
+      <view class="load-more" wx:if="{{!disputeLoading && disputeNoMore && disputeList.length > 0}}">
+        <text>— 已经到底啦 —</text>
+      </view>
+
+      <!-- 空状态 -->
+      <view wx:if="{{!disputeLoading && disputeList.length === 0}}" class="empty-state">
+        <text class="empty-emoji">⚖️</text>
+        <text class="empty-label">暂无纠纷记录</text>
+      </view>
+    </block>
+  </block>
+
+  <!-- ===== 举报管理（Tab=18）===== -->
+  <block wx:if="{{currentTab === 18}}">
+    <view wx:if="{{!isSuperAdmin}}" class="empty-state">
+      <text class="empty-emoji">🔐</text>
+      <text class="empty-label">需要超级管理员权限</text>
+    </view>
+    <block wx:else>
+      <!-- 统计卡片 -->
+      <view class="stats-cards">
+        <view class="stats-card">
+          <text class="stats-card-num">{{reportStats.pending}}</text>
+          <text class="stats-card-label">待处理</text>
+        </view>
+        <view class="stats-card">
+          <text class="stats-card-num">{{reportStats.handled}}</text>
+          <text class="stats-card-label">已处理</text>
+        </view>
+        <view class="stats-card">
+          <text class="stats-card-num">{{reportStats.rejected}}</text>
+          <text class="stats-card-label">已驳回</text>
+        </view>
+      </view>
+
+      <!-- 筛选标签 -->
+      <view class="filter-tabs">
+        <view class="filter-tab {{reportFilter === 'all' ? 'active' : ''}}" bindtap="switchReportFilter" data-filter="all">全部</view>
+        <view class="filter-tab {{reportFilter === 'pending' ? 'active' : ''}}" bindtap="switchReportFilter" data-filter="pending">待处理</view>
+        <view class="filter-tab {{reportFilter === 'handled' ? 'active' : ''}}" bindtap="switchReportFilter" data-filter="handled">已处理</view>
+        <view class="filter-tab {{reportFilter === 'rejected' ? 'active' : ''}}" bindtap="switchReportFilter" data-filter="rejected">已驳回</view>
+      </view>
+
+      <!-- 举报列表 -->
+      <view class="dispute-list">
+        <view class="dispute-card" wx:for="{{reportList}}" wx:key="_id">
+          <!-- 头部：状态和时间 -->
+          <view class="dispute-header">
+            <view class="dispute-header-left">
+              <text class="dispute-status {{item.status}}">{{item.statusLabel}}</text>
+              <text class="dispute-type">{{item.targetType === 'product' ? '商品举报' : '用户举报'}}</text>
+            </view>
+            <text class="dispute-time">{{item.createTimeText}}</text>
+          </view>
+          
+          <!-- 举报人和被举报人信息 -->
+          <view class="dispute-user">
+            <image class="dispute-user-avatar" src="{{item.reporterAvatar || '/images/default-avatar.png'}}" mode="aspectFill"/>
+            <view class="dispute-user-info">
+              <text class="dispute-user-name">{{item.reporterName || '未知用户'}}</text>
+              <text class="dispute-user-id">举报{{item.targetType === 'product' ? '商品' : '用户'}}: {{item.targetName || item.targetId}}</text>
+            </view>
+          </view>
+          
+          <!-- 举报内容 -->
+          <view class="dispute-content">
+            <view class="dispute-reason-wrap">
+              <text class="dispute-reason-label">举报类型：</text>
+              <text class="dispute-reason">{{item.reportTypeName}}</text>
+            </view>
+            <view class="dispute-desc-wrap" wx:if="{{item.description}}">
+              <text class="dispute-desc-label">详细描述：</text>
+              <text class="dispute-desc">{{item.description}}</text>
+            </view>
+          </view>
+          
+          <!-- 凭证图片 -->
+          <view class="dispute-images" wx:if="{{item.images && item.images.length > 0}}">
+            <text class="dispute-images-label">凭证图片：</text>
+            <view class="dispute-images-list">
+              <image wx:for="{{item.images}}" wx:for-item="img" wx:key="*this" 
+                     class="dispute-image" src="{{img}}" mode="aspectFill" 
+                     bindtap="previewReportImage" data-url="{{img}}"/>
+            </view>
+          </view>
+          
+          <!-- 处理结果（已处理） -->
+          <view class="dispute-result" wx:if="{{item.adminNote || item.punishmentLevel}}">
+            <view class="dispute-result-header">
+              <text class="dispute-result-title">✓ 处理结果</text>
+              <text class="dispute-handle-time" wx:if="{{item.handleTimeText}}">{{item.handleTimeText}}</text>
+            </view>
+            <text class="dispute-result-text" wx:if="{{item.punishmentLevel}}">处罚等级：{{item.punishmentLevelName}}</text>
+            <text class="dispute-note" wx:if="{{item.adminNote}}">备注：{{item.adminNote}}</text>
+          </view>
+          
+          <!-- 操作按钮 -->
+          <view class="dispute-actions" wx:if="{{item.status === 'pending'}}">
+            <view class="dispute-btn close" bindtap="showReportModal" data-item="{{item}}" data-action="reject">
+              <text class="dispute-btn-icon">✕</text>
+              <text>驳回举报</text>
+            </view>
+            <view class="dispute-btn resolve" bindtap="showReportModal" data-item="{{item}}" data-action="handle">
+              <text class="dispute-btn-icon">✓</text>
+              <text>处理举报</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 加载更多 -->
+      <view class="load-more" wx:if="{{reportLoading && reportList.length > 0}}">
+        <view class="loading-spinner"></view>
+        <text>加载中...</text>
+      </view>
+      <view class="load-more" wx:if="{{!reportLoading && reportNoMore && reportList.length > 0}}">
+        <text>— 已经到底啦 —</text>
+      </view>
+
+      <!-- 空状态 -->
+      <view wx:if="{{!reportLoading && reportList.length === 0}}" class="empty-state">
+        <text class="empty-emoji">🚨</text>
+        <text class="empty-label">暂无举报记录</text>
       </view>
     </block>
   </block>
@@ -956,231 +1537,511 @@
        弹窗区域 - 统一用 modal-overlay + modal-box
   ==================================================================== -->
 
-  <!-- 用户编辑弹窗 -->
-  <view wx:if="{{userEditModalVisible}}" class="modal-overlay" catchtap="closeUserEditModal" style="z-index: 9999; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center;">
-    <view class="modal-box" catchtap="stopPropagation" style="width: 88%; max-width: 680rpx; max-height: 78vh; background: white; border-radius: 28rpx; box-shadow: 0 20rpx 60rpx rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden;">
-      <view class="modal-hd" style="display: flex; align-items: center; justify-content: space-between; padding: 32rpx 32rpx 20rpx; border-bottom: 1rpx solid rgba(0,0,0,0.07); flex-shrink: 0;">
-        <text class="modal-title-text" style="font-size: 32rpx; font-weight: 700; color: #000;">✏️ 编辑用户</text>
-        <view class="modal-close-btn" catchtap="closeUserEditModal" style="width: 56rpx; height: 56rpx; border-radius: 50%; background: rgba(0,0,0,0.07); display: flex; align-items: center; justify-content: center;">✕</view>
+  <!-- 举报处理弹窗 -->
+  <view wx:if="{{reportModalVisible}}" catchtap="closeReportModal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:999999;display:flex;align-items:center;justify-content:center;">
+    <view catchtap="stopPropagation" style="width:88%;max-width:680rpx;max-height:80vh;background:#fff;border-radius:32rpx;box-shadow:0 20rpx 60rpx rgba(0,0,0,0.3);display:flex;flex-direction:column;overflow:hidden;">
+      <view style="display:flex;align-items:center;justify-content:space-between;padding:36rpx 32rpx 24rpx;background:#fff;border-bottom:1rpx solid rgba(0,0,0,0.06);">
+        <text style="font-size:34rpx;font-weight:700;color:#1C1C1E;">{{reportModalAction === 'handle' ? '✓ 处理举报' : '✕ 驳回举报'}}</text>
+        <view catchtap="closeReportModal" style="width:60rpx;height:60rpx;border-radius:50%;background:rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;font-size:28rpx;color:#8E8E93;">✕</view>
       </view>
-      <scroll-view scroll-y class="modal-scroll-body" style="flex: 1; padding: 24rpx 32rpx; overflow-y: auto; max-height: 55vh;">
-        <text class="form-label-v3" style="font-size: 24rpx; font-weight: 500; color: #666; display: block; margin-bottom: 10rpx;">昵称</text>
-        <input class="form-input-v3" value="{{editingUser.nickName}}" bindinput="updateUserField" data-field="nickName" placeholder="用户昵称" style="width: 100%; height: 88rpx; padding: 0 20rpx; background: rgba(0,0,0,0.04); border: 1rpx solid rgba(0,0,0,0.1); border-radius: 16rpx; font-size: 28rpx; color: #000; box-sizing: border-box; margin-bottom: 20rpx; display: block;" />
-        <text class="form-label-v3" style="font-size: 24rpx; font-weight: 500; color: #666; display: block; margin-bottom: 10rpx;">省份</text>
+      <view style="flex:1;padding:28rpx 32rpx;overflow-y:auto;" wx:if="{{reportModalItem}}">
+        <view style="display:flex;align-items:center;gap:16rpx;padding:20rpx 24rpx;background:rgba(255,59,48,0.06);border-radius:20rpx;margin-bottom:24rpx;">
+          <text style="font-size:40rpx;">🚨</text>
+          <view>
+            <text style="font-size:28rpx;font-weight:600;color:#1C1C1E;display:block;">{{reportModalItem.reportTypeName}}</text>
+            <text style="font-size:24rpx;color:#636366;display:block;">举报时间：{{reportModalItem.createTimeText}}</text>
+          </view>
+        </view>
+        
+        <!-- 处罚等级选择（仅处理时显示） -->
+        <block wx:if="{{reportModalAction === 'handle'}}">
+          <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;">处罚等级</text>
+          <view style="display:flex;flex-direction:column;gap:12rpx;margin-bottom:24rpx;">
+            <view bindtap="selectPunishmentLevel" data-level="minor" style="padding:20rpx 24rpx;border-radius:16rpx;border:2rpx solid {{reportPunishmentLevel === 'minor' ? '#30D158' : 'rgba(0,0,0,0.08)'}};background:{{reportPunishmentLevel === 'minor' ? 'rgba(48,209,88,0.08)' : 'rgba(0,0,0,0.03)'}};">
+              <text style="font-size:28rpx;font-weight:600;color:#1C1C1E;display:block;">轻微违规</text>
+              <text style="font-size:24rpx;color:#636366;display:block;">警告/下架商品</text>
+            </view>
+            <view bindtap="selectPunishmentLevel" data-level="normal" style="padding:20rpx 24rpx;border-radius:16rpx;border:2rpx solid {{reportPunishmentLevel === 'normal' ? '#FF9F0A' : 'rgba(0,0,0,0.08)'}};background:{{reportPunishmentLevel === 'normal' ? 'rgba(255,159,10,0.08)' : 'rgba(0,0,0,0.03)'}};">
+              <text style="font-size:28rpx;font-weight:600;color:#1C1C1E;display:block;">一般违规</text>
+              <text style="font-size:24rpx;color:#636366;display:block;">扣积分10-20 / 扣信用分5-10 / 下架</text>
+            </view>
+            <view bindtap="selectPunishmentLevel" data-level="serious" style="padding:20rpx 24rpx;border-radius:16rpx;border:2rpx solid {{reportPunishmentLevel === 'serious' ? '#FF3B30' : 'rgba(0,0,0,0.08)'}};background:{{reportPunishmentLevel === 'serious' ? 'rgba(255,59,48,0.08)' : 'rgba(0,0,0,0.03)'}};">
+              <text style="font-size:28rpx;font-weight:600;color:#1C1C1E;display:block;">严重违规</text>
+              <text style="font-size:24rpx;color:#636366;display:block;">扣积分50-100 / 扣信用分20-50 / 封号7天</text>
+            </view>
+            <view bindtap="selectPunishmentLevel" data-level="critical" style="padding:20rpx 24rpx;border-radius:16rpx;border:2rpx solid {{reportPunishmentLevel === 'critical' ? '#AF52DE' : 'rgba(0,0,0,0.08)'}};background:{{reportPunishmentLevel === 'critical' ? 'rgba(175,82,222,0.08)' : 'rgba(0,0,0,0.03)'}};">
+              <text style="font-size:28rpx;font-weight:600;color:#1C1C1E;display:block;">极其严重</text>
+              <text style="font-size:24rpx;color:#636366;display:block;">永久封号 / 扣除全部积分和押金</text>
+            </view>
+          </view>
+        </block>
+        
+        <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;">处理备注（选填）</text>
+        <textarea style="width:100%;height:160rpx;padding:20rpx 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;font-size:28rpx;color:#1C1C1E;box-sizing:border-box;" value="{{reportAdminNote}}" bindinput="onReportNoteInput" placeholder="请输入处理备注" />
+      </view>
+      <view style="display:flex;gap:16rpx;padding:24rpx 32rpx 36rpx;background:#fff;border-top:1rpx solid rgba(0,0,0,0.05);">
+        <view catchtap="closeReportModal" style="flex:1;height:92rpx;border-radius:46rpx;display:flex;align-items:center;justify-content:center;font-size:30rpx;font-weight:600;background:rgba(0,0,0,0.06);color:#636366;">取消</view>
+        <view catchtap="submitReportHandle" style="flex:1;height:92rpx;border-radius:46rpx;display:flex;align-items:center;justify-content:center;font-size:30rpx;font-weight:600;background:{{reportModalAction === 'handle' ? 'linear-gradient(135deg,#30D158 0%,#28B148 100%)' : 'linear-gradient(135deg,#FF3B30 0%,#E62E24 100%)'}};color:#fff;">确认{{reportModalAction === 'handle' ? '处理' : '驳回'}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 纠纷处理弹窗 -->
+  <view wx:if="{{disputeModalVisible}}" catchtap="closeDisputeModal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:999999;display:flex;align-items:center;justify-content:center;">
+    <view catchtap="stopPropagation" style="width:88%;max-width:680rpx;max-height:85vh;background:#fff;border-radius:32rpx;box-shadow:0 20rpx 60rpx rgba(0,0,0,0.3);display:flex;flex-direction:column;overflow:hidden;">
+      <view style="display:flex;align-items:center;justify-content:space-between;padding:36rpx 32rpx 24rpx;background:#fff;border-bottom:1rpx solid rgba(0,0,0,0.06);">
+        <text style="font-size:34rpx;font-weight:700;color:#1C1C1E;">{{disputeModalAction === 'resolve' ? '✓ 解决纠纷' : '✕ 关闭纠纷'}}</text>
+        <view catchtap="closeDisputeModal" style="width:60rpx;height:60rpx;border-radius:50%;background:rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;font-size:28rpx;color:#8E8E93;">✕</view>
+      </view>
+      <view style="flex:1;padding:28rpx 32rpx;overflow-y:auto;" wx:if="{{disputeModalItem}}">
+        <view style="display:flex;align-items:center;gap:16rpx;padding:20rpx 24rpx;background:rgba(255,159,10,0.06);border-radius:20rpx;margin-bottom:24rpx;">
+          <text style="font-size:40rpx;">⚠️</text>
+          <view>
+            <text style="font-size:28rpx;font-weight:600;color:#1C1C1E;display:block;">{{disputeModalItem.reason}}</text>
+            <text style="font-size:24rpx;color:#636366;display:block;">提交时间：{{disputeModalItem.createTimeText}}</text>
+          </view>
+        </view>
+
+        <!-- 处罚选项（仅解决纠纷时显示） -->
+        <block wx:if="{{disputeModalAction === 'resolve'}}">
+          <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:16rpx;">处罚方式</text>
+          <view style="display:flex;flex-direction:column;gap:12rpx;margin-bottom:24rpx;">
+            <!-- 不处罚 -->
+            <view bindtap="selectDisputePunishment" data-type="none" style="padding:20rpx 24rpx;border-radius:16rpx;border:2rpx solid {{disputePunishmentType === 'none' ? '#30D158' : 'rgba(0,0,0,0.08)'}};background:{{disputePunishmentType === 'none' ? 'rgba(48,209,88,0.08)' : 'rgba(0,0,0,0.03)'}};">
+              <text style="font-size:28rpx;font-weight:600;color:#1C1C1E;display:block;">✓ 不处罚</text>
+              <text style="font-size:24rpx;color:#636366;display:block;">仅记录纠纷，不对任何一方进行处罚</text>
+            </view>
+            <!-- 扣除积分 -->
+            <view bindtap="selectDisputePunishment" data-type="points" style="padding:20rpx 24rpx;border-radius:16rpx;border:2rpx solid {{disputePunishmentType === 'points' ? '#FF9F0A' : 'rgba(0,0,0,0.08)'}};background:{{disputePunishmentType === 'points' ? 'rgba(255,159,10,0.08)' : 'rgba(0,0,0,0.03)'}};">
+              <text style="font-size:28rpx;font-weight:600;color:#1C1C1E;display:block;">⚡ 扣除积分</text>
+              <view wx:if="{{disputePunishmentType === 'points'}}" style="margin-top:12rpx;display:flex;align-items:center;gap:16rpx;">
+                <text style="font-size:24rpx;color:#636366;">扣除数量：</text>
+                <input type="number" style="flex:1;height:64rpx;padding:0 20rpx;background:#fff;border:1rpx solid rgba(0,0,0,0.1);border-radius:12rpx;font-size:28rpx;" value="{{disputePunishmentValue}}" bindinput="onDisputePunishmentValueInput" placeholder="请输入积分数" />
+              </view>
+              <text wx:else style="font-size:24rpx;color:#636366;display:block;">从责任方扣除积分</text>
+            </view>
+            <!-- 扣除信用分 -->
+            <view bindtap="selectDisputePunishment" data-type="credit" style="padding:20rpx 24rpx;border-radius:16rpx;border:2rpx solid {{disputePunishmentType === 'credit' ? '#FF3B30' : 'rgba(0,0,0,0.08)'}};background:{{disputePunishmentType === 'credit' ? 'rgba(255,59,48,0.08)' : 'rgba(0,0,0,0.03)'}};">
+              <text style="font-size:28rpx;font-weight:600;color:#1C1C1E;display:block;">📉 扣除信用分</text>
+              <view wx:if="{{disputePunishmentType === 'credit'}}" style="margin-top:12rpx;display:flex;align-items:center;gap:16rpx;">
+                <text style="font-size:24rpx;color:#636366;">扣除数量：</text>
+                <input type="number" style="flex:1;height:64rpx;padding:0 20rpx;background:#fff;border:1rpx solid rgba(0,0,0,0.1);border-radius:12rpx;font-size:28rpx;" value="{{disputePunishmentValue}}" bindinput="onDisputePunishmentValueInput" placeholder="请输入信用分数" />
+              </view>
+              <text wx:else style="font-size:24rpx;color:#636366;display:block;">从责任方扣除信用分</text>
+            </view>
+            <!-- 扣除押金 -->
+            <view bindtap="selectDisputePunishment" data-type="deposit" style="padding:20rpx 24rpx;border-radius:16rpx;border:2rpx solid {{disputePunishmentType === 'deposit' ? '#AF52DE' : 'rgba(0,0,0,0.08)'}};background:{{disputePunishmentType === 'deposit' ? 'rgba(175,82,222,0.08)' : 'rgba(0,0,0,0.03)'}};">
+              <text style="font-size:28rpx;font-weight:600;color:#1C1C1E;display:block;">💰 扣除押金</text>
+              <view wx:if="{{disputePunishmentType === 'deposit'}}" style="margin-top:12rpx;display:flex;align-items:center;gap:16rpx;">
+                <text style="font-size:24rpx;color:#636366;">扣除金额(元)：</text>
+                <input type="digit" style="flex:1;height:64rpx;padding:0 20rpx;background:#fff;border:1rpx solid rgba(0,0,0,0.1);border-radius:12rpx;font-size:28rpx;" value="{{disputePunishmentValue}}" bindinput="onDisputePunishmentValueInput" placeholder="请输入金额" />
+              </view>
+              <text wx:else style="font-size:24rpx;color:#636366;display:block;">从责任方扣除押金作为赔偿</text>
+            </view>
+          </view>
+
+          <!-- 责任方选择 -->
+          <block wx:if="{{disputePunishmentType && disputePunishmentType !== 'none'}}">
+            <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;">责任方</text>
+            <view style="display:flex;gap:16rpx;margin-bottom:24rpx;">
+              <view bindtap="selectDisputeResponsible" data-party="initiator" style="flex:1;padding:20rpx 16rpx;border-radius:16rpx;border:2rpx solid {{disputeResponsibleParty === 'initiator' ? '#007AFF' : 'rgba(0,0,0,0.08)'}};background:{{disputeResponsibleParty === 'initiator' ? 'rgba(0,122,255,0.08)' : '#fff'}};text-align:center;">
+                <text style="font-size:26rpx;font-weight:600;color:{{disputeResponsibleParty === 'initiator' ? '#007AFF' : '#1C1C1E'}};display:block;">发起方</text>
+                <text style="font-size:22rpx;color:#636366;display:block;margin-top:4rpx;">申请纠纷的用户</text>
+              </view>
+              <view bindtap="selectDisputeResponsible" data-party="responder" style="flex:1;padding:20rpx 16rpx;border-radius:16rpx;border:2rpx solid {{disputeResponsibleParty === 'responder' ? '#007AFF' : 'rgba(0,0,0,0.08)'}};background:{{disputeResponsibleParty === 'responder' ? 'rgba(0,122,255,0.08)' : '#fff'}};text-align:center;">
+                <text style="font-size:26rpx;font-weight:600;color:{{disputeResponsibleParty === 'responder' ? '#007AFF' : '#1C1C1E'}};display:block;">被申请方</text>
+                <text style="font-size:22rpx;color:#636366;display:block;margin-top:4rpx;">互换的另一方</text>
+              </view>
+              <view bindtap="selectDisputeResponsible" data-party="both" style="flex:1;padding:20rpx 16rpx;border-radius:16rpx;border:2rpx solid {{disputeResponsibleParty === 'both' ? '#007AFF' : 'rgba(0,0,0,0.08)'}};background:{{disputeResponsibleParty === 'both' ? 'rgba(0,122,255,0.08)' : '#fff'}};text-align:center;">
+                <text style="font-size:26rpx;font-weight:600;color:{{disputeResponsibleParty === 'both' ? '#007AFF' : '#1C1C1E'}};display:block;">双方</text>
+                <text style="font-size:22rpx;color:#636366;display:block;margin-top:4rpx;">双方各承担50%</text>
+              </view>
+            </view>
+          </block>
+        </block>
+
+        <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;">处理结果说明</text>
+        <input style="width:100%;height:92rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;font-size:30rpx;color:#1C1C1E;box-sizing:border-box;" value="{{disputeResult}}" bindinput="onDisputeResultInput" placeholder="请输入处理结果说明" />
+        <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;margin-top:24rpx;">备注（选填）</text>
+        <textarea style="width:100%;height:120rpx;padding:20rpx 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;font-size:28rpx;color:#1C1C1E;box-sizing:border-box;" value="{{disputeNote}}" bindinput="onDisputeNoteInput" placeholder="请输入备注信息" />
+      </view>
+      <view style="display:flex;gap:16rpx;padding:24rpx 32rpx 36rpx;background:#fff;border-top:1rpx solid rgba(0,0,0,0.05);">
+        <view catchtap="closeDisputeModal" style="flex:1;height:92rpx;border-radius:46rpx;display:flex;align-items:center;justify-content:center;font-size:30rpx;font-weight:600;background:rgba(0,0,0,0.06);color:#636366;">取消</view>
+        <view catchtap="submitDisputeHandle" style="flex:1;height:92rpx;border-radius:46rpx;display:flex;align-items:center;justify-content:center;font-size:30rpx;font-weight:600;background:{{disputeModalAction === 'resolve' ? 'linear-gradient(135deg,#30D158 0%,#28B148 100%)' : 'linear-gradient(135deg,#FF3B30 0%,#E62E24 100%)'}};color:#fff;">确认{{disputeModalAction === 'resolve' ? '解决' : '关闭'}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 用户编辑弹窗 -->
+  <view wx:if="{{userEditModalVisible}}" catchtap="closeUserEditModal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:999999;display:flex;align-items:center;justify-content:center;">
+    <view class="modal-box" catchtap="stopPropagation" style="width:88%;max-width:680rpx;max-height:80vh;background:linear-gradient(135deg,#ffffff 0%,#f8f9fa 100%);border-radius:32rpx;box-shadow:0 20rpx 60rpx rgba(0,0,0,0.4);display:flex;flex-direction:column;overflow:hidden;">
+      <view class="modal-hd" style="display:flex;align-items:center;justify-content:space-between;padding:36rpx 32rpx 24rpx;background:#fff;border-bottom:1rpx solid rgba(0,0,0,0.06);flex-shrink:0;">
+        <text class="modal-title-text" style="font-size:34rpx;font-weight:700;color:#1C1C1E;">✏️ 编辑用户</text>
+        <view class="modal-close-btn" catchtap="closeUserEditModal" style="width:60rpx;height:60rpx;border-radius:50%;background:rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;font-size:28rpx;color:#8E8E93;">✕</view>
+      </view>
+      <scroll-view scroll-y class="modal-scroll-body" style="flex:1;padding:28rpx 32rpx;overflow-y:auto;max-height:58vh;">
+        <text class="form-label-v3" style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;">昵称</text>
+        <input class="form-input-v3" value="{{editingUser.nickName}}" bindinput="updateUserField" data-field="nickName" placeholder="用户昵称" style="width:100%;height:92rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;font-size:30rpx;color:#1C1C1E;box-sizing:border-box;" />
+        <text class="form-label-v3" style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;margin-top:24rpx;">省份</text>
         <picker mode="selector" range="{{provinceList}}" range-key="name" value="{{provinceIndex}}" bindchange="onUserProvinceChange">
-          <view class="form-picker-v3" style="display: flex; align-items: center; justify-content: space-between; height: 88rpx; padding: 0 20rpx; background: rgba(0,0,0,0.04); border: 1rpx solid rgba(0,0,0,0.1); border-radius: 16rpx; font-size: 28rpx; color: #000; margin-bottom: 20rpx;">
-            <text>{{provinceIndex >= 0 ? provinceList[provinceIndex].name : '请选择省份'}}</text>
-            <text class="picker-chevron" style="color: #999; font-size: 22rpx;">▼</text>
+          <view class="form-picker-v3" style="width:100%;height:92rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;">
+            <text style="font-size:30rpx;color:#1C1C1E;">{{provinceIndex >= 0 ? provinceList[provinceIndex].name : '请选择省份'}}</text>
+            <text style="font-size:24rpx;color:#8E8E93;">▼</text>
           </view>
         </picker>
-        <text class="form-label-v3" style="font-size: 24rpx; font-weight: 500; color: #666; display: block; margin-bottom: 10rpx;">性别</text>
-        <view class="gender-row" style="display: flex; gap: 12rpx; margin-bottom: 20rpx;">
-          <view class="gender-opt-v3 {{editingUser.gender == 1 ? 'g-active' : ''}}" catchtap="updateUserField" data-field="gender" data-value="{{1}}" style="flex: 1; height: 76rpx; border-radius: 16rpx; display: flex; align-items: center; justify-content: center; font-size: 26rpx; background: rgba(0,0,0,0.04); border: 1rpx solid rgba(0,0,0,0.1); color: #666; transition: all 0.15s ease;">👨 男</view>
-          <view class="gender-opt-v3 {{editingUser.gender == 2 ? 'g-active' : ''}}" catchtap="updateUserField" data-field="gender" data-value="{{2}}" style="flex: 1; height: 76rpx; border-radius: 16rpx; display: flex; align-items: center; justify-content: center; font-size: 26rpx; background: rgba(0,0,0,0.04); border: 1rpx solid rgba(0,0,0,0.1); color: #666; transition: all 0.15s ease;">👩 女</view>
-          <view class="gender-opt-v3 {{editingUser.gender == 0 ? 'g-active' : ''}}" catchtap="updateUserField" data-field="gender" data-value="{{0}}" style="flex: 1; height: 76rpx; border-radius: 16rpx; display: flex; align-items: center; justify-content: center; font-size: 26rpx; background: rgba(0,0,0,0.04); border: 1rpx solid rgba(0,0,0,0.1); color: #666; transition: all 0.15s ease;">🔒 保密</view>
+        <text class="form-label-v3" style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;margin-top:24rpx;">性别</text>
+        <view class="gender-row" style="display:flex;gap:16rpx;">
+          <view class="gender-opt-v3 {{editingUser.gender == 1 ? 'g-active' : ''}}" catchtap="updateUserField" data-field="gender" data-value="{{1}}" style="flex:1;height:88rpx;border-radius:16rpx;display:flex;align-items:center;justify-content:center;font-size:28rpx;background:rgba(0,0,0,0.03);color:#636366;{{editingUser.gender == 1 ? 'background:linear-gradient(135deg,#0A84FF 0%,#007AFF 100%);color:#fff;' : ''}}">👨 男</view>
+          <view class="gender-opt-v3 {{editingUser.gender == 2 ? 'g-active' : ''}}" catchtap="updateUserField" data-field="gender" data-value="{{2}}" style="flex:1;height:88rpx;border-radius:16rpx;display:flex;align-items:center;justify-content:center;font-size:28rpx;background:rgba(0,0,0,0.03);color:#636366;{{editingUser.gender == 2 ? 'background:linear-gradient(135deg,#0A84FF 0%,#007AFF 100%);color:#fff;' : ''}}">👩 女</view>
+          <view class="gender-opt-v3 {{editingUser.gender == 0 ? 'g-active' : ''}}" catchtap="updateUserField" data-field="gender" data-value="{{0}}" style="flex:1;height:88rpx;border-radius:16rpx;display:flex;align-items:center;justify-content:center;font-size:28rpx;background:rgba(0,0,0,0.03);color:#636366;{{editingUser.gender == 0 ? 'background:linear-gradient(135deg,#0A84FF 0%,#007AFF 100%);color:#fff;' : ''}}">🔒 保密</view>
         </view>
-        <text class="form-label-v3" style="font-size: 24rpx; font-weight: 500; color: #666; display: block; margin-bottom: 10rpx;">积分</text>
-        <input class="form-input-v3" type="number" value="{{editingUser.points}}" bindinput="updateUserField" data-field="points" placeholder="积分数量" style="width: 100%; height: 88rpx; padding: 0 20rpx; background: rgba(0,0,0,0.04); border: 1rpx solid rgba(0,0,0,0.1); border-radius: 16rpx; font-size: 28rpx; color: #000; box-sizing: border-box; margin-bottom: 20rpx; display: block;" />
-        <text class="form-label-v3" style="font-size: 24rpx; font-weight: 500; color: #666; display: block; margin-bottom: 10rpx;">信用分</text>
-        <input class="form-input-v3" type="number" value="{{editingUser.creditScore}}" bindinput="updateUserField" data-field="creditScore" placeholder="0-100" style="width: 100%; height: 88rpx; padding: 0 20rpx; background: rgba(0,0,0,0.04); border: 1rpx solid rgba(0,0,0,0.1); border-radius: 16rpx; font-size: 28rpx; color: #000; box-sizing: border-box; margin-bottom: 20rpx; display: block;" />
+        <text class="form-label-v3" style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;margin-top:24rpx;">积分</text>
+        <input class="form-input-v3" type="number" value="{{editingUser.points}}" bindinput="updateUserField" data-field="points" placeholder="积分数量" style="width:100%;height:92rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;font-size:30rpx;color:#1C1C1E;box-sizing:border-box;" />
+        <text class="form-label-v3" style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;margin-top:24rpx;">信用分</text>
+        <input class="form-input-v3" type="number" value="{{editingUser.creditScore}}" bindinput="updateUserField" data-field="creditScore" placeholder="0-100" style="width:100%;height:92rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;font-size:30rpx;color:#1C1C1E;box-sizing:border-box;" />
       </scroll-view>
-      <view class="modal-footer-btns" style="display: flex; gap: 16rpx; padding: 20rpx 32rpx 32rpx; flex-shrink: 0; border-top: 1rpx solid rgba(0,0,0,0.06);">
-        <view class="mfb-cancel" catchtap="closeUserEditModal" style="flex: 1; height: 88rpx; border-radius: 44rpx; display: flex; align-items: center; justify-content: center; font-size: 28rpx; font-weight: 600; background: rgba(0,0,0,0.06); color: #666;">取消</view>
-        <view class="mfb-confirm" catchtap="saveUserEdit" style="flex: 1; height: 88rpx; border-radius: 44rpx; display: flex; align-items: center; justify-content: center; font-size: 28rpx; font-weight: 600; background: #0A84FF; color: #fff; box-shadow: 0 4rpx 16rpx rgba(10,132,255,0.35);">保存</view>
+      <view class="modal-footer-btns" style="display:flex;gap:16rpx;padding:24rpx 32rpx 36rpx;flex-shrink:0;background:#fff;border-top:1rpx solid rgba(0,0,0,0.05);">
+        <view class="mfb-cancel" catchtap="closeUserEditModal" style="flex:1;height:92rpx;border-radius:46rpx;display:flex;align-items:center;justify-content:center;font-size:30rpx;font-weight:600;background:rgba(0,0,0,0.06);color:#636366;">取消</view>
+        <view class="mfb-confirm" catchtap="saveUserEdit" style="flex:1;height:92rpx;border-radius:46rpx;display:flex;align-items:center;justify-content:center;font-size:30rpx;font-weight:600;background:linear-gradient(135deg,#0A84FF 0%,#007AFF 100%);color:#fff;box-shadow:0 4rpx 20rpx rgba(10,132,255,0.4);">保存</view>
       </view>
     </view>
   </view>
 
   <!-- 特产编辑弹窗 -->
-  <view wx:if="{{productEditModalVisible}}" class="modal-overlay" catchtap="closeProductEditModal">
-    <view class="modal-box" catchtap="stopPropagation">
-      <view class="modal-hd">
-        <text class="modal-title-text">✏️ 编辑特产</text>
-        <view class="modal-close-btn" catchtap="closeProductEditModal">✕</view>
+  <view wx:if="{{productEditModalVisible}}" catchtap="closeProductEditModal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:999999;display:flex;align-items:center;justify-content:center;">
+    <view catchtap="stopPropagation" style="width:88%;max-width:680rpx;max-height:80vh;background:#fff;border-radius:32rpx;box-shadow:0 20rpx 60rpx rgba(0,0,0,0.3);display:flex;flex-direction:column;overflow:hidden;">
+      <view style="display:flex;align-items:center;justify-content:space-between;padding:36rpx 32rpx 24rpx;background:#fff;border-bottom:1rpx solid rgba(0,0,0,0.06);">
+        <text style="font-size:34rpx;font-weight:700;color:#1C1C1E;">✏️ 编辑特产</text>
+        <view catchtap="closeProductEditModal" style="width:60rpx;height:60rpx;border-radius:50%;background:rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;font-size:28rpx;color:#8E8E93;">✕</view>
       </view>
-      <scroll-view scroll-y class="modal-scroll-body">
-        <text class="form-label-v3">特产名称</text>
-        <input class="form-input-v3" value="{{editingProduct.name}}" bindinput="updateProductField" data-field="name" placeholder="特产名称" />
-        <text class="form-label-v3">省份</text>
-        <input class="form-input-v3" value="{{editingProduct.province}}" bindinput="updateProductField" data-field="province" placeholder="省份" />
-        <text class="form-label-v3">城市</text>
-        <input class="form-input-v3" value="{{editingProduct.city}}" bindinput="updateProductField" data-field="city" placeholder="城市（选填）" />
-        <text class="form-label-v3">分类</text>
+      <scroll-view scroll-y style="flex:1;padding:28rpx 32rpx;max-height:58vh;">
+        <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;">特产名称</text>
+        <input style="width:100%;height:92rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;font-size:30rpx;color:#1C1C1E;box-sizing:border-box;" value="{{editingProduct.name}}" bindinput="updateProductField" data-field="name" placeholder="特产名称" />
+        <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;margin-top:24rpx;">省份</text>
+        <input style="width:100%;height:92rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;font-size:30rpx;color:#1C1C1E;box-sizing:border-box;" value="{{editingProduct.province}}" bindinput="updateProductField" data-field="province" placeholder="省份" />
+        <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;margin-top:24rpx;">城市</text>
+        <input style="width:100%;height:92rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;font-size:30rpx;color:#1C1C1E;box-sizing:border-box;" value="{{editingProduct.city}}" bindinput="updateProductField" data-field="city" placeholder="城市（选填）" />
+        <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;margin-top:24rpx;">分类</text>
         <picker mode="selector" range="{{categoryList}}" range-key="name" value="{{categoryIndex >= 0 ? categoryIndex : 0}}" bindchange="onProductCategoryChange">
-          <view class="form-picker-v3">
-            <text>{{categoryIndex >= 0 ? categoryList[categoryIndex].name : '请选择分类'}}</text>
-            <text class="picker-chevron">▼</text>
+          <view style="width:100%;height:92rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;">
+            <text style="font-size:30rpx;color:#1C1C1E;">{{categoryIndex >= 0 ? categoryList[categoryIndex].name : '请选择分类'}}</text>
+            <text style="font-size:24rpx;color:#8E8E93;">▼</text>
           </view>
         </picker>
-        <text class="form-label-v3">估值范围</text>
+        <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;margin-top:24rpx;">估值范围</text>
         <picker mode="selector" range="{{valueRangeList}}" range-key="label" value="{{valueRangeIndex >= 0 ? valueRangeIndex : 0}}" bindchange="onProductValueRangeChange">
-          <view class="form-picker-v3">
-            <text>{{valueRangeIndex >= 0 ? valueRangeList[valueRangeIndex].label : '请选择估值'}}</text>
-            <text class="picker-chevron">▼</text>
+          <view style="width:100%;height:92rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;">
+            <text style="font-size:30rpx;color:#1C1C1E;">{{valueRangeIndex >= 0 ? valueRangeList[valueRangeIndex].label : '请选择估值'}}</text>
+            <text style="font-size:24rpx;color:#8E8E93;">▼</text>
           </view>
         </picker>
-        <text class="form-label-v3">状态</text>
+        <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;margin-top:24rpx;">状态</text>
         <picker mode="selector" range="{{statusLabels}}" value="{{statusIndex}}" bindchange="onProductStatusChange">
-          <view class="form-picker-v3">
-            <text>{{statusLabels[statusIndex]}}</text>
-            <text class="picker-chevron">▼</text>
+          <view style="width:100%;height:92rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;">
+            <text style="font-size:30rpx;color:#1C1C1E;">{{statusLabels[statusIndex]}}</text>
+            <text style="font-size:24rpx;color:#8E8E93;">▼</text>
           </view>
         </picker>
       </scroll-view>
-      <view class="modal-footer-btns">
-        <view class="mfb-cancel" catchtap="closeProductEditModal">取消</view>
-        <view class="mfb-confirm" catchtap="saveProductEdit">保存</view>
+      <view style="display:flex;gap:16rpx;padding:24rpx 32rpx 36rpx;background:#fff;border-top:1rpx solid rgba(0,0,0,0.05);">
+        <view catchtap="closeProductEditModal" style="flex:1;height:92rpx;border-radius:46rpx;display:flex;align-items:center;justify-content:center;font-size:30rpx;font-weight:600;background:rgba(0,0,0,0.06);color:#636366;">取消</view>
+        <view catchtap="saveProductEdit" style="flex:1;height:92rpx;border-radius:46rpx;display:flex;align-items:center;justify-content:center;font-size:30rpx;font-weight:600;background:linear-gradient(135deg,#0A84FF 0%,#007AFF 100%);color:#fff;">保存</view>
       </view>
     </view>
   </view>
 
   <!-- 积分弹窗 -->
-  <view wx:if="{{pointsModalVisible}}" class="modal-overlay" catchtap="closePointsModal">
-    <view class="modal-box" catchtap="stopPropagation">
-      <view class="modal-hd">
-        <text class="modal-title-text">💰 积分操作</text>
-        <view class="modal-close-btn" catchtap="closePointsModal">✕</view>
+  <view wx:if="{{pointsModalVisible}}" catchtap="closePointsModal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:999999;display:flex;align-items:center;justify-content:center;">
+    <view catchtap="stopPropagation" style="width:88%;max-width:680rpx;max-height:80vh;background:#fff;border-radius:32rpx;box-shadow:0 20rpx 60rpx rgba(0,0,0,0.3);display:flex;flex-direction:column;overflow:hidden;">
+      <view style="display:flex;align-items:center;justify-content:space-between;padding:36rpx 32rpx 24rpx;background:#fff;border-bottom:1rpx solid rgba(0,0,0,0.06);">
+        <text style="font-size:34rpx;font-weight:700;color:#1C1C1E;">💰 积分操作</text>
+        <view catchtap="closePointsModal" style="width:60rpx;height:60rpx;border-radius:50%;background:rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;font-size:28rpx;color:#8E8E93;">✕</view>
       </view>
-      <view class="modal-scroll-body" wx:if="{{selectedUser}}">
-        <view class="modal-user-info">
-          <image class="mui-avatar" src="{{selectedUser.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill" />
+      <view style="flex:1;padding:28rpx 32rpx;overflow-y:auto;" wx:if="{{selectedUser}}">
+        <view style="display:flex;align-items:center;gap:16rpx;padding:20rpx 24rpx;background:rgba(10,132,255,0.06);border-radius:20rpx;margin-bottom:24rpx;">
+          <image style="width:76rpx;height:76rpx;border-radius:50%;background:#f2f4f8;" src="{{selectedUser.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill" />
           <view>
-            <text class="mui-name">{{selectedUser.nickName || '用户'}}</text>
-            <text class="mui-sub">当前积分：{{selectedUser.points || 0}}</text>
+            <text style="font-size:30rpx;font-weight:600;color:#1C1C1E;display:block;">{{selectedUser.nickName || '用户'}}</text>
+            <text style="font-size:24rpx;color:#636366;display:block;">当前积分：{{selectedUser.points || 0}}</text>
           </view>
         </view>
-        <view class="tab-toggle-row">
-          <view class="tt-btn {{pointsAction === 'add' ? 'tt-add' : ''}}" catchtap="switchPointsAction" data-action="add">➕ 增加</view>
-          <view class="tt-btn {{pointsAction === 'deduct' ? 'tt-deduct' : ''}}" catchtap="switchPointsAction" data-action="deduct">➖ 扣除</view>
+        <view style="display:flex;gap:16rpx;margin-bottom:24rpx;">
+          <view catchtap="switchPointsAction" data-action="add" style="flex:1;height:88rpx;border-radius:16rpx;display:flex;align-items:center;justify-content:center;font-size:28rpx;{{pointsAction === 'add' ? 'background:linear-gradient(135deg,#30D158 0%,#28a745 100%);color:#fff;' : 'background:rgba(0,0,0,0.03);color:#636366;'}}">➕ 增加</view>
+          <view catchtap="switchPointsAction" data-action="deduct" style="flex:1;height:88rpx;border-radius:16rpx;display:flex;align-items:center;justify-content:center;font-size:28rpx;{{pointsAction === 'deduct' ? 'background:linear-gradient(135deg,#FF3B30 0%,#dc3545 100%);color:#fff;' : 'background:rgba(0,0,0,0.03);color:#636366;'}}">➖ 扣除</view>
         </view>
-        <text class="form-label-v3">积分数量</text>
-        <input class="form-input-v3" type="number" value="{{pointsValue}}" bindinput="onPointsInput" placeholder="请输入积分数量" />
-        <text class="form-label-v3">原因（选填）</text>
-        <input class="form-input-v3" value="{{pointsReason}}" bindinput="onPointsReasonInput" placeholder="操作原因" />
+        <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;">积分数量</text>
+        <input style="width:100%;height:92rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;font-size:30rpx;color:#1C1C1E;box-sizing:border-box;" type="number" value="{{pointsValue}}" bindinput="onPointsInput" placeholder="请输入积分数量" />
+        <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;margin-top:24rpx;">原因（选填）</text>
+        <input style="width:100%;height:92rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;font-size:30rpx;color:#1C1C1E;box-sizing:border-box;" value="{{pointsReason}}" bindinput="onPointsReasonInput" placeholder="操作原因" />
       </view>
-      <view class="modal-footer-btns">
-        <view class="mfb-cancel" catchtap="closePointsModal">取消</view>
-        <view class="mfb-confirm" catchtap="confirmPoints">确认</view>
+      <view style="display:flex;gap:16rpx;padding:24rpx 32rpx 36rpx;background:#fff;border-top:1rpx solid rgba(0,0,0,0.05);">
+        <view catchtap="closePointsModal" style="flex:1;height:92rpx;border-radius:46rpx;display:flex;align-items:center;justify-content:center;font-size:30rpx;font-weight:600;background:rgba(0,0,0,0.06);color:#636366;">取消</view>
+        <view catchtap="confirmPoints" style="flex:1;height:92rpx;border-radius:46rpx;display:flex;align-items:center;justify-content:center;font-size:30rpx;font-weight:600;background:linear-gradient(135deg,#0A84FF 0%,#007AFF 100%);color:#fff;">确认</view>
       </view>
     </view>
   </view>
 
   <!-- 信用分弹窗 -->
-  <view wx:if="{{creditModalVisible}}" class="modal-overlay" catchtap="closeCreditModal">
-    <view class="modal-box" catchtap="stopPropagation">
-      <view class="modal-hd">
-        <text class="modal-title-text">⭐ 调整信用分</text>
-        <view class="modal-close-btn" catchtap="closeCreditModal">✕</view>
+  <view wx:if="{{creditModalVisible}}" catchtap="closeCreditModal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:999999;display:flex;align-items:center;justify-content:center;">
+    <view catchtap="stopPropagation" style="width:88%;max-width:680rpx;max-height:80vh;background:#fff;border-radius:32rpx;box-shadow:0 20rpx 60rpx rgba(0,0,0,0.3);display:flex;flex-direction:column;overflow:hidden;">
+      <view style="display:flex;align-items:center;justify-content:space-between;padding:36rpx 32rpx 24rpx;background:#fff;border-bottom:1rpx solid rgba(0,0,0,0.06);">
+        <text style="font-size:34rpx;font-weight:700;color:#1C1C1E;">⭐ 调整信用分</text>
+        <view catchtap="closeCreditModal" style="width:60rpx;height:60rpx;border-radius:50%;background:rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;font-size:28rpx;color:#8E8E93;">✕</view>
       </view>
-      <view class="modal-scroll-body" wx:if="{{selectedUser}}">
-        <view class="modal-user-info">
-          <image class="mui-avatar" src="{{selectedUser.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill" />
+      <view style="flex:1;padding:28rpx 32rpx;overflow-y:auto;" wx:if="{{selectedUser}}">
+        <view style="display:flex;align-items:center;gap:16rpx;padding:20rpx 24rpx;background:rgba(10,132,255,0.06);border-radius:20rpx;margin-bottom:24rpx;">
+          <image style="width:76rpx;height:76rpx;border-radius:50%;background:#f2f4f8;" src="{{selectedUser.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill" />
           <view>
-            <text class="mui-name">{{selectedUser.nickName || '用户'}}</text>
-            <text class="mui-sub">当前信用分：{{selectedUser.creditScore || 100}}</text>
+            <text style="font-size:30rpx;font-weight:600;color:#1C1C1E;display:block;">{{selectedUser.nickName || '用户'}}</text>
+            <text style="font-size:24rpx;color:#636366;display:block;">当前信用分：{{selectedUser.creditScore || 100}}</text>
           </view>
         </view>
-        <text class="form-label-v3">新信用分（0-100）</text>
-        <input class="form-input-v3" type="number" value="{{creditValue}}" bindinput="onCreditInput" placeholder="0-100" />
-        <text class="form-label-v3">原因（选填）</text>
-        <input class="form-input-v3" value="{{creditReason}}" bindinput="onCreditReasonInput" placeholder="调整原因" />
+        <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;">新信用分（0-100）</text>
+        <input style="width:100%;height:92rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;font-size:30rpx;color:#1C1C1E;box-sizing:border-box;" type="number" value="{{creditValue}}" bindinput="onCreditInput" placeholder="0-100" />
+        <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;margin-top:24rpx;">原因（选填）</text>
+        <input style="width:100%;height:92rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;font-size:30rpx;color:#1C1C1E;box-sizing:border-box;" value="{{creditReason}}" bindinput="onCreditReasonInput" placeholder="调整原因" />
       </view>
-      <view class="modal-footer-btns">
-        <view class="mfb-cancel" catchtap="closeCreditModal">取消</view>
-        <view class="mfb-confirm" catchtap="confirmCredit">确认</view>
+      <view style="display:flex;gap:16rpx;padding:24rpx 32rpx 36rpx;background:#fff;border-top:1rpx solid rgba(0,0,0,0.05);">
+        <view catchtap="closeCreditModal" style="flex:1;height:92rpx;border-radius:46rpx;display:flex;align-items:center;justify-content:center;font-size:30rpx;font-weight:600;background:rgba(0,0,0,0.06);color:#636366;">取消</view>
+        <view catchtap="confirmCredit" style="flex:1;height:92rpx;border-radius:46rpx;display:flex;align-items:center;justify-content:center;font-size:30rpx;font-weight:600;background:linear-gradient(135deg,#0A84FF 0%,#007AFF 100%);color:#fff;">确认</view>
       </view>
     </view>
   </view>
 
   <!-- 神秘特产编辑弹窗 -->
-  <view wx:if="{{mysteryModalVisible}}" class="modal-overlay" catchtap="closeMysteryModal">
-    <view class="modal-box" catchtap="stopPropagation">
-      <view class="modal-hd">
-        <text class="modal-title-text">🎰 编辑神秘特产</text>
-        <view class="modal-close-btn" catchtap="closeMysteryModal">✕</view>
+  <view wx:if="{{mysteryModalVisible}}" catchtap="closeMysteryModal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:999999;display:flex;align-items:center;justify-content:center;">
+    <view catchtap="stopPropagation" style="width:88%;max-width:680rpx;max-height:80vh;background:#fff;border-radius:32rpx;box-shadow:0 20rpx 60rpx rgba(0,0,0,0.3);display:flex;flex-direction:column;overflow:hidden;">
+      <view style="display:flex;align-items:center;justify-content:space-between;padding:36rpx 32rpx 24rpx;background:#fff;border-bottom:1rpx solid rgba(0,0,0,0.06);">
+        <text style="font-size:34rpx;font-weight:700;color:#1C1C1E;">🎰 编辑神秘特产</text>
+        <view catchtap="closeMysteryModal" style="width:60rpx;height:60rpx;border-radius:50%;background:rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;font-size:28rpx;color:#8E8E93;">✕</view>
       </view>
-      <scroll-view scroll-y class="modal-scroll-body" wx:if="{{editingMystery}}">
-        <text class="form-label-v3">名称</text>
-        <input class="form-input-v3" value="{{editingMystery.name}}" bindinput="updateMysteryField" data-field="name" placeholder="特产名称" />
-        <text class="form-label-v3">描述</text>
-        <input class="form-input-v3" value="{{editingMystery.description}}" bindinput="updateMysteryField" data-field="description" placeholder="特产描述" />
-        <text class="form-label-v3">省份</text>
-        <input class="form-input-v3" value="{{editingMystery.province}}" bindinput="updateMysteryField" data-field="province" placeholder="省份" />
-        <text class="form-label-v3">城市</text>
-        <input class="form-input-v3" value="{{editingMystery.city}}" bindinput="updateMysteryField" data-field="city" placeholder="城市（选填）" />
-        <text class="form-label-v3">状态</text>
+      <scroll-view scroll-y style="flex:1;padding:28rpx 32rpx;max-height:58vh;" wx:if="{{editingMystery}}">
+        <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;">名称</text>
+        <input style="width:100%;height:92rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;font-size:30rpx;color:#1C1C1E;box-sizing:border-box;" value="{{editingMystery.name}}" bindinput="updateMysteryField" data-field="name" placeholder="特产名称" />
+        <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;margin-top:24rpx;">描述</text>
+        <input style="width:100%;height:92rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;font-size:30rpx;color:#1C1C1E;box-sizing:border-box;" value="{{editingMystery.description}}" bindinput="updateMysteryField" data-field="description" placeholder="特产描述" />
+        <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;margin-top:24rpx;">省份</text>
+        <input style="width:100%;height:92rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;font-size:30rpx;color:#1C1C1E;box-sizing:border-box;" value="{{editingMystery.province}}" bindinput="updateMysteryField" data-field="province" placeholder="省份" />
+        <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;margin-top:24rpx;">城市</text>
+        <input style="width:100%;height:92rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;font-size:30rpx;color:#1C1C1E;box-sizing:border-box;" value="{{editingMystery.city}}" bindinput="updateMysteryField" data-field="city" placeholder="城市（选填）" />
+        <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;margin-top:24rpx;">状态</text>
         <picker mode="selector" range="{{['展示中', '已下架']}}" value="{{editingMystery.status === 'active' ? 0 : 1}}" bindchange="updateMysteryStatus">
-          <view class="form-picker-v3">
-            <text>{{editingMystery.status === 'active' ? '展示中' : '已下架'}}</text>
-            <text class="picker-chevron">▼</text>
+          <view style="width:100%;height:92rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;">
+            <text style="font-size:30rpx;color:#1C1C1E;">{{editingMystery.status === 'active' ? '展示中' : '已下架'}}</text>
+            <text style="font-size:24rpx;color:#8E8E93;">▼</text>
           </view>
         </picker>
       </scroll-view>
-      <view class="modal-footer-btns">
-        <view class="mfb-cancel" catchtap="closeMysteryModal">取消</view>
-        <view class="mfb-confirm" catchtap="saveMystery">保存</view>
+      <view style="display:flex;gap:16rpx;padding:24rpx 32rpx 36rpx;background:#fff;border-top:1rpx solid rgba(0,0,0,0.05);">
+        <view catchtap="closeMysteryModal" style="flex:1;height:92rpx;border-radius:46rpx;display:flex;align-items:center;justify-content:center;font-size:30rpx;font-weight:600;background:rgba(0,0,0,0.06);color:#636366;">取消</view>
+        <view catchtap="saveMystery" style="flex:1;height:92rpx;border-radius:46rpx;display:flex;align-items:center;justify-content:center;font-size:30rpx;font-weight:600;background:linear-gradient(135deg,#0A84FF 0%,#007AFF 100%);color:#fff;">保存</view>
       </view>
     </view>
   </view>
 
   <!-- 调整代购等级弹窗 -->
-  <view wx:if="{{levelModalVisible}}" class="modal-overlay" catchtap="closeLevelModal">
-    <view class="modal-box" catchtap="stopPropagation">
-      <view class="modal-hd">
-        <text class="modal-title-text">🏅 调整代购等级</text>
-        <view class="modal-close-btn" catchtap="closeLevelModal">✕</view>
+  <view wx:if="{{levelModalVisible}}" catchtap="closeLevelModal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:999999;display:flex;align-items:center;justify-content:center;">
+    <view catchtap="stopPropagation" style="width:88%;max-width:680rpx;max-height:80vh;background:#fff;border-radius:32rpx;box-shadow:0 20rpx 60rpx rgba(0,0,0,0.3);display:flex;flex-direction:column;overflow:hidden;">
+      <view style="display:flex;align-items:center;justify-content:space-between;padding:36rpx 32rpx 24rpx;background:#fff;border-bottom:1rpx solid rgba(0,0,0,0.06);">
+        <text style="font-size:34rpx;font-weight:700;color:#1C1C1E;">🏅 调整代购等级</text>
+        <view catchtap="closeLevelModal" style="width:60rpx;height:60rpx;border-radius:50%;background:rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;font-size:28rpx;color:#8E8E93;">✕</view>
       </view>
-      <scroll-view scroll-y class="modal-scroll-body" wx:if="{{levelModalUser}}">
-        <view class="modal-user-info">
-          <image class="mui-avatar" src="{{levelModalUser.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill" />
+      <scroll-view scroll-y style="flex:1;padding:28rpx 32rpx;max-height:58vh;" wx:if="{{levelModalUser}}">
+        <view style="display:flex;align-items:center;gap:16rpx;padding:20rpx 24rpx;background:rgba(10,132,255,0.06);border-radius:20rpx;margin-bottom:24rpx;">
+          <image style="width:76rpx;height:76rpx;border-radius:50%;background:#f2f4f8;" src="{{levelModalUser.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill" />
           <view>
-            <text class="mui-name">{{levelModalUser.nickName}}</text>
-            <text class="mui-sub">当前：{{levelModalUser.daigouLevelName}} · 积分 {{levelModalUser.points}}</text>
+            <text style="font-size:30rpx;font-weight:600;color:#1C1C1E;display:block;">{{levelModalUser.nickName}}</text>
+            <text style="font-size:24rpx;color:#636366;display:block;">当前：{{levelModalUser.daigouLevelName}} · 积分 {{levelModalUser.points}}</text>
           </view>
         </view>
-        <text class="form-label-v3">目标等级</text>
+        <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;">目标等级</text>
         <picker mode="selector" range="{{levelOptions}}" value="{{levelPickerIndex}}" bindchange="onLevelPickerChange">
-          <view class="form-picker-v3">
-            <text>{{levelOptions[levelPickerIndex] || '请选择'}}</text>
-            <text class="picker-chevron">▼</text>
+          <view style="width:100%;height:92rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;">
+            <text style="font-size:30rpx;color:#1C1C1E;">{{levelOptions[levelPickerIndex] || '请选择'}}</text>
+            <text style="font-size:24rpx;color:#8E8E93;">▼</text>
           </view>
         </picker>
-        <text class="form-label-v3">调整原因（选填）</text>
-        <input class="form-input-v3" placeholder="例如：手动升级审核" bindinput="onLevelReasonInput" value="{{levelReason}}" />
+        <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;margin-top:24rpx;">调整原因（选填）</text>
+        <input style="width:100%;height:92rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;font-size:30rpx;color:#1C1C1E;box-sizing:border-box;" placeholder="例如：手动升级审核" bindinput="onLevelReasonInput" value="{{levelReason}}" />
       </scroll-view>
-      <view class="modal-footer-btns">
-        <view class="mfb-cancel" catchtap="closeLevelModal">取消</view>
-        <view class="mfb-confirm mfb-confirm-orange" catchtap="confirmLevelAdjust">确认调整</view>
+      <view style="display:flex;gap:16rpx;padding:24rpx 32rpx 36rpx;background:#fff;border-top:1rpx solid rgba(0,0,0,0.05);">
+        <view catchtap="closeLevelModal" style="flex:1;height:92rpx;border-radius:46rpx;display:flex;align-items:center;justify-content:center;font-size:30rpx;font-weight:600;background:rgba(0,0,0,0.06);color:#636366;">取消</view>
+        <view catchtap="confirmLevelAdjust" style="flex:1;height:92rpx;border-radius:46rpx;display:flex;align-items:center;justify-content:center;font-size:30rpx;font-weight:600;background:linear-gradient(135deg,#FF9500 0%,#FF8800 100%);color:#fff;">确认调整</view>
       </view>
     </view>
   </view>
 
   <!-- 录入押金弹窗 -->
-  <view wx:if="{{depositInputModalVisible}}" class="modal-overlay" catchtap="closeDepositInputModal">
-    <view class="modal-box" catchtap="stopPropagation">
-      <view class="modal-hd">
-        <text class="modal-title-text">💰 录入/修改押金</text>
-        <view class="modal-close-btn" catchtap="closeDepositInputModal">✕</view>
+  <view wx:if="{{depositInputModalVisible}}" catchtap="closeDepositInputModal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:999999;display:flex;align-items:center;justify-content:center;">
+    <view catchtap="stopPropagation" style="width:88%;max-width:680rpx;max-height:80vh;background:#fff;border-radius:32rpx;box-shadow:0 20rpx 60rpx rgba(0,0,0,0.3);display:flex;flex-direction:column;overflow:hidden;">
+      <view style="display:flex;align-items:center;justify-content:space-between;padding:36rpx 32rpx 24rpx;background:#fff;border-bottom:1rpx solid rgba(0,0,0,0.06);">
+        <text style="font-size:34rpx;font-weight:700;color:#1C1C1E;">
+          {{depositInputMode === 'add' ? '➕ 补押金' : depositInputMode === 'refund' ? '↩️ 退押金' : '💰 录入/修改押金'}}
+        </text>
+        <view catchtap="closeDepositInputModal" style="width:60rpx;height:60rpx;border-radius:50%;background:rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;font-size:28rpx;color:#8E8E93;">✕</view>
       </view>
-      <scroll-view scroll-y class="modal-scroll-body" wx:if="{{depositInputUser}}">
-        <view class="modal-user-info">
-          <image class="mui-avatar" src="{{depositInputUser.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill" />
+      <scroll-view scroll-y style="flex:1;padding:28rpx 32rpx;max-height:58vh;" wx:if="{{depositInputUser}}">
+        <view style="display:flex;align-items:center;gap:16rpx;padding:20rpx 24rpx;background:rgba(10,132,255,0.06);border-radius:20rpx;margin-bottom:24rpx;">
+          <image style="width:76rpx;height:76rpx;border-radius:50%;background:#f2f4f8;" src="{{depositInputUser.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill" />
           <view>
-            <text class="mui-name">{{depositInputUser.nickName}}</text>
-            <text class="mui-sub">当前押金：¥{{depositInputUser.depositPaid || 0}} · 余额：¥{{depositInputUser.depositBalance || 0}}</text>
+            <text style="font-size:30rpx;font-weight:600;color:#1C1C1E;display:block;">{{depositInputUser.nickName}}</text>
+            <text style="font-size:24rpx;color:#636366;display:block;">当前押金：¥{{depositInputUser.depositPaid || 0}} · 余额：¥{{depositInputUser.depositBalance || 0}}</text>
           </view>
         </view>
-        <text class="form-label-v3">押金总额（元）</text>
-        <input class="form-input-v3" type="digit" placeholder="例如：200" bindinput="onDepositAmountInput" value="{{depositInputAmount}}" />
-        <text class="form-label-v3">备注（选填）</text>
-        <input class="form-input-v3" placeholder="例如：线下转账已收款" bindinput="onDepositNoteInput" value="{{depositInputNote}}" />
-        <view class="deposit-hint-bar">💡 此操作直接更新押金余额，无需微信支付</view>
+        <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;">
+          {{depositInputMode === 'add' ? '补入金额（元）' : depositInputMode === 'refund' ? '退款金额（元）' : '押金总额（元）'}}
+        </text>
+        <input style="width:100%;height:92rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;font-size:30rpx;color:#1C1C1E;box-sizing:border-box;" type="digit" placeholder="例如：200" bindinput="onDepositAmountInput" value="{{depositInputAmount}}" />
+        <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:12rpx;margin-top:24rpx;">备注（选填）</text>
+        <input style="width:100%;height:92rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;font-size:30rpx;color:#1C1C1E;box-sizing:border-box;" placeholder="例如：线下转账已收款" bindinput="onDepositNoteInput" value="{{depositInputNote}}" />
+        <view style="padding:18rpx 24rpx;border-radius:16rpx;font-size:26rpx;margin-top:24rpx;{{depositInputMode === 'refund' ? 'background:rgba(255,59,48,0.08);color:#CC0000;' : 'background:rgba(255,149,0,0.1);color:#CC7700;'}}">
+          {{depositInputMode === 'add' ? '💡 补押金将累加到现有押金余额' : depositInputMode === 'refund' ? '⚠️ 退押金将从余额中扣减，不可撤销' : '💡 此操作直接设置押金总额'}}
+        </view>
       </scroll-view>
-      <view class="modal-footer-btns">
-        <view class="mfb-cancel" catchtap="closeDepositInputModal">取消</view>
-        <view class="mfb-confirm mfb-confirm-orange" catchtap="confirmDepositInput">确认录入</view>
+      <view style="display:flex;gap:16rpx;padding:24rpx 32rpx 36rpx;background:#fff;border-top:1rpx solid rgba(0,0,0,0.05);">
+        <view catchtap="closeDepositInputModal" style="flex:1;height:92rpx;border-radius:46rpx;display:flex;align-items:center;justify-content:center;font-size:30rpx;font-weight:600;background:rgba(0,0,0,0.06);color:#636366;">取消</view>
+        <view catchtap="confirmDepositInput" style="flex:1;height:92rpx;border-radius:46rpx;display:flex;align-items:center;justify-content:center;font-size:30rpx;font-weight:600;color:#fff;background:{{depositInputMode === 'refund' ? 'linear-gradient(135deg,#FF3B30 0%,#CC0000 100%)' : depositInputMode === 'add' ? 'linear-gradient(135deg,#30D158 0%,#248A3D 100%)' : 'linear-gradient(135deg,#FF9500 0%,#FF8800 100%)'}};">
+          {{depositInputMode === 'add' ? '确认补押金' : depositInputMode === 'refund' ? '确认退押金' : '确认录入'}}
+        </view>
       </view>
     </view>
   </view>
+
+  <!-- ===== 消息测试（Tab=19）===== -->
+  <block wx:if="{{currentTab === 19}}">
+    <view wx:if="{{!isSuperAdmin}}" class="empty-state">
+      <text class="empty-emoji">🔐</text>
+      <text class="empty-text">仅超级管理员可用</text>
+    </view>
+    <view wx:else class="msg-test-wrap">
+
+      <!-- 说明 -->
+      <view class="msg-test-tip">
+        <text class="mtt-icon">💡</text>
+        <text class="mtt-text">向自己（当前登录账号）发送各类订阅消息，验证模板字段是否正确。发送前需先在"我的"页面完成订阅授权。</text>
+      </view>
+
+      <!-- 消息类型列表 -->
+      <view class="msg-test-list">
+
+        <view class="msg-test-item">
+          <view class="mti-left">
+            <text class="mti-icon">📦</text>
+            <view>
+              <text class="mti-name">发货通知</text>
+              <text class="mti-desc">shipment · 发货状态/快递/单号</text>
+            </view>
+          </view>
+          <view class="mti-btn {{msgTestLoading === 'shipment' ? 'loading' : ''}}" bindtap="testSendMsg" data-action="shipment">
+            {{msgTestLoading === 'shipment' ? '发送中' : '测试'}}
+          </view>
+        </view>
+
+        <view class="msg-test-item">
+          <view class="mti-left">
+            <text class="mti-icon">⭐</text>
+            <view>
+              <text class="mti-name">积分到账</text>
+              <text class="mti-desc">points · 积分数量/说明</text>
+            </view>
+          </view>
+          <view class="mti-btn {{msgTestLoading === 'points' ? 'loading' : ''}}" bindtap="testSendMsg" data-action="points">
+            {{msgTestLoading === 'points' ? '发送中' : '测试'}}
+          </view>
+        </view>
+
+        <view class="msg-test-item">
+          <view class="mti-left">
+            <text class="mti-icon">❌</text>
+            <view>
+              <text class="mti-name">订单取消</text>
+              <text class="mti-desc">orderCancel · 取消原因/日期</text>
+            </view>
+          </view>
+          <view class="mti-btn {{msgTestLoading === 'orderCancel' ? 'loading' : ''}}" bindtap="testSendMsg" data-action="orderCancel">
+            {{msgTestLoading === 'orderCancel' ? '发送中' : '测试'}}
+          </view>
+        </view>
+
+        <view class="msg-test-item">
+          <view class="mti-left">
+            <text class="mti-icon">💰</text>
+            <view>
+              <text class="mti-name">提现结果</text>
+              <text class="mti-desc">withdrawal · 状态/金额/账号</text>
+            </view>
+          </view>
+          <view class="mti-btn {{msgTestLoading === 'withdrawal' ? 'loading' : ''}}" bindtap="testSendMsg" data-action="withdrawal">
+            {{msgTestLoading === 'withdrawal' ? '发送中' : '测试'}}
+          </view>
+        </view>
+
+        <view class="msg-test-item">
+          <view class="mti-left">
+            <text class="mti-icon">🔔</text>
+            <view>
+              <text class="mti-name">活动通知</text>
+              <text class="mti-desc">activity · 内容/开始/截止/备注</text>
+            </view>
+          </view>
+          <view class="mti-btn {{msgTestLoading === 'activity' ? 'loading' : ''}}" bindtap="testSendMsg" data-action="activity">
+            {{msgTestLoading === 'activity' ? '发送中' : '测试'}}
+          </view>
+        </view>
+
+        <view class="msg-test-item">
+          <view class="mti-left">
+            <text class="mti-icon">🔄</text>
+            <view>
+              <text class="mti-name">互换申请</text>
+              <text class="mti-desc">swapRequest · 申请人/特产/日期</text>
+            </view>
+          </view>
+          <view class="mti-btn {{msgTestLoading === 'swapRequest' ? 'loading' : ''}}" bindtap="testSendMsg" data-action="swapRequest">
+            {{msgTestLoading === 'swapRequest' ? '发送中' : '测试'}}
+          </view>
+        </view>
+
+        <view class="msg-test-item">
+          <view class="mti-left">
+            <text class="mti-icon">✅</text>
+            <view>
+              <text class="mti-name">互换接受</text>
+              <text class="mti-desc">swapAccept · 接受人/特产/日期</text>
+            </view>
+          </view>
+          <view class="mti-btn {{msgTestLoading === 'swapAccept' ? 'loading' : ''}}" bindtap="testSendMsg" data-action="swapAccept">
+            {{msgTestLoading === 'swapAccept' ? '发送中' : '测试'}}
+          </view>
+        </view>
+
+        <view class="msg-test-item">
+          <view class="mti-left">
+            <text class="mti-icon">🚫</text>
+            <view>
+              <text class="mti-name">互换拒绝</text>
+              <text class="mti-desc">swapReject · 拒绝人/特产/日期</text>
+            </view>
+          </view>
+          <view class="mti-btn {{msgTestLoading === 'swapReject' ? 'loading' : ''}}" bindtap="testSendMsg" data-action="swapReject">
+            {{msgTestLoading === 'swapReject' ? '发送中' : '测试'}}
+          </view>
+        </view>
+
+      </view>
+
+      <!-- 测试结果日志 -->
+      <view class="msg-test-log" wx:if="{{msgTestLogs.length > 0}}">
+        <view class="mtl-title">📋 发送记录</view>
+        <view class="mtl-item {{item.success ? 'ok' : 'fail'}}" wx:for="{{msgTestLogs}}" wx:key="index">
+          <text class="mtl-action">{{item.action}}</text>
+          <text class="mtl-status">{{item.success ? '✅ 成功' : '❌ ' + item.error}}</text>
+          <text class="mtl-time">{{item.time}}</text>
+        </view>
+      </view>
+
+      <view class="safe-bottom"></view>
+    </view>
+  </block>
 
 </view>
