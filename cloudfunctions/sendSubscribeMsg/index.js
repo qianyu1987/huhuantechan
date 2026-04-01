@@ -123,41 +123,50 @@ async function doSend(touser, templateId, data, page) {
 // 各业务消息发送函数
 // ======================
 
-/** 发货通知 */
+/** 发货通知
+ * 模板实际字段（根据错误信息 phrase12 推断，需对照公众平台确认）
+ * 先用 queryTemplate 查出真实字段再填
+ */
 async function sendShipmentNotify(openid, params = {}) {
   const { status, deliveryMethod, trackingNumber, page } = params;
+  // phrase12 是模板里的字段，说明模板字段编号较大，需查询确认
+  // 暂时用 queryTemplate 返回的字段名填充
   return doSend(openid, TEMPLATES.SHIPMENT_NOTIFY, {
-    thing1:   { value: fmtThing(status, 20) },
-    thing2:   { value: fmtThing(deliveryMethod, 20) },
-    character_string3: { value: fmtChar(trackingNumber, 32) },
+    phrase12: { value: fmtPhrase(status) },
   }, page);
 }
 
-/** 积分到账提醒 */
+/** 积分到账提醒
+ * 模板实际字段：number5（根据错误信息推断）
+ */
 async function sendPointsArrival(openid, params = {}) {
   const { points, reason, page } = params;
   return doSend(openid, TEMPLATES.POINTS_ARRIVAL, {
-    number1: { value: String(Number(points) || 0) },
-    thing2:  { value: fmtThing(reason, 20) },
+    number5: { value: String(Number(points) || 0) },
   }, page);
 }
 
-/** 订单取消通知 */
+/** 订单取消通知
+ * 模板实际字段：thing1 + date2 + thing3（根据错误信息推断）
+ */
 async function sendOrderCancel(openid, params = {}) {
   const { cancelReason, cancelTime, page } = params;
   return doSend(openid, TEMPLATES.ORDER_CANCEL, {
     thing1: { value: fmtThing(cancelReason, 20) },
-    date2:  { value: fmtDate(cancelTime) },  // ORDER_CANCEL 第二个字段是 date 类型
+    date2:  { value: fmtDate(cancelTime) },
+    thing3: { value: '特产互换平台' },
   }, page);
 }
 
-/** 提现结果通知 */
+/** 提现结果通知
+ * 模板实际字段：thing1 开头（根据错误信息推断，不是 phrase1）
+ */
 async function sendWithdrawalResult(openid, params = {}) {
   const { status, amount, account, page } = params;
   return doSend(openid, TEMPLATES.WITHDRAWAL_RESULT, {
-    phrase1:  { value: fmtPhrase(status) },   // phrase 必须用预设关键词
-    amount2:  { value: String(Number(amount) || 0) },
-    thing3:   { value: fmtThing(account, 20) },
+    thing1:  { value: fmtThing(status, 20) },
+    amount2: { value: String(Number(amount) || 0) },
+    thing3:  { value: fmtThing(account, 20) },
   }, page);
 }
 
@@ -228,16 +237,35 @@ exports.main = async (event, context) => {
   }
 
   const ACTION_MAP = {
-    shipment:    sendShipmentNotify,
-    points:      sendPointsArrival,
-    orderCancel: sendOrderCancel,
-    withdrawal:  sendWithdrawalResult,
-    newProduct:  sendNewProduct,
-    activity:    sendActivityNotify,
-    swapRequest: sendSwapRequest,
-    swapAccept:  sendSwapAccept,
-    swapReject:  sendSwapReject,
+    shipment:      sendShipmentNotify,
+    points:        sendPointsArrival,
+    orderCancel:   sendOrderCancel,
+    withdrawal:    sendWithdrawalResult,
+    newProduct:    sendNewProduct,
+    activity:      sendActivityNotify,
+    swapRequest:   sendSwapRequest,
+    swapAccept:    sendSwapAccept,
+    swapReject:    sendSwapReject,
   };
+
+  // 查询模板字段（调试用）
+  if (action === 'queryTemplate') {
+    try {
+      const results = {};
+      for (const [name, id] of Object.entries(TEMPLATES)) {
+        try {
+          const res = await cloud.openapi.subscribeMessage.getTemplateList();
+          results[name] = { id, templateList: res.data };
+          break; // getTemplateList 一次返回所有，只需调一次
+        } catch (e) {
+          results[name] = { id, error: e.message };
+        }
+      }
+      return { success: true, results };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  }
 
   const handler = ACTION_MAP[action];
   if (!handler) {

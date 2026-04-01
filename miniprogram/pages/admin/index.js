@@ -12,6 +12,7 @@ Page({
     // 消息测试
     msgTestLoading: '',
     msgTestLogs: [],
+    templateQueryResult: '',
     // 用户操作日志
     operationLogs: [],
     logsLoading: false,
@@ -3527,6 +3528,35 @@ Page({
     swapRequest: 'qkNEkQTj0waYSCgdJC7dSe9L5_gqfAQqme-J0IEFA_c',
     swapAccept:  'qkNEkQTj0waYSCgdJC7dSe9L5_gqfAQqme-J0IEFA_c',
     swapReject:  'qkNEkQTj0waYSCgdJC7dSe9L5_gqfAQqme-J0IEFA_c',
+  },
+
+  // 查询所有模板字段（调试用）
+  async queryMsgTemplates() {
+    wx.showLoading({ title: '查询中...' })
+    try {
+      const res = await callCloud('sendSubscribeMsg', { action: 'queryTemplate', openid: 'dummy' })
+      wx.hideLoading()
+      if (res && res.success && res.results) {
+        // 格式化输出
+        let text = ''
+        const list = res.results?.results?.templateList || []
+        if (list.length > 0) {
+          list.forEach(t => {
+            text += `【${t.title || t.priTmplId}】\nID: ${t.priTmplId}\n`
+            if (t.content) text += `字段: ${t.content}\n`
+            text += '\n'
+          })
+        } else {
+          text = JSON.stringify(res.results, null, 2)
+        }
+        this.setData({ templateQueryResult: text })
+      } else {
+        this.setData({ templateQueryResult: JSON.stringify(res, null, 2) })
+      }
+    } catch (e) {
+      wx.hideLoading()
+      this.setData({ templateQueryResult: '查询失败: ' + e.message })
+    }
   },
 
   // 测试发送订阅消息

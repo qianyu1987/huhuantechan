@@ -1921,6 +1921,23 @@
         <text class="mtt-text">向自己（当前登录账号）发送各类订阅消息，验证模板字段是否正确。发送前需先在"我的"页面完成订阅授权。</text>
       </view>
 
+      <!-- 查询模板字段 -->
+      <view class="msg-test-item" style="background:rgba(0,122,255,0.05);border-radius:20rpx;margin-bottom:24rpx;">
+        <view class="mti-left">
+          <text class="mti-icon">🔍</text>
+          <view>
+            <text class="mti-name">查询模板字段</text>
+            <text class="mti-desc">获取所有模板的真实字段名</text>
+          </view>
+        </view>
+        <view class="mti-btn" style="background:linear-gradient(135deg,#007AFF,#0055CC);" bindtap="queryMsgTemplates">查询</view>
+      </view>
+
+      <!-- 模板字段结果 -->
+      <view wx:if="{{templateQueryResult}}" style="background:#fff;border-radius:20rpx;padding:24rpx 32rpx;margin-bottom:32rpx;box-shadow:0 2rpx 16rpx rgba(0,0,0,0.06);">
+        <text style="font-size:26rpx;color:#636366;font-family:monospace;white-space:pre-wrap;">{{templateQueryResult}}</text>
+      </view>
+
       <!-- 消息类型列表 -->
       <view class="msg-test-list">
 
