@@ -14,7 +14,10 @@
   <scroll-view scroll-y class="settings-scroll">
     <!-- 系统设置 - 独立区块 -->
     <view class="section">
-      <view class="section-title">系统设置</view>
+      <view class="section-title">
+        <view class="section-icon">⚙️</view>
+        <text class="section-text">系统设置</text>
+      </view>
       <view class="menu-list">
         <view class="menu-item" bindtap="toggleTheme">
           <view class="menu-left">
@@ -25,6 +28,20 @@
             <text class="theme-name">{{currentThemeName}}</text>
             <text class="menu-arrow">›</text>
           </view>
+        </view>
+        <view class="menu-item">
+          <view class="menu-left">
+            <text class="menu-icon">🔔</text>
+            <text class="menu-text">声音提示</text>
+          </view>
+          <switch class="menu-switch" checked="{{soundEnabled}}" bindchange="toggleSwitch" data-key="soundEnabled"/>
+        </view>
+        <view class="menu-item">
+          <view class="menu-left">
+            <text class="menu-icon">📳</text>
+            <text class="menu-text">振动反馈</text>
+          </view>
+          <switch class="menu-switch" checked="{{vibrationEnabled}}" bindchange="toggleSwitch" data-key="vibrationEnabled"/>
         </view>
         <view class="menu-item" bindtap="clearCache">
           <view class="menu-left">
@@ -43,19 +60,70 @@
           </view>
           <text class="menu-arrow">›</text>
         </view>
-        <view class="menu-item">
+        <view class="menu-item" bindtap="checkUpdate">
           <view class="menu-left">
             <text class="menu-icon">📱</text>
             <text class="menu-text">版本信息</text>
           </view>
-          <text class="version-text">v1.0.0</text>
+          <view class="menu-right">
+            <text class="version-text">v{{version}}</text>
+            <text class="menu-arrow">›</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 帮助与反馈 -->
+    <view class="section">
+      <view class="section-title">
+        <view class="section-icon">❓</view>
+        <text class="section-text">帮助与反馈</text>
+      </view>
+      <view class="menu-list">
+        <view class="menu-item" bindtap="goToHelp">
+          <view class="menu-left">
+            <text class="menu-icon">❓</text>
+            <text class="menu-text">帮助中心</text>
+          </view>
+          <text class="menu-arrow">›</text>
+        </view>
+        <view class="menu-item" bindtap="goToFeedback">
+          <view class="menu-left">
+            <text class="menu-icon">💬</text>
+            <text class="menu-text">意见反馈</text>
+          </view>
+          <text class="menu-arrow">›</text>
+        </view>
+        <view class="menu-item" bindtap="goToUserAgreement">
+          <view class="menu-left">
+            <text class="menu-icon">📄</text>
+            <text class="menu-text">用户协议</text>
+          </view>
+          <text class="menu-arrow">›</text>
+        </view>
+        <view class="menu-item" bindtap="goToPrivacyPolicy">
+          <view class="menu-left">
+            <text class="menu-icon">🔒</text>
+            <text class="menu-text">隐私政策</text>
+          </view>
+          <text class="menu-arrow">›</text>
+        </view>
+        <view class="menu-item" bindtap="goToAbout">
+          <view class="menu-left">
+            <text class="menu-icon">ℹ️</text>
+            <text class="menu-text">关于我们</text>
+          </view>
+          <text class="menu-arrow">›</text>
         </view>
       </view>
     </view>
 
     <!-- 账号设置 -->
     <view class="section">
-      <view class="section-title">账号设置</view>
+      <view class="section-title">
+        <view class="section-icon">👤</view>
+        <text class="section-text">账号设置</text>
+      </view>
       <view class="menu-list">
         <view class="menu-item" bindtap="editProfile">
           <view class="menu-left">
@@ -83,7 +151,10 @@
 
     <!-- 隐私设置 -->
     <view class="section">
-      <view class="section-title">隐私设置</view>
+      <view class="section-title">
+        <view class="section-icon">🔒</view>
+        <text class="section-text">隐私设置</text>
+      </view>
       <view class="menu-list">
         <view class="menu-item">
           <view class="menu-left">
@@ -103,8 +174,11 @@
     </view>
 
     <!-- 账号操作 -->
-    <view class="section">
-      <view class="section-title">账号</view>
+    <view class="section section-last">
+      <view class="section-title">
+        <view class="section-icon">🚪</view>
+        <text class="section-text">账号</text>
+      </view>
       <view class="menu-list">
         <view class="menu-item danger" bindtap="logout">
           <view class="menu-left">
@@ -116,7 +190,7 @@
       </view>
     </view>
 
-    <view style="height: 60rpx"/>
+    <view style="height: 40rpx"/>
   </scroll-view>
 
   <!-- 主题选择弹窗 -->

@@ -1,0 +1,80 @@
+/* pages/article-list/index.wxss */
+page {
+  background: #000;
+  color: #fff;
+}
+
+.page {
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  padding: 20rpx;
+  background: #1C1C1E;
+  position: sticky;
+  top: 0;
+}
+
+.back {
+  font-size: 40rpx;
+  padding: 10rpx 20rpx;
+}
+
+.title {
+  font-size: 32rpx;
+  font-weight: 600;
+  margin-left: 20rpx;
+}
+
+.content {
+  height: calc(100vh - 80rpx);
+  padding: 20rpx;
+}
+
+.article-item {
+  display: flex;
+  gap: 20rpx;
+  padding: 20rpx;
+  background: #1C1C1E;
+  border-radius: 12rpx;
+  margin-bottom: 20rpx;
+}
+
+.cover {
+  width: 200rpx;
+  height: 150rpx;
+  border-radius: 8rpx;
+  background: #2C2C2E;
+}
+
+.info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.article-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.article-summary {
+  font-size: 24rpx;
+  color: #8E8E93;
+  line-height: 1.4;
+}
+
+.article-time {
+  font-size: 22rpx;
+  color: #636366;
+}
+
+.loading, .empty {
+  text-align: center;
+  padding: 60rpx;
+  color: #8E8E93;
+}

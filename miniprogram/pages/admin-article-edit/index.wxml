@@ -1,0 +1,95 @@
+<!-- pages/admin-article-edit/index.wxml - 文章编辑页面 -->
+<view class="edit-page theme-{{pageTheme}}">
+  <!-- 导航栏 -->
+  <view class="glass-nav">
+    <view class="nav-back" bindtap="goBack">
+      <text>‹</text>
+    </view>
+    <text class="nav-title">{{isEdit ? '编辑文章' : '添加文章'}}</text>
+    <view class="nav-placeholder"></view>
+  </view>
+
+  <!-- 表单 -->
+  <scroll-view scroll-y class="form-scroll">
+    <view class="form-section">
+      <!-- 封面图 -->
+      <view class="form-item">
+        <text class="form-label">封面图片</text>
+        <view class="cover-upload" bindtap="chooseCover">
+          <image 
+            wx:if="{{form.coverUrl}}" 
+            class="cover-preview" 
+            src="{{form.coverUrl}}" 
+            mode="aspectFill"
+          />
+          <view wx:else class="cover-placeholder">
+            <text class="placeholder-icon">📷</text>
+            <text class="placeholder-text">点击上传封面</text>
+          </view>
+          <view wx:if="{{form.coverUrl}}" class="cover-delete" catchtap="deleteCover">
+            <text>✕</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 标题 -->
+      <view class="form-item">
+        <text class="form-label">标题 <text class="required">*</text></text>
+        <input 
+          class="form-input" 
+          placeholder="请输入文章标题" 
+          value="{{form.title}}"
+          data-field="title"
+          bindinput="onInput"
+          maxlength="100"
+        />
+      </view>
+
+      <!-- 摘要 -->
+      <view class="form-item">
+        <text class="form-label">摘要 <text class="required">*</text></text>
+        <textarea 
+          class="form-textarea" 
+          placeholder="请输入文章摘要"
+          value="{{form.summary}}"
+          data-field="summary"
+          bindinput="onInput"
+          maxlength="200"
+          auto-height
+        />
+      </view>
+
+      <!-- 内容 -->
+      <view class="form-item">
+        <text class="form-label">正文内容</text>
+        <textarea 
+          class="form-textarea content" 
+          placeholder="请输入文章正文内容（可选）"
+          value="{{form.content}}"
+          data-field="content"
+          bindinput="onInput"
+          auto-height
+        />
+      </view>
+
+      <!-- 原文链接 -->
+      <view class="form-item">
+        <text class="form-label">原文链接</text>
+        <input 
+          class="form-input" 
+          placeholder="请输入公众号原文链接（可选）" 
+          value="{{form.sourceUrl}}"
+          data-field="sourceUrl"
+          bindinput="onInput"
+        />
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 底部按钮 -->
+  <view class="form-footer">
+    <view class="save-btn" bindtap="saveArticle">
+      <text>保存文章</text>
+    </view>
+  </view>
+</view>

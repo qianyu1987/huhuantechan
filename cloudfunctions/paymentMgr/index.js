@@ -14,7 +14,7 @@ const _ = db.command
 // ========== 常量配置 ==========
 // 充值预设金额选项（元）
 const RECHARGE_PRESETS = [50, 100, 200, 500, 1000]
-// 充值最小/最大金额（最低1元起充，无需审核）
+// 充值最小/最大金额（最低1元起充）
 const RECHARGE_MIN = 1
 const RECHARGE_MAX = 10000
 // 管理员微信号（用于充值联系）
@@ -197,7 +197,7 @@ exports.main = async (event, context) => {
       case 'getTransactions':
         return await getTransactions(openid, event)
 
-      // ── 充值申请 ──
+      // ── 充值相关 ──
       case 'submitRechargeApply':
         return await submitRechargeApply(openid, event)
       case 'getMyRechargeApplies':
@@ -205,25 +205,17 @@ exports.main = async (event, context) => {
       case 'cancelRechargeApply':
         return await cancelRechargeApply(openid, event)
 
-      // ── 微信支付充值（新增）──
+      // ── 微信支付充值 ──
       case 'createWechatPayOrder':
         return await createWechatPayOrder(openid, event, wxContext)
       case 'getWechatPayResult':
         return await getWechatPayResult(openid, event)
 
-      // ── 管理员操作（需鉴权）──
-      case 'adminGetRechargeApplies':
-        return await adminGetRechargeApplies(openid, event)
-      case 'adminApproveRecharge':
-        return await adminApproveRecharge(openid, event)
-      case 'adminRejectRecharge':
-        return await adminRejectRecharge(openid, event)
-
-      // ── 旧接口兼容 ──
-      case 'createOrder':
-        return { success: false, message: '支付功能暂未开放' }
-      case 'getPaymentStatus':
-        return { success: false, message: '暂无支付订单' }
+      // ── 代购微信支付 ──
+      case 'createDaigouWxPayOrder':
+        return await createDaigouWxPayOrder(openid, event, wxContext)
+      case 'queryDaigouPayResult':
+        return await queryDaigouPayResult(openid, event)
 
       // ── 提现功能 ──
       case 'submitWithdrawalApply':
@@ -242,6 +234,12 @@ exports.main = async (event, context) => {
         return await adminApproveWithdrawal(openid, event)
       case 'adminRejectWithdrawal':
         return await adminRejectWithdrawal(openid, event)
+
+      // ── 积分兑换 ──
+      case 'createPointsExchangeOrder':
+        return await createPointsExchangeOrder(openid, event, wxContext)
+      case 'getPointsExchangeResult':
+        return await getPointsExchangeResult(openid, event)
 
       default:
         return { success: false, message: '不支持的 action: ' + action }
@@ -268,12 +266,6 @@ async function getWalletInfo(openid) {
   const user = userRes.data[0]
   const daigouStats = user.daigouStats || {}
 
-  // 查询待审核充值金额总和
-  const pendingRes = await db.collection('recharge_apply')
-    .where({ _openid: openid, status: 'pending' })
-    .get()
-  const pendingAmount = (pendingRes.data || []).reduce((sum, r) => sum + (r.amount || 0), 0)
-
   return {
     success: true,
     walletBalance: user.walletBalance || 0,
@@ -281,7 +273,6 @@ async function getWalletInfo(openid) {
     depositPaid: daigouStats.depositPaid || 0,
     depositFrozen: daigouStats.depositFrozen || 0,
     points: user.points || 0,
-    pendingRechargeAmount: pendingAmount,
     rechargePresets: RECHARGE_PRESETS,
     adminWechat: ADMIN_WECHAT
   }
@@ -404,12 +395,10 @@ async function getMyRechargeApplies(openid, event) {
     success: true,
     list: (listRes.data || []).map(item => ({
       id: item._id,
-      applyNo: item.applyNo,
+      orderNo: item.orderNo || item.applyNo,
       amount: item.amount,
       status: item.status,
       statusText: getRechargeStatusText(item.status),
-      remark: item.remark || '',
-      adminNote: item.adminNote || '',
       createTime: formatTime(item.createTime),
       updateTime: formatTime(item.updateTime)
     })),
@@ -441,197 +430,17 @@ async function cancelRechargeApply(openid, event) {
 }
 
 // ========================================================
-// 管理员：获取充值申请列表
-// ========================================================
-async function adminGetRechargeApplies(openid, event) {
-  // 鉴权
-  const isAdmin = await verifyAdmin(openid)
-  if (!isAdmin) return { success: false, message: '无管理员权限' }
-
-  const { page = 1, pageSize = 20, status = '' } = event
-  const skip = (page - 1) * pageSize
-
-  let whereClause = {}
-  if (status) whereClause.status = status
-
-  const [listRes, countRes] = await Promise.all([
-    db.collection('recharge_apply')
-      .where(whereClause)
-      .orderBy('createTime', 'desc')
-      .skip(skip)
-      .limit(pageSize)
-      .get(),
-    db.collection('recharge_apply')
-      .where(whereClause)
-      .count()
-  ])
-
-  // 批量获取用户信息
-  const openids = [...new Set((listRes.data || []).map(r => r._openid))]
-  let userMap = {}
-  if (openids.length > 0) {
-    const usersRes = await db.collection('users')
-      .where({ _openid: _.in(openids) })
-      .field({ _openid: true, nickName: true, avatarUrl: true, walletBalance: true })
-      .get()
-    for (const u of (usersRes.data || [])) {
-      userMap[u._openid] = u
-    }
-  }
-
-  return {
-    success: true,
-    list: (listRes.data || []).map(item => ({
-      id: item._id,
-      applyNo: item.applyNo,
-      amount: item.amount,
-      status: item.status,
-      statusText: getRechargeStatusText(item.status),
-      remark: item.remark || '',
-      adminNote: item.adminNote || '',
-      transferProof: item.transferProof || '',
-      userInfo: userMap[item._openid] || item.userInfo || {},
-      currentBalance: (userMap[item._openid] && userMap[item._openid].walletBalance) || 0,
-      createTime: formatTime(item.createTime),
-      updateTime: formatTime(item.updateTime)
-    })),
-    total: countRes.total || 0
-  }
-}
-
-// ========================================================
-// 管理员：审批通过充值申请
-// ========================================================
-async function adminApproveRecharge(openid, event) {
-  const isAdmin = await verifyAdmin(openid)
-  if (!isAdmin) return { success: false, message: '无管理员权限' }
-
-  const { applyId, adminNote = '审批通过' } = event
-  if (!applyId) return { success: false, message: '缺少申请ID' }
-
-  // 获取申请信息
-  const applyRes = await db.collection('recharge_apply').doc(applyId).get()
-  const apply = applyRes.data
-  if (!apply) return { success: false, message: '申请不存在' }
-  if (apply.status !== 'pending') return { success: false, message: `该申请已是${getRechargeStatusText(apply.status)}状态` }
-
-  const amount = apply.amount
-
-  // 获取用户文档
-  const userRes = await db.collection('users')
-    .where({ _openid: apply._openid })
-    .limit(1)
-    .get()
-  if (!userRes.data || userRes.data.length === 0) {
-    return { success: false, message: '申请用户不存在' }
-  }
-  const user = userRes.data[0]
-  const oldBalance = user.walletBalance || 0
-  const newBalance = Math.round((oldBalance + amount) * 100) / 100
-
-  // 更新申请状态
-  await db.collection('recharge_apply').doc(applyId).update({
-    data: {
-      status: 'approved',
-      adminNote,
-      approvedBy: openid,
-      approvedAt: db.serverDate(),
-      updateTime: db.serverDate()
-    }
-  })
-
-  // 更新用户钱包余额
-  await db.collection('users').doc(user._id).update({
-    data: {
-      walletBalance: newBalance,
-      updateTime: db.serverDate()
-    }
-  })
-
-  // 写钱包流水
-  await db.collection('wallet_logs').add({
-    data: {
-      _openid: apply._openid,
-      type: 'recharge',
-      flow: 'income',
-      title: '钱包充值',
-      amount,
-      balanceBefore: oldBalance,
-      balanceAfter: newBalance,
-      relatedId: applyId,
-      applyNo: apply.applyNo,
-      remark: adminNote,
-      status: 'done',
-      createTime: db.serverDate()
-    }
-  })
-
-  return {
-    success: true,
-    amount,
-    newBalance,
-    message: `已通过充值申请，充值 ¥${amount.toFixed(2)}，用户余额更新为 ¥${newBalance.toFixed(2)}`
-  }
-}
-
-// ========================================================
-// 管理员：拒绝充值申请
-// ========================================================
-async function adminRejectRecharge(openid, event) {
-  const isAdmin = await verifyAdmin(openid)
-  if (!isAdmin) return { success: false, message: '无管理员权限' }
-
-  const { applyId, adminNote = '申请被拒绝' } = event
-  if (!applyId) return { success: false, message: '缺少申请ID' }
-
-  const applyRes = await db.collection('recharge_apply').doc(applyId).get()
-  const apply = applyRes.data
-  if (!apply) return { success: false, message: '申请不存在' }
-  if (apply.status !== 'pending') return { success: false, message: `该申请已是${getRechargeStatusText(apply.status)}状态` }
-
-  await db.collection('recharge_apply').doc(applyId).update({
-    data: {
-      status: 'rejected',
-      adminNote,
-      rejectedBy: openid,
-      rejectedAt: db.serverDate(),
-      updateTime: db.serverDate()
-    }
-  })
-
-  return { success: true, message: '已拒绝该充值申请' }
-}
-
-// ========================================================
 // 工具函数
 // ========================================================
 function getRechargeStatusText(status) {
   const map = {
-    pending: '待审核',
-    approved: '已通过',
+    pending: '处理中',
+    approved: '充值成功',
     rejected: '已拒绝',
-    cancelled: '已取消'
+    cancelled: '已取消',
+    failed: '支付失败'
   }
   return map[status] || status
-}
-
-async function verifyAdmin(openid) {
-  try {
-    const res = await db.collection('system_config')
-      .where({ key: 'admin_openids' })
-      .limit(1)
-      .get()
-    if (res.data && res.data[0] && Array.isArray(res.data[0].value)) {
-      return res.data[0].value.includes(openid)
-    }
-    // 备用：检查用户的 isAdmin 字段
-    const userRes = await db.collection('users')
-      .where({ _openid: openid, isAdmin: true })
-      .count()
-    return userRes.total > 0
-  } catch (e) {
-    return false
-  }
 }
 
 function formatTime(ts) {
@@ -986,6 +795,192 @@ async function processRechargeSuccess(openid, orderId, record, transactionId) {
     console.error('[processRechargeSuccess]', e)
     return { success: false, message: '处理充值时出错' }
   }
+}
+
+// ========================================================
+// 代购订单微信支付：创建支付订单
+// ========================================================
+async function createDaigouWxPayOrder(openid, event, wxContext) {
+  const { orderId, orderNo, amount, productName, buyerOpenid } = event
+
+  if (!orderId || !orderNo || !amount) {
+    return { success: false, message: '参数不完整' }
+  }
+
+  const amountNum = parseFloat(amount)
+  if (isNaN(amountNum) || amountNum <= 0) {
+    return { success: false, message: '支付金额无效' }
+  }
+
+  const payOpenid = buyerOpenid || openid
+
+  try {
+    const clientIP = (wxContext && wxContext.CLIENTIP) || '127.0.0.1'
+    const notifyUrl = 'https://cloud1-3g4sjhqr5e28e54e-1348466332.ap-shanghai.app.tcloudbase.com/paymentCallback'
+
+    // 生成支付单号（避免与充值订单号冲突，加 DG 前缀）
+    const wxPayOrderNo = 'DGP' + Date.now() + Math.random().toString(36).substr(2, 5).toUpperCase()
+
+    const payResult = await callUnifiedOrder({
+      body: productName ? ('特产代购-' + productName.substring(0, 20)) : '特产代购',
+      outTradeNo: wxPayOrderNo,
+      totalFee: Math.round(amountNum * 100),  // 分
+      spbillCreateIp: clientIP,
+      openid: payOpenid
+    }, notifyUrl)
+
+    console.log('[代购微信支付统一下单响应]', JSON.stringify(payResult))
+
+    if (payResult.return_code === 'SUCCESS' && payResult.result_code === 'SUCCESS') {
+      if (!payResult.prepay_id) {
+        return { success: false, message: '支付参数获取失败，请重试' }
+      }
+
+      // 记录支付单到 daigou_pay_logs
+      let wxPayOrderId = ''
+      try {
+        const addRes = await db.collection('daigou_pay_logs').add({
+          data: {
+            _openid: payOpenid,
+            daigouOrderId: orderId,
+            daigouOrderNo: orderNo,
+            wxPayOrderNo,
+            prepayId: payResult.prepay_id,
+            amount: amountNum,
+            status: 'pending',
+            createTime: db.serverDate(),
+            updateTime: db.serverDate()
+          }
+        })
+        wxPayOrderId = addRes._id
+      } catch (logErr) {
+        // 集合不存在不阻断支付流程
+        console.warn('[createDaigouWxPayOrder] daigou_pay_logs 写入失败:', logErr.message)
+      }
+
+      // 生成 JSAPI 调起参数
+      const timeStamp = String(Math.floor(Date.now() / 1000))
+      const nonceStr = generateNonceStr()
+      const packageStr = 'prepay_id=' + payResult.prepay_id
+      const signParams = {
+        appId: APPID,
+        timeStamp,
+        nonceStr,
+        package: packageStr,
+        signType: 'MD5'
+      }
+      const paySign = generateSign(signParams, API_KEY)
+
+      return {
+        success: true,
+        wxPayOrderId,
+        wxPayOrderNo,
+        paymentParams: {
+          timeStamp,
+          nonceStr,
+          package: packageStr,
+          signType: 'MD5',
+          paySign
+        },
+        message: '支付参数获取成功'
+      }
+    } else {
+      console.error('[代购微信支付失败]', payResult)
+      return {
+        success: false,
+        message: payResult.err_code_des || payResult.err_code || payResult.return_msg || '支付订单创建失败'
+      }
+    }
+  } catch (e) {
+    console.error('[createDaigouWxPayOrder]', e)
+    return { success: false, message: '支付创建失败：' + (e.message || '请稍后重试') }
+  }
+}
+
+// ========================================================
+// 代购订单微信支付：查询支付结果
+// ========================================================
+async function queryDaigouPayResult(openid, event) {
+  const { orderId, wxPayOrderId } = event
+  if (!orderId) return { success: false, message: '缺少订单ID' }
+
+  try {
+    // 先查 daigou_pay_logs 获取微信支付单号
+    let wxPayOrderNo = ''
+    if (wxPayOrderId) {
+      try {
+        const logRes = await db.collection('daigou_pay_logs').doc(wxPayOrderId).get()
+        if (logRes.data) {
+          wxPayOrderNo = logRes.data.wxPayOrderNo || ''
+          // 如果已经成功，直接返回
+          if (logRes.data.status === 'success') {
+            return { success: true, paid: true }
+          }
+        }
+      } catch (e) {
+        console.warn('[queryDaigouPayResult] 查日志失败:', e.message)
+      }
+    }
+
+    if (!wxPayOrderNo) {
+      return { success: true, paid: false, message: '支付单号不存在' }
+    }
+
+    // 查询微信支付状态
+    const queryResult = await queryWechatPayOrder(wxPayOrderNo)
+    const tradeState = queryResult.trade_state
+
+    if (tradeState === 'SUCCESS') {
+      // 更新日志状态
+      if (wxPayOrderId) {
+        try {
+          await db.collection('daigou_pay_logs').doc(wxPayOrderId).update({
+            data: {
+              status: 'success',
+              transactionId: queryResult.transaction_id || '',
+              updateTime: db.serverDate()
+            }
+          })
+        } catch (e) {}
+      }
+      return { success: true, paid: true, transactionId: queryResult.transaction_id }
+    } else if (tradeState === 'CLOSED' || tradeState === 'PAYERROR') {
+      return { success: true, paid: false, closed: true, message: '支付已关闭，请重新发起' }
+    } else {
+      return { success: true, paid: false, tradeState }
+    }
+  } catch (e) {
+    console.error('[queryDaigouPayResult]', e)
+    return { success: false, message: '查询失败' }
+  }
+}
+
+// ========================================================
+// 管理员权限验证（paymentMgr 内部使用）
+// ========================================================
+async function verifyAdmin(openid) {
+  if (!openid) return false
+  try {
+    // 先从 system_config 中查 superAdmins 列表（与 adminMgr 保持一致）
+    const cfgRes = await db.collection('system_config')
+      .where({ configKey: 'superAdmins' })
+      .limit(1)
+      .get()
+    if (cfgRes.data && cfgRes.data.length > 0) {
+      const superAdmins = cfgRes.data[0].configValue || []
+      if (Array.isArray(superAdmins) && superAdmins.includes(openid)) return true
+    }
+  } catch (e) {
+    console.warn('[paymentMgr/verifyAdmin] superAdmins 查询失败，回退到 admins 集合', e.message)
+  }
+  try {
+    // 回退：查 admins 集合
+    const adminsRes = await db.collection('admins').where({ openid }).limit(1).get()
+    if (adminsRes.data && adminsRes.data.length > 0) return true
+  } catch (e2) {
+    console.warn('[paymentMgr/verifyAdmin] admins 查询失败', e2.message)
+  }
+  return false
 }
 
 // ========================================================
@@ -1504,4 +1499,249 @@ function getWithdrawalStatusText(status) {
     cancelled: '已取消'
   }
   return map[status] || status
+}
+
+// ========================================================
+// 积分兑换：创建微信支付订单
+// ========================================================
+async function createPointsExchangeOrder(openid, event, wxContext) {
+  const { points, amount } = event
+
+  if (!points || points < 100) {
+    return { success: false, message: '最少兑换100积分' }
+  }
+  if (points > 100000) {
+    return { success: false, message: '单次兑换不能超过100000积分' }
+  }
+  if (!amount || amount < 0.01) {
+    return { success: false, message: '兑换金额不能低于0.01元' }
+  }
+
+  // 生成订单号
+  const orderNo = 'PE' + Date.now() + Math.random().toString(36).substr(2, 6).toUpperCase()
+
+  try {
+    // 创建积分兑换记录
+    const res = await db.collection('points_exchange').add({
+      data: {
+        _openid: openid,
+        orderNo,
+        points: parseInt(points),
+        amount: parseFloat(amount),
+        status: 'pending',
+        createTime: db.serverDate(),
+        updateTime: db.serverDate()
+      }
+    })
+
+    // 获取客户端IP
+    const clientIP = wxContext.CLIENTIP || '127.0.0.1'
+
+    // 支付回调地址
+    const notifyUrl = 'https://cloud1-3g4sjhqr5e28e54e-1348466332.ap-shanghai.app.tcloudbase.com/paymentCallback'
+
+    // 调用统一下单接口
+    const payResult = await callUnifiedOrder({
+      body: '特产互换平台积分兑换',
+      outTradeNo: orderNo,
+      totalFee: Math.round(amount * 100),
+      spbillCreateIp: clientIP,
+      openid: openid
+    }, notifyUrl)
+
+    if (payResult.return_code === 'SUCCESS' && payResult.result_code === 'SUCCESS') {
+      if (!payResult.prepay_id) {
+        return { success: false, message: '支付参数获取失败，请重试' }
+      }
+
+      // 更新兑换记录
+      await db.collection('points_exchange').doc(res._id).update({
+        data: {
+          wechatPayOrderNo: payResult.prepay_id,
+          updateTime: db.serverDate()
+        }
+      })
+
+      // 生成JSAPI支付参数
+      const timeStamp = String(Math.floor(Date.now() / 1000))
+      const nonceStr = generateNonceStr()
+      const packageStr = 'prepay_id=' + payResult.prepay_id
+
+      const signParams = {
+        appId: APPID,
+        timeStamp: timeStamp,
+        nonceStr: nonceStr,
+        package: packageStr,
+        signType: 'MD5'
+      }
+      const paySign = generateSign(signParams, API_KEY)
+
+      return {
+        success: true,
+        orderId: res._id,
+        orderNo,
+        paymentParams: {
+          timeStamp,
+          nonceStr,
+          package: packageStr,
+          signType: 'MD5',
+          paySign
+        }
+      }
+    } else {
+      await db.collection('points_exchange').doc(res._id).update({
+        data: {
+          status: 'failed',
+          errorMsg: payResult.err_code_des || '支付创建失败',
+          updateTime: db.serverDate()
+        }
+      })
+      return {
+        success: false,
+        message: payResult.err_code_des || '支付订单创建失败'
+      }
+    }
+  } catch (e) {
+    console.error('[createPointsExchangeOrder]', e)
+    return { success: false, message: e.message || '创建兑换订单失败' }
+  }
+}
+
+// ========================================================
+// 积分兑换：查询支付结果
+// ========================================================
+async function getPointsExchangeResult(openid, event) {
+  const { orderId } = event
+
+  if (!orderId) {
+    return { success: false, message: '缺少订单ID' }
+  }
+
+  try {
+    const res = await db.collection('points_exchange').doc(orderId).get()
+    const record = res.data
+
+    if (!record) {
+      return { success: false, message: '订单不存在' }
+    }
+
+    if (record._openid !== openid) {
+      return { success: false, message: '无权查看此订单' }
+    }
+
+    // 如果状态已经是 success，说明已经到账
+    if (record.status === 'success') {
+      return {
+        success: true,
+        status: 'success',
+        points: record.points,
+        message: '积分已到账'
+      }
+    }
+
+    // 如果状态是 failed
+    if (record.status === 'failed') {
+      return {
+        success: false,
+        status: 'failed',
+        message: record.errorMsg || '兑换失败'
+      }
+    }
+
+    // 如果状态是 pending 且有微信支付订单号，查询支付状态
+    if (record.status === 'pending' && record.wechatPayOrderNo) {
+      try {
+        const queryResult = await queryWechatPayOrder(record.orderNo)
+        const tradeState = queryResult.trade_state
+
+        if (tradeState === 'SUCCESS') {
+          // 支付成功，增加用户积分
+          const userRes = await db.collection('users').where({ _openid: openid }).limit(1).get()
+          const user = userRes.data && userRes.data[0]
+
+          if (!user) {
+            return { success: false, message: '用户不存在' }
+          }
+
+          const oldPoints = user.points || 0
+          const newPoints = oldPoints + record.points
+
+          // 更新用户积分
+          await db.collection('users').doc(user._id).update({
+            data: {
+              points: newPoints,
+              updateTime: db.serverDate()
+            }
+          })
+
+          // 更新兑换记录
+          await db.collection('points_exchange').doc(orderId).update({
+            data: {
+              status: 'success',
+              transactionId: queryResult.transaction_id,
+              updateTime: db.serverDate()
+            }
+          })
+
+          // 记录积分日志
+          await db.collection('points_logs').add({
+            data: {
+              _openid: openid,
+              type: 'exchange',
+              flow: 'income',
+              title: '积分兑换',
+              points: record.points,
+              balanceBefore: oldPoints,
+              balanceAfter: newPoints,
+              relatedId: record.orderNo,
+              remark: `现金兑换积分 ¥${record.amount}`,
+              createTime: db.serverDate()
+            }
+          })
+
+          return {
+            success: true,
+            status: 'success',
+            points: record.points,
+            message: '积分已到账'
+          }
+        } else if (tradeState === 'CLOSED' || tradeState === 'PAY_ERROR') {
+          await db.collection('points_exchange').doc(orderId).update({
+            data: {
+              status: 'failed',
+              errorMsg: '支付已关闭或失败',
+              updateTime: db.serverDate()
+            }
+          })
+          return {
+            success: false,
+            status: 'failed',
+            message: '支付已关闭，请重新发起兑换'
+          }
+        } else {
+          return {
+            success: true,
+            status: 'pending',
+            message: '支付处理中'
+          }
+        }
+      } catch (queryErr) {
+        console.error('[查询支付状态失败]', queryErr)
+        return {
+          success: true,
+          status: 'pending',
+          message: '支付状态查询中'
+        }
+      }
+    }
+
+    return {
+      success: true,
+      status: record.status,
+      message: '处理中'
+    }
+  } catch (e) {
+    console.error('[getPointsExchangeResult]', e)
+    return { success: false, message: e.message || '查询失败' }
+  }
 }

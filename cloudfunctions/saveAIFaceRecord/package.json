@@ -1,0 +1,9 @@
+{
+  "name": "saveAIFaceRecord",
+  "version": "1.0.0",
+  "description": "保存AI颜值分析记录",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "^2.6.3"
+  }
+}

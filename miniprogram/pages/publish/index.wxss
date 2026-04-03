@@ -46,8 +46,8 @@
 
 /* ===== 神秘特产开关 ===== */
 .mystery-toggle-section {
-  background: linear-gradient(135deg, rgba(191, 90, 242, 0.15) 0%, rgba(98, 40, 215, 0.15) 100%) !important;
-  border: 1rpx solid rgba(191, 90, 242, 0.3) !important;
+  background: linear-gradient(135deg, rgba(191, 90, 242, 0.15) 0%, rgba(98, 40, 215, 0.15) 100%);
+  border: 1rpx solid rgba(191, 90, 242, 0.3);
 }
 
 .mystery-toggle-row {
@@ -89,16 +89,30 @@
 .mystery-toggle-title {
   font-size: 30rpx;
   font-weight: 700;
-  color: #FFFFFF;
+  color: var(--color-text);
 }
 
 .mystery-toggle-desc {
   font-size: 22rpx;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-secondary);
 }
 
 .mystery-switch {
   transform: scale(0.9);
+}
+
+/* 纯净白主题 - 神秘特产开关覆盖 */
+.theme-light .mystery-toggle-section {
+  background: linear-gradient(135deg, rgba(191, 90, 242, 0.08) 0%, rgba(98, 40, 215, 0.08) 100%);
+  border: 1rpx solid rgba(191, 90, 242, 0.2);
+}
+
+.theme-light .mystery-toggle-title {
+  color: var(--color-text);
+}
+
+.theme-light .mystery-toggle-desc {
+  color: var(--color-text-secondary);
 }
 
 .label-hint {
@@ -1080,4 +1094,68 @@
 .img-add-error {
   border-color: rgba(255, 59, 48, 0.4) !important;
   background: rgba(255, 59, 48, 0.04) !important;
+}
+
+/* ===== 纯净白主题样式覆盖 ===== */
+.theme-light .page-header {
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.08);
+}
+
+.theme-light .section {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1rpx solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+}
+
+.theme-light .section-label {
+  color: var(--color-text);
+}
+
+.theme-light .input-field,
+.theme-light .picker-value {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: var(--color-text);
+}
+
+.theme-light .input-placeholder,
+.theme-light .picker-placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.theme-light .tag-item {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: var(--color-text);
+}
+
+.theme-light .tag-item.selected {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #FFFFFF;
+}
+
+.theme-light .img-add {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+.theme-light .img-add-text {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.theme-light .gender-select-item {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.theme-light .gender-select-item.selected {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.theme-light .submit-btn-incomplete {
+  background: linear-gradient(180deg, #8E8E93 0%, #636366 100%) !important;
+  opacity: 0.7;
 }

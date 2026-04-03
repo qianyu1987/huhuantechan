@@ -1,0 +1,106 @@
+<!-- pages/help/index.wxml - 帮助中心 -->
+<view class="help-page">
+  <!-- 自定义导航栏 -->
+  <view class="custom-nav">
+    <view class="nav-back" bindtap="goBack">
+      <text class="back-icon">‹</text>
+    </view>
+    <text class="nav-title">帮助中心</text>
+    <view class="nav-placeholder"></view>
+  </view>
+
+  <scroll-view scroll-y class="help-content">
+    <!-- 搜索栏 -->
+    <view class="search-section">
+      <view class="search-box">
+        <text class="search-icon">🔍</text>
+        <input 
+          class="search-input" 
+          placeholder="搜索问题关键词..." 
+          value="{{searchKeyword}}"
+          bindinput="onSearchInput"
+        />
+      </view>
+    </view>
+
+    <!-- 分类标签 -->
+    <scroll-view scroll-x class="category-scroll" show-scrollbar="false">
+      <view class="category-list">
+        <view 
+          class="category-item {{activeCategory === item.id ? 'active' : ''}}" 
+          wx:for="{{categories}}" 
+          wx:key="id"
+          bindtap="switchCategory"
+          data-category="{{item.id}}"
+        >
+          <text class="category-icon">{{item.icon}}</text>
+          <text class="category-name">{{item.name}}</text>
+        </view>
+      </view>
+    </scroll-view>
+
+    <!-- FAQ列表 -->
+    <view class="faq-section">
+      <view class="section-title">常见问题</view>
+      
+      <view class="faq-list">
+        <view class="faq-item" wx:for="{{filteredFaqList}}" wx:key="id">
+          <view class="faq-header" bindtap="toggleFaq" data-id="{{item.id}}">
+            <view class="faq-question">
+              <text class="question-icon">Q</text>
+              <text class="question-text">{{item.question}}</text>
+            </view>
+            <text class="expand-icon">{{item.expanded ? '−' : '+'}}</text>
+          </view>
+          <view class="faq-answer {{item.expanded ? 'show' : ''}}">
+            <text class="answer-text">{{item.answer}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 空状态 -->
+      <view class="empty-state" wx:if="{{filteredFaqList.length === 0}}">
+        <text class="empty-icon">🔍</text>
+        <text class="empty-text">没有找到相关问题</text>
+        <text class="empty-tip">请尝试其他关键词或联系客服</text>
+      </view>
+    </view>
+
+    <!-- 联系客服卡片 -->
+    <view class="contact-card" bindtap="contactService">
+      <view class="contact-left">
+        <text class="contact-icon">🎧</text>
+        <view class="contact-info">
+          <text class="contact-title">还有疑问？</text>
+          <text class="contact-desc">联系人工客服获取更多帮助</text>
+        </view>
+      </view>
+      <text class="contact-arrow">›</text>
+    </view>
+
+    <!-- 快捷入口 -->
+    <view class="quick-section">
+      <view class="section-title">快捷入口</view>
+      <view class="quick-grid">
+        <view class="quick-item" bindtap="goBack">
+          <text class="quick-icon">📝</text>
+          <text class="quick-label">意见反馈</text>
+        </view>
+        <navigator url="/pages/user-agreement/index" class="quick-item">
+          <text class="quick-icon">📄</text>
+          <text class="quick-label">用户协议</text>
+        </navigator>
+        <navigator url="/pages/privacy-policy/index" class="quick-item">
+          <text class="quick-icon">🔒</text>
+          <text class="quick-label">隐私政策</text>
+        </navigator>
+        <navigator url="/pages/tutorial/index" class="quick-item">
+          <text class="quick-icon">📖</text>
+          <text class="quick-label">使用教程</text>
+        </navigator>
+      </view>
+    </view>
+
+    <view class="bottom-safe"></view>
+  </scroll-view>
+</view>

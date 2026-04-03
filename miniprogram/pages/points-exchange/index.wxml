@@ -1,0 +1,96 @@
+<!-- pages/points-exchange/index.wxml - 积分兑换页面 -->
+<view class="page-container theme-{{pageTheme}}">
+  <!-- 头部 -->
+  <view class="header">
+    <view class="header-bg"></view>
+    <view class="header-content">
+      <view class="back-btn" bindtap="onBack">
+        <text class="back-icon">‹</text>
+      </view>
+      <text class="header-title">积分兑换</text>
+      <text class="header-subtitle">现金充值兑换积分</text>
+    </view>
+  </view>
+
+  <!-- 当前积分卡片 -->
+  <view class="points-card">
+    <view class="points-icon">💎</view>
+    <view class="points-info">
+      <text class="points-label">当前积分</text>
+      <text class="points-value">{{currentPoints}}</text>
+    </view>
+  </view>
+
+  <!-- 兑换区域 -->
+  <view class="exchange-section">
+    <view class="section-title">选择兑换数量</view>
+    <view class="section-subtitle">{{exchangeRate}}积分 = 1元</view>
+
+    <!-- 预设选项 -->
+    <view class="preset-grid">
+      <view
+        wx:for="{{presets}}"
+        wx:key="*this"
+        class="preset-item {{selectedPreset === index ? 'selected' : ''}}"
+        bindtap="onSelectPreset"
+        data-index="{{index}}"
+      >
+        <text class="preset-points">{{item}}</text>
+        <text class="preset-label">积分</text>
+        <text class="preset-amount">¥{{(item / exchangeRate).toFixed(2)}}</text>
+      </view>
+    </view>
+
+    <!-- 自定义输入 -->
+    <view class="custom-input-wrap">
+      <text class="input-label">自定义数量</text>
+      <view class="input-box">
+        <input
+          class="points-input"
+          type="number"
+          placeholder="请输入积分数量"
+          value="{{customAmount}}"
+          bindinput="onCustomPointsInput"
+        />
+        <text class="input-unit">积分</text>
+      </view>
+      <text wx:if="{{customAmount}}" class="input-hint">需支付 ¥{{(parseInt(customAmount || 0) / exchangeRate).toFixed(2)}}</text>
+    </view>
+  </view>
+
+  <!-- 兑换说明 -->
+  <view class="tips-section">
+    <view class="tips-title">💡 兑换说明</view>
+    <view class="tips-list">
+      <text class="tips-item">• 积分可用于发布特产、抵扣订单金额</text>
+      <text class="tips-item">• 兑换比例：{{exchangeRate}}积分 = 1元人民币</text>
+      <text class="tips-item">• 最低兑换100积分，最高单次100000积分</text>
+      <text class="tips-item">• 积分充值后不支持退款</text>
+    </view>
+  </view>
+
+  <!-- 底部操作栏 -->
+  <view class="bottom-bar">
+    <view class="price-info">
+      <text class="price-label">需支付</text>
+      <text class="price-value">¥{{calculateAmount()}}</text>
+    </view>
+    <button
+      class="exchange-btn {{currentPoints >= 100 && !submitting ? '' : 'disabled'}}"
+      bindtap="onExchange"
+      disabled="{{currentPoints < 100 || submitting}}"
+    >
+      {{submitting ? '处理中...' : '立即兑换'}}
+    </button>
+  </view>
+
+  <!-- 支付状态弹窗 -->
+  <view wx:if="{{showPayModal}}" class="modal-overlay">
+    <view class="modal-content">
+      <view class="modal-icon">⏳</view>
+      <text class="modal-title">{{checkingPayment ? '正在确认支付...' : '支付完成'}}</text>
+      <text class="modal-desc">{{checkingPayment ? '请稍候，正在处理您的兑换' : '积分已到账'}}</text>
+      <view wx:if="{{!checkingPayment}}" class="modal-btn" bindtap="closePayModal">知道了</view>
+    </view>
+  </view>
+</view>

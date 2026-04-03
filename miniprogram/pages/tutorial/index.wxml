@@ -1,0 +1,205 @@
+<!--pages/tutorial/index.wxml-->
+<view class="tutorial-page">
+  <view class="tutorial-header">
+    <text class="tutorial-title">📚 使用教程</text>
+    <text class="tutorial-subtitle">快速上手互换特产小程序</text>
+  </view>
+
+  <view class="tutorial-list">
+    <!-- 新手入门 -->
+    <view class="tutorial-section">
+      <view class="section-header">
+        <text class="section-icon">🎯</text>
+        <text class="section-title">新手入门</text>
+      </view>
+      <view class="tutorial-items">
+        <view class="tutorial-item" bindtap="showDetail" data-id="1">
+          <view class="item-number">01</view>
+          <view class="item-content">
+            <text class="item-title">如何注册账号</text>
+            <text class="item-desc">微信一键登录，完善个人资料</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+        <view class="tutorial-item" bindtap="showDetail" data-id="2">
+          <view class="item-number">02</view>
+          <view class="item-content">
+            <text class="item-title">发布我的特产</text>
+            <text class="item-desc">上传特产照片，填写描述和价格</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+        <view class="tutorial-item" bindtap="showDetail" data-id="3">
+          <view class="item-number">03</view>
+          <view class="item-content">
+            <text class="item-title">浏览他人特产</text>
+            <text class="item-desc">发现全国各地的特色美食</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 互换流程 -->
+    <view class="tutorial-section">
+      <view class="section-header">
+        <text class="section-icon">🔄</text>
+        <text class="section-title">互换流程</text>
+      </view>
+      <view class="tutorial-items">
+        <view class="tutorial-item" bindtap="showDetail" data-id="4">
+          <view class="item-number">01</view>
+          <view class="item-content">
+            <text class="item-title">发起互换请求</text>
+            <text class="item-desc">选择心仪的特产，发送互换申请</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+        <view class="tutorial-item" bindtap="showDetail" data-id="5">
+          <view class="item-number">02</view>
+          <view class="item-content">
+            <text class="item-title">等待对方确认</text>
+            <text class="item-desc">对方同意后进入发货流程</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+        <view class="tutorial-item" bindtap="showDetail" data-id="6">
+          <view class="item-number">03</view>
+          <view class="item-content">
+            <text class="item-title">填写物流信息</text>
+            <text class="item-desc">发货后及时填写快递单号</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+        <view class="tutorial-item" bindtap="showDetail" data-id="7">
+          <view class="item-number">04</view>
+          <view class="item-content">
+            <text class="item-title">确认收货互评</text>
+            <text class="item-desc">收到特产后进行评价</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 代购服务 -->
+    <view class="tutorial-section">
+      <view class="section-header">
+        <text class="section-icon">🛒</text>
+        <text class="section-title">代购服务</text>
+      </view>
+      <view class="tutorial-items">
+        <view class="tutorial-item" bindtap="showDetail" data-id="8">
+          <view class="item-number">01</view>
+          <view class="item-content">
+            <text class="item-title">申请代购资质</text>
+            <text class="item-desc">提交认证，成为认证代购</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+        <view class="tutorial-item" bindtap="showDetail" data-id="9">
+          <view class="item-number">02</view>
+          <view class="item-content">
+            <text class="item-title">发布代购商品</text>
+            <text class="item-desc">设置代购费和发货地区</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+        <view class="tutorial-item" bindtap="showDetail" data-id="10">
+          <view class="item-number">03</view>
+          <view class="item-content">
+            <text class="item-title">处理代购订单</text>
+            <text class="item-desc">接单、采购、发货全流程</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 积分与信用 -->
+    <view class="tutorial-section">
+      <view class="section-header">
+        <text class="section-icon">⭐</text>
+        <text class="section-title">积分与信用</text>
+      </view>
+      <view class="tutorial-items">
+        <view class="tutorial-item" bindtap="showDetail" data-id="11">
+          <view class="item-number">01</view>
+          <view class="item-content">
+            <text class="item-title">如何获得积分</text>
+            <text class="item-desc">每日签到、完成任务、互换成功</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+        <view class="tutorial-item" bindtap="showDetail" data-id="12">
+          <view class="item-number">02</view>
+          <view class="item-content">
+            <text class="item-title">信用分规则</text>
+            <text class="item-desc">诚信交易，维护良好信用</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+        <view class="tutorial-item" bindtap="showDetail" data-id="13">
+          <view class="item-number">03</view>
+          <view class="item-content">
+            <text class="item-title">省份集章玩法</text>
+            <text class="item-desc">收集全国34省特产印章</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 常见问题 -->
+    <view class="tutorial-section">
+      <view class="section-header">
+        <text class="section-icon">❓</text>
+        <text class="section-title">常见问题</text>
+      </view>
+      <view class="tutorial-items">
+        <view class="tutorial-item" bindtap="showDetail" data-id="14">
+          <view class="item-number">Q1</view>
+          <view class="item-content">
+            <text class="item-title">互换特产收费吗？</text>
+            <text class="item-desc">平台免费，仅需支付快递费用</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+        <view class="tutorial-item" bindtap="showDetail" data-id="15">
+          <view class="item-number">Q2</view>
+          <view class="item-content">
+            <text class="item-title">如何保证交易安全？</text>
+            <text class="item-desc">信用体系+押金机制双重保障</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+        <view class="tutorial-item" bindtap="showDetail" data-id="16">
+          <view class="item-number">Q3</view>
+          <view class="item-content">
+            <text class="item-title">特产不满意怎么办？</text>
+            <text class="item-desc">可申请售后，平台介入处理</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部安全区 -->
+  <view class="bottom-safe"/>
+
+  <!-- 详情弹窗 -->
+  <view class="modal-mask {{showModal ? 'show' : ''}}" bindtap="closeModal"/>
+  <view class="modal-content {{showModal ? 'show' : ''}}">
+    <view class="modal-header">
+      <text class="modal-title">{{currentTutorial.title}}</text>
+      <view class="modal-close" bindtap="closeModal">✕</view>
+    </view>
+    <scroll-view class="modal-body" scroll-y>
+      <text class="modal-text">{{currentTutorial.content}}</text>
+    </scroll-view>
+    <view class="modal-footer">
+      <view class="modal-btn" bindtap="closeModal">知道了</view>
+    </view>
+  </view>
+</view>

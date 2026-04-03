@@ -4,7 +4,6 @@ const { callCloud, toast } = require('../../utils/util')
 Page({
   data: {
     walletBalance: 0,
-    pendingRechargeAmount: 0,   // 待审核充值金额
     depositBalance: 0,
     depositPaid: 0,
     depositFrozen: 0,
@@ -40,7 +39,6 @@ Page({
       if (walletRes && walletRes.success !== false) {
         this.setData({
           walletBalance: walletRes.walletBalance || 0,
-          pendingRechargeAmount: walletRes.pendingRechargeAmount || 0,
           depositBalance: walletRes.depositBalance || 0,
           depositPaid: walletRes.depositPaid || 0,
           depositFrozen: walletRes.depositFrozen || 0,

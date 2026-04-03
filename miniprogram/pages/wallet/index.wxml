@@ -8,10 +8,6 @@
       <view class="wallet-balance">
         <text class="wallet-balance-label">钱包余额</text>
         <text class="wallet-balance-amount">¥{{walletBalance || 0}}</text>
-        <!-- 待审核充值提示 -->
-        <view wx:if="{{pendingRechargeAmount > 0}}" class="pending-recharge-tip">
-          <text class="pending-recharge-text">＋¥{{pendingRechargeAmount}} 待审核中</text>
-        </view>
       </view>
       <view class="wallet-stats">
         <view class="wallet-stat-item">

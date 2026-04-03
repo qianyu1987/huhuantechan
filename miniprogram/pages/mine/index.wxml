@@ -107,6 +107,21 @@
         <text class="notify-label">提现申请</text>
       </view>
     </view>
+    <!-- 快捷操作栏 -->
+    <view class="notify-actions">
+      <view class="notify-action-btn" bindtap="goToAdmin">
+        <text class="notify-action-icon">🎛️</text>
+        <text class="notify-action-label">进入后台</text>
+      </view>
+      <view class="notify-action-btn accent" bindtap="goToArticleAdmin">
+        <text class="notify-action-icon">📝</text>
+        <text class="notify-action-label">文章管理</text>
+      </view>
+      <view class="notify-action-btn sync" bindtap="syncOfficialArticles">
+        <text class="notify-action-icon">🔄</text>
+        <text class="notify-action-label">同步文章</text>
+      </view>
+    </view>
   </view>
 
   <!-- 页面内容 -->
@@ -232,15 +247,15 @@
           <view class="tool-icon icon-blue">🤖</view>
           <text class="tool-label">智能客服</text>
         </view>
-        <view class="tool-item" bindtap="goToSettings">
-          <view class="tool-icon icon-gray">⚙️</view>
-          <text class="tool-label">系统设置</text>
+        <view class="tool-item" bindtap="goToAIFace">
+          <view class="tool-icon icon-green">✨</view>
+          <text class="tool-label">AI颜值</text>
         </view>
       </view>
     </view>
 
     <!-- 账号与安全 -->
-    <view class="section">
+    <view class="section section-last security-section">
       <view class="section-title">账号与安全</view>
       <view class="menu-list">
         <phone-verify 
@@ -249,6 +264,28 @@
           verified="{{phoneVerified}}" 
           bind:verified="onPhoneVerified"
         />
+      </view>
+    </view>
+
+    <!-- 服务号内容展示栏 -->
+    <view class="service-account-section" bindtap="goToArticleList">
+      <view class="sa-header">
+        <text class="sa-title">关注我们</text>
+        <text class="sa-subtitle">获取最新活动资讯</text>
+      </view>
+      <view class="sa-content">
+        <view class="sa-item" bindtap="goToAnnouncements">
+          <view class="sa-icon">📢</view>
+          <text class="sa-name">活动公告</text>
+        </view>
+        <view class="sa-item" bindtap="goToTutorial">
+          <view class="sa-icon">📖</view>
+          <text class="sa-name">使用教程</text>
+        </view>
+        <view class="sa-item" bindtap="goToSettings">
+          <view class="sa-icon">⚙️</view>
+          <text class="sa-name">系统设置</text>
+        </view>
       </view>
     </view>
 
@@ -261,30 +298,28 @@
   <tab-bar active="mine" />
 
   <!-- 客服面板 -->
-  <view class="service-panel {{showServicePanel ? 'show' : ''}}">
+  <view class="service-panel {{showServicePanel ? 'show' : ''}}" wx:if="{{showServicePanel}}">
     <view class="service-mask" bindtap="hideService"/>
-    <view class="service-content">
+    <view class="service-content" catchtap="noop">
       <view class="service-header">
         <text class="service-title">智能客服</text>
         <view class="service-close" bindtap="hideService">✕</view>
       </view>
-      <scroll-view scroll-y class="service-messages">
-        <view class="message bot">
+      <scroll-view scroll-y class="service-messages" scroll-into-view="{{scrollToView}}">
+        <view class="message bot" id="msg-0">
           <text class="message-text">👋 您好！我是特产互换小助手，请问有什么可以帮您？</text>
         </view>
-        <view class="message bot" wx:for="{{serviceFaqs}}" wx:key="index">
-          <view class="faq-item" bindtap="sendFaq" data-index="{{index}}">
-            <text class="faq-num">{{index + 1}}</text>
-            <text class="faq-text">{{item.q}}</text>
-          </view>
+        <view class="message bot" wx:for="{{serviceMessages}}" wx:key="index" id="msg-{{index + 1}}">
+          <text class="message-text" wx:if="{{item.type === 'ai'}}">{{item.content}}</text>
+          <text class="message-text user" wx:if="{{item.type === 'user'}}">{{item.content}}</text>
         </view>
       </scroll-view>
       <view class="service-quick">
-        <text class="quick-tag" wx:for="{{serviceQuick}}" wx:key="index" bindtap="sendQuick" data-text="{{item}}">{{item}}</text>
+        <text class="quick-tag" wx:for="{{quickQuestions}}" wx:key="index" bindtap="selectQuickQuestion" data-index="{{index}}">{{item}}</text>
       </view>
       <view class="service-input-bar">
-        <input class="service-input" placeholder="输入问题..." value="{{serviceInput}}" bindinput="onServiceInput" confirm-type="send" bindconfirm="sendServiceMessage"/>
-        <view class="service-send {{serviceInput ? 'active' : ''}}" bindtap="sendServiceMessage">发送</view>
+        <input class="service-input" placeholder="输入问题..." value="{{serviceInput}}" bindinput="onServiceInput" confirm-type="send" bindconfirm="sendMessage"/>
+        <view class="service-send {{serviceInput ? 'active' : ''}}" bindtap="sendMessage">发送</view>
       </view>
     </view>
   </view>

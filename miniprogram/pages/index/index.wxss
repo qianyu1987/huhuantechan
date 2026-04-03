@@ -173,7 +173,7 @@
 .search-input {
   flex: 1;
   font-size: 28rpx;
-  color: var(--color-text-primary);
+  color: var(--color-text);
   height: 48rpx;
   line-height: 48rpx;
 }
@@ -222,7 +222,7 @@
 .search-title {
   font-size: 28rpx;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--color-text);
 }
 
 .search-count {
@@ -277,7 +277,7 @@
 .product-name {
   font-size: 28rpx;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--color-text);
   margin-bottom: 12rpx;
   line-height: 1.4;
   display: -webkit-box;
@@ -1241,4 +1241,72 @@
   font-size: 24rpx;
   color: var(--color-text-tertiary);
   margin-left: 12rpx;
+}
+
+/* ===== 纯净白主题样式覆盖 ===== */
+.theme-light .header {
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.08);
+}
+
+.theme-light .slogan-bar {
+  background: linear-gradient(135deg, 
+    rgba(0, 122, 255, 0.08) 0%, 
+    rgba(0, 122, 255, 0.03) 100%);
+  border: 1rpx solid rgba(0, 122, 255, 0.15);
+}
+
+.theme-light .msg-btn {
+  background: rgba(0, 0, 0, 0.06);
+  border: 1rpx solid rgba(0, 0, 0, 0.1);
+}
+
+.theme-light .search-bar {
+  background: rgba(0, 0, 0, 0.06);
+  border: 1rpx solid rgba(0, 0, 0, 0.1);
+}
+
+.theme-light .search-clear {
+  background: rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.theme-light .category-bar {
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.08);
+}
+
+.theme-light .cat-item {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.theme-light .cat-item.active {
+  color: var(--color-primary);
+  background: rgba(0, 122, 255, 0.1);
+}
+
+.theme-light .product-card {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1rpx solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+}
+
+.theme-light .product-location {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.theme-light .mystery-card {
+  background: linear-gradient(135deg, rgba(191, 90, 242, 0.1) 0%, rgba(98, 40, 215, 0.05) 100%);
+  border: 1rpx solid rgba(191, 90, 242, 0.2);
+}
+
+.theme-light .skeleton-card {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1rpx solid rgba(0, 0, 0, 0.06);
+}
+
+.theme-light .skeleton-img,
+.theme-light .skeleton-line {
+  background: linear-gradient(90deg, rgba(0,0,0,0.03) 25%, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0.03) 75%);
+  background-size: 200% 100%;
 }

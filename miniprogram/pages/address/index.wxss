@@ -67,9 +67,9 @@ page {
   top: 0;
   left: 0;
   right: 0;
-  height: 400rpx;
+  height: 280rpx;
   background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-green-light) 50%, var(--primary-green) 100%);
-  border-radius: 0 0 60rpx 60rpx;
+  border-radius: 0 0 40rpx 40rpx;
   z-index: 0;
 }
 
@@ -77,7 +77,7 @@ page {
 .page-header {
   position: relative;
   z-index: 1;
-  padding: 100rpx 24rpx 40rpx;
+  padding: 80rpx 24rpx 30rpx;
   text-align: center;
 }
 
@@ -421,6 +421,7 @@ page {
   justify-content: space-between;
   box-sizing: border-box;
   transition: all 0.3s ease;
+  line-height: 96rpx;
 }
 
 .region-picker:active {
@@ -430,11 +431,17 @@ page {
 .region-text {
   font-size: 30rpx;
   color: var(--text-primary);
+  line-height: 1;
+  display: flex;
+  align-items: center;
 }
 
 .region-placeholder {
   font-size: 30rpx;
   color: var(--text-tertiary);
+  line-height: 1;
+  display: flex;
+  align-items: center;
 }
 
 .region-arrow {

@@ -118,31 +118,31 @@
       </view>
     </view>
 
-    <!-- ══ 付款说明（待付款状态下买家提示） ══ -->
+    <!-- ══ 支付操作卡（待付款状态下买家提示） ══ -->
     <view class="payment-tip-card glass payment-tip-urgent" wx:if="{{order.status === 'pending_payment' && isBuyer}}">
       <view class="ptip-hd">
-        <text class="ptip-icon">💸</text>
-        <text class="ptip-title">请完成付款</text>
+        <text class="ptip-icon">💳</text>
+        <text class="ptip-title">请完成微信支付</text>
       </view>
       <view class="ptip-body">
         <view class="ptip-step-row">
           <text class="ptip-step-num">1</text>
-          <text class="ptip-step-text">通过微信直接向卖家转账 <text class="ptip-price">¥{{order.actualPrice || order.price || 0}}</text></text>
+          <text class="ptip-step-text">点击下方「立即支付」按钮</text>
         </view>
         <view class="ptip-step-row">
           <text class="ptip-step-num">2</text>
-          <text class="ptip-step-text">转账时备注「代购订单 {{order.orderNo}}」</text>
+          <text class="ptip-step-text">通过微信支付 <text class="ptip-price">¥{{order.actualPrice || order.price || 0}}</text></text>
         </view>
         <view class="ptip-step-row">
           <text class="ptip-step-num">3</text>
-          <text class="ptip-step-text">卖家确认收款后订单将自动进入备货状态</text>
+          <text class="ptip-step-text">支付成功后卖家将自动收到备货通知</text>
         </view>
       </view>
       <view class="ptip-warning">
-        <text class="ptip-warn-icon">⚠️</text>
-        <text class="ptip-warn-text">请勿通过任何第三方平台付款，仅支持微信直接转账给卖家本人</text>
+        <text class="ptip-warn-icon">🔒</text>
+        <text class="ptip-warn-text">由微信安全支付保障，平台自动托管货款，确认收货后自动结算给卖家</text>
       </view>
-      <!-- 联系卖家入口 -->
+      <!-- 卖家信息 -->
       <view class="ptip-contact-row" bindtap="goSellerProfile">
         <view class="ptip-seller-info">
           <image
@@ -159,16 +159,16 @@
       </view>
     </view>
 
-    <!-- ══ 支付说明（待发货状态下买家提示） ══ -->
+    <!-- ══ 支付完成提示（待发货状态下买家） ══ -->
     <view class="payment-tip-card glass" wx:if="{{order.status === 'pending_shipment' && isBuyer}}">
       <view class="ptip-hd">
-        <text class="ptip-icon">💡</text>
-        <text class="ptip-title">付款提示</text>
+        <text class="ptip-icon">✅</text>
+        <text class="ptip-title">付款已完成</text>
       </view>
       <view class="ptip-body">
-        <text>请通过微信直接向卖家转账 </text>
-        <text class="ptip-price">¥{{order.price}}</text>
-        <text>，卖家收款确认后将为您发货。</text>
+        <text>您已成功支付 </text>
+        <text class="ptip-price">¥{{order.actualPrice || order.price}}</text>
+        <text>，货款由平台托管，卖家发货后可确认收货结算。</text>
       </view>
       <!-- 联系卖家入口 -->
       <view class="ptip-contact-row" bindtap="goSellerProfile">
@@ -190,21 +190,21 @@
     <!-- ══ 安全免责提示 ══ -->
     <view class="safety-notice-card" wx:if="{{order.status !== 'completed' && order.status !== 'cancelled' && order.status !== 'refunded'}}">
       <view class="notice-hd">
-        <text class="notice-icon">⚠️</text>
-        <text class="notice-title">交易安全提示</text>
+        <text class="notice-icon">🛡️</text>
+        <text class="notice-title">交易安全保障</text>
       </view>
       <view class="notice-items">
         <view class="notice-row">
           <text class="n-dot">•</text>
-          <text class="n-text">本平台<text class="n-em">不经手任何资金</text>，付款请直接微信转账给卖家</text>
+          <text class="n-text">买家付款后，货款由<text class="n-em">平台安全托管</text>，不直接打给卖家</text>
+        </view>
+        <view class="notice-row">
+          <text class="n-dot">•</text>
+          <text class="n-text">确认收货后，货款才会<text class="n-em">自动结算给卖家</text></text>
         </view>
         <view class="notice-row">
           <text class="n-dot">•</text>
           <text class="n-text">收货前务必<text class="n-em">当面或视频验货</text>，确认无误再确认收货</text>
-        </view>
-        <view class="notice-row">
-          <text class="n-dot">•</text>
-          <text class="n-text">平台对交易中的<text class="n-em">货物损失、资金纠纷不承担责任</text></text>
         </view>
       </view>
     </view>
@@ -314,6 +314,19 @@
     <!-- ══ 底部操作栏 ══ -->
     <view class="bottom-bar glass">
       <block wx:if="{{isBuyer}}">
+        <!-- 待付款：立即支付 + 取消订单 -->
+        <block wx:if="{{order.status === 'pending_payment'}}">
+          <button class="action-btn btn-ghost" bindtap="cancelOrder">取消订单</button>
+          <button
+            class="action-btn btn-primary"
+            bindtap="payNow"
+            loading="{{paying}}"
+            disabled="{{paying}}"
+          >
+            <text>{{paying ? '支付中...' : '立即支付'}}</text>
+            <text class="btn-points-hint"> ¥{{order.actualPrice || order.price || 0}}</text>
+          </button>
+        </block>
         <!-- 待发货：取消订单 -->
         <button
           wx:if="{{order.status === 'pending_shipment'}}"

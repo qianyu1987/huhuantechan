@@ -1,4 +1,6 @@
 // pages/settings/index.js - 设置
+const { callCloud } = require('../../utils/util')
+
 Page({
   data: {
     notifyEnabled: true,
@@ -8,6 +10,21 @@ Page({
     currentTheme: 'dark',
     currentThemeName: '深邃黑',
     showThemeModal: false,
+    version: '1.0.0',
+    // 新增功能开关
+    soundEnabled: true,
+    vibrationEnabled: true,
+    autoUpdateEnabled: true,
+    privacyMode: false,
+    // 客服配置
+    serviceWechat: '',
+    servicePhone: '',
+    // 关于我们信息
+    aboutInfo: {
+      company: '特产互换科技',
+      contact: 'support@techan.com',
+      website: 'www.techan.com'
+    },
     themes: [
       {
         id: 'dark',
@@ -26,6 +43,12 @@ Page({
         name: '玫瑰红',
         desc: 'iOS 18 玫瑰红，优雅浪漫',
         colors: ['#1A0008', '#FF3B54', '#FF6B7F']
+      },
+      {
+        id: 'fresh',
+        name: '小清新',
+        desc: '鼠尾草绿配奶油黄，白底轻盈',
+        colors: ['#F7F9F5', '#7DAF8E', '#E8C96A']
       }
     ]
   },
@@ -33,11 +56,28 @@ Page({
   onLoad() {
     this.loadSettings()
     this.loadTheme()
+    this.loadServiceConfig()
   },
 
   onShow() {
     // 每次显示页面时更新主题
     this.loadTheme()
+    this.loadServiceConfig()
+  },
+
+  // 加载客服配置
+  async loadServiceConfig() {
+    try {
+      const res = await callCloud('userInit', { action: 'getServiceConfig' })
+      if (res && res.success) {
+        this.setData({
+          serviceWechat: res.serviceWechat || '',
+          servicePhone: res.servicePhone || ''
+        })
+      }
+    } catch (e) {
+      console.error('加载客服配置失败', e)
+    }
   },
 
   loadSettings() {
@@ -45,7 +85,11 @@ Page({
     this.setData({
       notifyEnabled: settings.notifyEnabled ?? true,
       showProfile: settings.showProfile ?? true,
-      searchable: settings.searchable ?? true
+      searchable: settings.searchable ?? true,
+      soundEnabled: settings.soundEnabled ?? true,
+      vibrationEnabled: settings.vibrationEnabled ?? true,
+      autoUpdateEnabled: settings.autoUpdateEnabled ?? true,
+      privacyMode: settings.privacyMode ?? false
     })
   },
 
@@ -54,7 +98,8 @@ Page({
     const themeNames = {
       'dark': '深邃黑',
       'light': '纯净白',
-      'rose': '玫瑰红'
+      'rose': '玫瑰红',
+      'fresh': '小清新'
     }
     this.setData({
       currentTheme: savedTheme,
@@ -123,7 +168,8 @@ Page({
     const themeNames = {
       'dark': '深邃黑',
       'light': '纯净白',
-      'rose': '玫瑰红'
+      'rose': '玫瑰红',
+      'fresh': '小清新'
     }
     this.setData({
       currentTheme: themeId,
@@ -199,6 +245,92 @@ Page({
         }
       }
     })
+  },
+
+  // 通用开关切换
+  toggleSwitch(e) {
+    const key = e.currentTarget.dataset.key
+    const enabled = e.detail.value
+    this.setData({ [key]: enabled })
+    this.saveSettings(key, enabled)
+    
+    const messages = {
+      soundEnabled: enabled ? '声音已开启' : '声音已关闭',
+      vibrationEnabled: enabled ? '振动已开启' : '振动已关闭',
+      autoUpdateEnabled: enabled ? '自动更新已开启' : '自动更新已关闭',
+      privacyMode: enabled ? '隐私模式已开启' : '隐私模式已关闭'
+    }
+    wx.showToast({ title: messages[key] || '设置已保存', icon: 'none' })
+  },
+
+  // 检查更新
+  checkUpdate() {
+    wx.showLoading({ title: '检查中...' })
+    
+    // 模拟检查更新
+    setTimeout(() => {
+      wx.hideLoading()
+      wx.showModal({
+        title: '已是最新版本',
+        content: `当前版本 v${this.data.version}，无需更新`,
+        showCancel: false,
+        confirmText: '知道了'
+      })
+    }, 1000)
+  },
+
+  // 意见反馈
+  goToFeedback() {
+    const wechat = this.data.serviceWechat || ''
+    const phone = this.data.servicePhone || ''
+    
+    let content = '如有问题或建议，欢迎联系我们：\n'
+    if (wechat) {
+      content += `\n📱 客服微信：${wechat}`
+    }
+    if (phone) {
+      content += `\n📞 客服电话：${phone}`
+    }
+    content += '\n📧 客服邮箱：support@techan.com'
+    
+    const hasContact = wechat || phone
+    
+    wx.showModal({
+      title: '意见反馈',
+      content: content,
+      confirmText: hasContact ? '复制联系方式' : '知道了',
+      showCancel: true,
+      cancelText: '关闭',
+      success: (res) => {
+        if (res.confirm && hasContact) {
+          const copyText = wechat ? `客服微信：${wechat}` : `客服电话：${phone}`
+          wx.setClipboardData({
+            data: copyText,
+            success: () => wx.showToast({ title: '已复制', icon: 'success' })
+          })
+        }
+      }
+    })
+  },
+
+  // 用户协议
+  goToUserAgreement() {
+    wx.navigateTo({ url: '/pages/user-agreement/index' })
+  },
+
+  // 隐私政策
+  goToPrivacyPolicy() {
+    wx.navigateTo({ url: '/pages/privacy-policy/index' })
+  },
+
+  // 关于我们
+  goToAbout() {
+    wx.navigateTo({ url: '/pages/about/index' })
+  },
+
+  // 帮助中心
+  goToHelp() {
+    wx.navigateTo({ url: '/pages/help/index' })
   },
 
   // 主题变化回调

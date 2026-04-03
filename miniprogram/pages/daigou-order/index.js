@@ -4,7 +4,7 @@ const { callCloud, toast, formatTime } = require('../../utils/util')
 const app = getApp()
 
 const STATUS_MAP = {
-  pending_payment:  { text: '等待付款',   desc: '请尽快完成线下付款，卖家收款后即开始备货',    icon: '⏳', color: '#FF9500' },
+  pending_payment:  { text: '等待付款',   desc: '请点击下方「立即支付」完成微信支付',          icon: '⏳', color: '#FF9500' },
   pending_shipment: { text: '等待发货',   desc: '卖家正在准备发货，请耐心等待',                icon: '📦', color: '#0A84FF' },
   shipped:          { text: '已发货',     desc: '商品在途中，确认收货后将获得积分奖励',         icon: '🚚', color: '#5856D6' },
   completed:        { text: '交易完成',   desc: '感谢购买！已发放积分奖励',                    icon: '✅', color: '#30D158' },
@@ -46,6 +46,8 @@ Page({
     shipping: false,
     // 弹窗动画
     panelVisible: false,
+    // 支付相关
+    paying: false,
     // 卖家信息（展示等级/认证）
     sellerInfo: null,
     // 买家信息
@@ -162,6 +164,91 @@ Page({
   },
 
   // ══ 买家操作 ══
+
+  // 立即支付（pending_payment 状态下使用）
+  async payNow() {
+    if (this.data.paying) return
+    const { orderId, order } = this.data
+
+    if (!order || order.status !== 'pending_payment') {
+      toast('当前状态不支持支付')
+      return
+    }
+
+    this.setData({ paying: true })
+    wx.showLoading({ title: '获取支付参数...' })
+
+    try {
+      const payRes = await callCloud('daigouMgr', {
+        action: 'createDaigouPayOrder',
+        orderId
+      })
+      wx.hideLoading()
+
+      if (!payRes || !payRes.success || !payRes.paymentParams) {
+        toast(payRes && payRes.message ? payRes.message : '支付参数获取失败，请稍后重试')
+        this.setData({ paying: false })
+        return
+      }
+
+      // 调起微信支付
+      this._callWxPayment(payRes.paymentParams, orderId, payRes.wxPayOrderId)
+    } catch (e) {
+      wx.hideLoading()
+      toast('支付发起失败，请稍后重试')
+      console.error('[daigou-order] payNow error', e)
+      this.setData({ paying: false })
+    }
+  },
+
+  // 调起微信支付（内部方法）
+  _callWxPayment(paymentParams, orderId, wxPayOrderId) {
+    const that = this
+    wx.showLoading({ title: '正在调起支付...' })
+
+    wx.requestPayment({
+      ...paymentParams,
+      success: async (payRes) => {
+        console.log('[代购支付成功]', payRes)
+        wx.hideLoading()
+        wx.showLoading({ title: '确认支付...' })
+
+        try {
+          const confirmRes = await callCloud('daigouMgr', {
+            action: 'confirmDaigouPayment',
+            orderId,
+            wxPayOrderId: wxPayOrderId || ''
+          })
+          wx.hideLoading()
+          that.setData({ paying: false })
+
+          wx.showToast({ title: '支付成功！', icon: 'success', duration: 1500 })
+          setTimeout(() => that.loadOrder(orderId), 1500)
+        } catch (confirmErr) {
+          wx.hideLoading()
+          that.setData({ paying: false })
+          console.error('[代购支付] 确认支付结果失败', confirmErr)
+          wx.showModal({
+            title: '支付已完成',
+            content: '支付成功，正在刷新订单状态...',
+            showCancel: false,
+            success: () => that.loadOrder(orderId)
+          })
+        }
+      },
+      fail: (payErr) => {
+        wx.hideLoading()
+        that.setData({ paying: false })
+        console.error('[代购支付取消或失败]', payErr)
+
+        if (payErr.errMsg && payErr.errMsg.includes('cancel')) {
+          toast('支付已取消，可稍后重新支付')
+        } else {
+          toast('支付失败，请稍后重试')
+        }
+      }
+    })
+  },
 
   async cancelOrder() {
     const res = await new Promise(resolve =>

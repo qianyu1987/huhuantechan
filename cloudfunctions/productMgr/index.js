@@ -712,13 +712,11 @@ async function checkImage(fileId) {
       
       console.log('[productMgr/myList] 查询用户特产:', { openid, status, isMystery, page })
       
-      // 构建查询条件：同时查询 _openid 和 openid 字段，确保兼容性
-      let query = db.collection('products').where(
-        db.command.or([
-          { _openid: openid },
-          { openid: openid }
-        ])
-      )
+      // 构建查询条件：只查询当前用户的特产
+      // 使用 _openid 字段（云开发自动维护的字段）
+      let query = db.collection('products').where({
+        _openid: openid
+      })
       
       // 应用状态筛选
       if (status) {

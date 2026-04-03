@@ -49,7 +49,7 @@
           <input
             class="custom-input"
             type="digit"
-            placeholder="输入充值金额（10~10000）"
+            placeholder="输入充值金额（1~10000）"
             placeholder-class="input-placeholder"
             value="{{customAmount}}"
             bindinput="onCustomAmountInput"
@@ -63,15 +63,15 @@
       </view>
     </view>
 
-    <!-- 微信支付按钮（新增） -->
-    <view class="section-card wechat-pay-section" wx:if="{{currentAmount > 0}}">
+    <!-- 微信支付按钮 -->
+    <view class="wechat-pay-section" wx:if="{{currentAmount > 0}}">
       <view class="wechat-pay-btn" bindtap="onWechatPay">
         <view class="wechat-pay-icon">
           <text class="wechat-pay-icon-text">微</text>
         </view>
         <view class="wechat-pay-info">
           <text class="wechat-pay-title">微信支付</text>
-          <text class="wechat-pay-desc">推荐 - 秒充到账</text>
+          <text class="wechat-pay-desc">秒充到账，无需等待</text>
         </view>
         <view class="wechat-pay-arrow">
           <text class="arrow-icon">›</text>
@@ -79,80 +79,29 @@
       </view>
     </view>
 
-    <!-- 分隔线 -->
-    <view class="divider-text" wx:if="{{currentAmount > 0}}">
-      <text class="divider-line"/>
-      <text class="divider-label">或选择其他方式</text>
-      <text class="divider-line"/>
-    </view>
-
     <!-- 充值说明 -->
     <view class="section-card notice-card">
       <view class="section-title-row">
         <text class="section-icon">📋</text>
-        <text class="section-title">充值流程说明</text>
+        <text class="section-title">充值说明</text>
       </view>
-      <view class="steps-list">
-        <view class="step-item">
-          <view class="step-num">1</view>
-          <view class="step-content">
-            <text class="step-title">提交充值申请</text>
-            <text class="step-desc">选择或填写充值金额，点击提交申请</text>
-          </view>
+      <view class="notice-list">
+        <view class="notice-item">
+          <text class="notice-dot">•</text>
+          <text class="notice-text">支持微信支付，充值金额实时到账</text>
         </view>
-        <view class="step-item">
-          <view class="step-num">2</view>
-          <view class="step-content">
-            <text class="step-title">联系管理员转账</text>
-            <text class="step-desc">添加管理员微信，备注申请单号后完成转账</text>
-          </view>
+        <view class="notice-item">
+          <text class="notice-dot">•</text>
+          <text class="notice-text">单次充值金额范围：¥1 ~ ¥10,000</text>
         </view>
-        <view class="step-item">
-          <view class="step-num">3</view>
-          <view class="step-content">
-            <text class="step-title">等待审核到账</text>
-            <text class="step-desc">管理员确认收款后，余额将自动到账</text>
-          </view>
+        <view class="notice-item">
+          <text class="notice-dot">•</text>
+          <text class="notice-text">充值金额可用于支付代购平台服务费</text>
         </view>
-      </view>
-
-      <!-- 管理员微信 -->
-      <view class="admin-wechat-row" bindtap="copyAdminWechat">
-        <text class="admin-wechat-icon">💬</text>
-        <view class="admin-wechat-info">
-          <text class="admin-wechat-label">管理员微信</text>
-          <text class="admin-wechat-id">xiaoqiange12315</text>
+        <view class="notice-item">
+          <text class="notice-dot">•</text>
+          <text class="notice-text">如有问题请联系客服微信：{{serviceWechat}}</text>
         </view>
-        <view class="copy-btn">
-          <text class="copy-btn-text">复制</text>
-        </view>
-      </view>
-    </view>
-
-    <!-- 备注 -->
-    <view class="section-card">
-      <view class="section-title-row">
-        <text class="section-icon">✏️</text>
-        <text class="section-title">备注（选填）</text>
-      </view>
-      <textarea
-        class="remark-input"
-        placeholder="可填写转账备注，方便管理员核对"
-        placeholder-class="input-placeholder"
-        value="{{remark}}"
-        bindinput="onRemarkInput"
-        maxlength="100"
-        auto-height
-      />
-    </view>
-
-    <!-- 提交按钮（手动转账方式） -->
-    <view class="submit-wrap">
-      <view
-        class="submit-btn secondary {{(!currentAmount || currentAmount <= 0 || submitting) ? 'disabled' : ''}}"
-        bindtap="onSubmit"
-      >
-        <text class="submit-text">{{submitting ? '提交中...' : '手动转账充值'}}</text>
       </view>
     </view>
 
@@ -167,20 +116,11 @@
           <view class="apply-left">
             <text class="apply-amount">¥{{item.amount}}</text>
             <text class="apply-time">{{item.createTime}}</text>
-            <text class="apply-no">单号：{{item.applyNo}}</text>
-            <text wx:if="{{item.adminNote}}" class="apply-admin-note">备注：{{item.adminNote}}</text>
+            <text class="apply-no">单号：{{item.orderNo || item.applyNo}}</text>
           </view>
           <view class="apply-right">
             <view class="apply-status status-{{item.status}}">
               <text class="apply-status-text">{{item.statusText}}</text>
-            </view>
-            <view
-              wx:if="{{item.status === 'pending'}}"
-              class="cancel-btn"
-              bindtap="onCancelApply"
-              data-id="{{item.id}}"
-            >
-              <text class="cancel-btn-text">取消</text>
             </view>
           </view>
         </view>
@@ -208,7 +148,7 @@
           <text class="wechat-pay-loading-icon-text">💳</text>
         </view>
         <text class="wechat-pay-title">{{checkingPayment ? '支付处理中...' : '支付完成'}}</text>
-        <text class="wechat-pay-subtitle">{{checkingPayment ? '请稍候，系统正在确认支付结果' : '支付已成功'}}</text>
+        <text class="wechat-pay-subtitle">{{checkingPayment ? '请稍候，系统正在确认支付结果' : '充值已成功到账'}}</text>
       </view>
 
       <!-- 订单信息 -->
@@ -250,99 +190,4 @@
 
   </view>
 
-</view>
-
-<!-- 提交成功弹窗 -->
-<view class="modal-mask" wx:if="{{showResultModal}}">
-  <view class="modal-content" catchtap="noop">
-
-    <!-- 滚动内容区 -->
-    <scroll-view scroll-y class="modal-scroll">
-
-      <!-- 顶部成功标识 -->
-      <view class="modal-success-header">
-        <view class="modal-success-ring">
-          <text class="modal-icon">✅</text>
-        </view>
-        <text class="modal-title">申请提交成功！</text>
-        <text class="modal-desc">请截图保存以下凭证，转账时备注单号</text>
-      </view>
-
-      <!-- 截图引导提示（凭证上方，更醒目） -->
-      <view class="screenshot-hint-top">
-        <text class="screenshot-hint-top-icon">📸</text>
-        <view>
-          <text class="screenshot-hint-top-text">请截图保存此凭证</text>
-          <text class="screenshot-hint-top-sub">转账时向管理员出示，备注申请单号</text>
-        </view>
-      </view>
-
-      <!-- 凭证卡片（截图核心区域） -->
-      <view class="voucher-card">
-        <view class="voucher-header">
-          <text class="voucher-header-icon">🧾</text>
-          <text class="voucher-header-title">充值凭证</text>
-          <text class="voucher-header-sub">互换特产平台</text>
-        </view>
-
-        <view class="voucher-divider">
-          <view class="voucher-divider-dot left"/>
-          <view class="voucher-divider-line"/>
-          <view class="voucher-divider-dot right"/>
-        </view>
-
-        <view class="voucher-row">
-          <text class="voucher-label">充值金额</text>
-          <text class="voucher-value voucher-amount">¥{{resultAmount}}</text>
-        </view>
-        <view class="voucher-row">
-          <text class="voucher-label">客服微信</text>
-          <text class="voucher-value voucher-wechat">{{serviceWechat || '未配置'}}</text>
-        </view>
-        <view class="voucher-row">
-          <text class="voucher-label">申请单号</text>
-          <text class="voucher-value voucher-no">{{resultApplyNo}}</text>
-        </view>
-        <view class="voucher-row">
-          <text class="voucher-label">申请时间</text>
-          <text class="voucher-value voucher-time">{{resultCreateTime}}</text>
-        </view>
-
-        <view class="voucher-divider">
-          <view class="voucher-divider-dot left"/>
-          <view class="voucher-divider-line"/>
-          <view class="voucher-divider-dot right"/>
-        </view>
-
-        <view class="voucher-tip-row">
-          <text class="voucher-tip-text">转账时请备注以上单号，方便管理员核对</text>
-        </view>
-      </view>
-
-      <!-- 截图引导提示（凭证下方辅助说明） -->
-      <view class="screenshot-hint">
-        <text class="screenshot-hint-icon">💡</text>
-        <text class="screenshot-hint-text">长按屏幕可截图，或使用手机截图功能保存</text>
-      </view>
-
-    </scroll-view>
-
-    <!-- 底部固定操作区 -->
-    <view class="modal-footer">
-      <view class="modal-actions">
-        <view class="modal-btn secondary" bindtap="copyApplyNo">
-          <text class="modal-btn-icon">📋</text>
-          <text>复制单号</text>
-        </view>
-        <view class="modal-btn primary" bindtap="copyAdminWechat">
-          <text class="modal-btn-icon">💬</text>
-          <text>复制微信号</text>
-        </view>
-      </view>
-      <view class="modal-close-btn" bindtap="closeResultModal">
-        <text class="modal-close-text">我已保存凭证，关闭</text>
-      </view>
-    </view>
-
-  </view>
 </view>

@@ -43,6 +43,8 @@ Page({
     this.setData({
       userInfo: app.globalData.userInfo
     })
+    // 每次显示页面时刷新邀请数据，确保获取最新配置
+    this.loadInviteData()
   },
 
   async loadInviteData() {

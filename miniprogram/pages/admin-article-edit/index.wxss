@@ -1,0 +1,188 @@
+/* pages/admin-article-edit/index.wxss - 文章编辑页面 */
+
+.edit-page {
+  min-height: 100vh;
+  background: var(--color-bg);
+  display: flex;
+  flex-direction: column;
+}
+
+/* 导航栏 */
+.glass-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 20rpx 32rpx;
+  padding-top: calc(20rpx + env(safe-area-inset-top));
+  background: var(--liquid-surface);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1rpx solid var(--color-divider);
+}
+
+.nav-back {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44rpx;
+  color: var(--color-primary);
+}
+
+.nav-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.nav-placeholder {
+  width: 60rpx;
+}
+
+/* 表单滚动区 */
+.form-scroll {
+  flex: 1;
+  height: calc(100vh - 180rpx - env(safe-area-inset-top));
+}
+
+.form-section {
+  padding: 24rpx;
+}
+
+/* 表单项 */
+.form-item {
+  margin-bottom: 32rpx;
+}
+
+.form-label {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 500;
+  color: var(--color-text);
+  margin-bottom: 16rpx;
+}
+
+.form-label .required {
+  color: var(--color-danger);
+}
+
+/* 输入框 */
+.form-input {
+  width: 100%;
+  padding: 24rpx;
+  background: var(--liquid-surface);
+  border: 1rpx solid var(--color-divider);
+  border-radius: var(--radius-lg);
+  font-size: 30rpx;
+  color: var(--color-text);
+  box-sizing: border-box;
+}
+
+.form-input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+/* 文本域 */
+.form-textarea {
+  width: 100%;
+  padding: 24rpx;
+  background: var(--liquid-surface);
+  border: 1rpx solid var(--color-divider);
+  border-radius: var(--radius-lg);
+  font-size: 30rpx;
+  color: var(--color-text);
+  min-height: 160rpx;
+  box-sizing: border-box;
+}
+
+.form-textarea.content {
+  min-height: 300rpx;
+}
+
+.form-textarea::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+/* 封面图上传 */
+.cover-upload {
+  position: relative;
+  width: 100%;
+  height: 320rpx;
+  background: var(--liquid-surface);
+  border: 2rpx dashed var(--color-divider);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.cover-preview {
+  width: 100%;
+  height: 100%;
+}
+
+.cover-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+}
+
+.placeholder-icon {
+  font-size: 64rpx;
+}
+
+.placeholder-text {
+  font-size: 28rpx;
+  color: var(--color-text-tertiary);
+}
+
+.cover-delete {
+  position: absolute;
+  top: 16rpx;
+  right: 16rpx;
+  width: 48rpx;
+  height: 48rpx;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cover-delete text {
+  font-size: 24rpx;
+  color: white;
+}
+
+/* 底部按钮 */
+.form-footer {
+  padding: 24rpx;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  background: var(--color-bg);
+}
+
+.save-btn {
+  width: 100%;
+  height: 96rpx;
+  background: var(--color-primary);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.save-btn text {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: white;
+}
+
+.save-btn:active {
+  opacity: 0.9;
+}

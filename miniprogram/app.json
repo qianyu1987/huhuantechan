@@ -15,6 +15,7 @@
     "pages/address/index",
     "pages/invitedFriends/index",
     "pages/points-rule/index",
+    "pages/points-exchange/index",
     "pages/credit/index",
     "pages/settings/index",
     "pages/about/index",
@@ -40,7 +41,14 @@
     "pages/deposit-apply/index",
     "pages/withdrawal/index",
     "pages/withdrawal-history/index",
-    "pages/product-list/index"
+    "pages/product-list/index",
+    "pages/article-list/index",
+    "pages/admin-article-list/index",
+    "pages/admin-article-edit/index",
+    "pages/tutorial/index",
+    "pages/ai-face/index",
+    "pages/privacy-policy/index",
+    "pages/help/index"
   ],
   "window": {
     "backgroundTextStyle": "light",

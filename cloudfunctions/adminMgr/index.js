@@ -786,30 +786,88 @@ exports.main = async (event, context) => {
         const list = await Promise.all(res.data.map(async (order) => {
           let orderData = { ...order }
 
-          // 获取请求者信息
-          if (order.requesterId || order.requesterOpenid || order._openid) {
+          // ===== 获取发起者（initiator）完整信息 =====
+          const initiatorOpenid = order.initiatorOpenid || order.requesterOpenid || order._openid
+          if (initiatorOpenid) {
             try {
-              const openid = order.requesterOpenid || order._openid
-              const userRes = await db.collection('users').where({
-                _openid: openid
-              }).field({ nickName: true, avatarUrl: true }).get()
+              const userRes = await db.collection('users').where({ _openid: initiatorOpenid })
+                .field({ nickName: true, avatarUrl: true, phone: true }).limit(1).get()
               if (userRes.data.length > 0) {
-                orderData.requesterNick = userRes.data[0].nickName
-                orderData.requesterAvatar = userRes.data[0].avatarUrl
+                const u = userRes.data[0]
+                orderData.initiatorNick   = u.nickName  || ''
+                orderData.initiatorAvatar = u.avatarUrl || ''
+                orderData.initiatorPhone  = u.phone     || ''
+              }
+              // 发起者收货地址
+              if (order.initiatorShipping) {
+                orderData.initiatorAddress = [
+                  order.initiatorShipping.contactName,
+                  order.initiatorShipping.contactPhone,
+                  (order.initiatorShipping.province || '') +
+                  (order.initiatorShipping.city || '') +
+                  (order.initiatorShipping.district || '') +
+                  (order.initiatorShipping.detailAddress || '')
+                ].filter(Boolean).join(' | ')
               }
             } catch (e) {}
           }
 
-          // 获取特产信息
-          if (order.productId) {
+          // ===== 获取接收者（receiver）完整信息 =====
+          const receiverOpenid = order.receiverOpenid || order.respondentOpenid
+          if (receiverOpenid) {
             try {
-              const productRes = await db.collection('products').doc(order.productId).get()
-              if (productRes.data) {
-                orderData.productName = productRes.data.name
-                orderData.productCover = productRes.data.images && productRes.data.images[0] ? productRes.data.images[0] : ''
-                orderData.productProvince = productRes.data.province
+              const userRes = await db.collection('users').where({ _openid: receiverOpenid })
+                .field({ nickName: true, avatarUrl: true, phone: true }).limit(1).get()
+              if (userRes.data.length > 0) {
+                const u = userRes.data[0]
+                orderData.receiverNick   = u.nickName  || ''
+                orderData.receiverAvatar = u.avatarUrl || ''
+                orderData.receiverPhone  = u.phone     || ''
+              }
+              // 接收者收货地址
+              if (order.receiverShipping) {
+                orderData.receiverAddress = [
+                  order.receiverShipping.contactName,
+                  order.receiverShipping.contactPhone,
+                  (order.receiverShipping.province || '') +
+                  (order.receiverShipping.city || '') +
+                  (order.receiverShipping.district || '') +
+                  (order.receiverShipping.detailAddress || '')
+                ].filter(Boolean).join(' | ')
               }
             } catch (e) {}
+          }
+
+          // ===== 兼容旧字段 requesterNick/requesterAvatar =====
+          orderData.requesterNick   = orderData.initiatorNick   || orderData.requesterNick   || ''
+          orderData.requesterAvatar = orderData.initiatorAvatar || orderData.requesterAvatar || ''
+
+          // ===== 获取双方特产信息 =====
+          const productIds = [order.initiatorProductId, order.receiverProductId, order.productId].filter(Boolean)
+          for (const pid of productIds) {
+            try {
+              const productRes = await db.collection('products').doc(pid).get()
+              if (productRes.data) {
+                if (pid === order.initiatorProductId || pid === order.productId) {
+                  orderData.productName    = orderData.productName    || productRes.data.name
+                  orderData.productCover   = orderData.productCover   || (productRes.data.images && productRes.data.images[0] ? productRes.data.images[0] : '')
+                  orderData.productProvince = orderData.productProvince || productRes.data.province
+                  orderData.initiatorProductName  = productRes.data.name
+                  orderData.initiatorProductCover = productRes.data.images && productRes.data.images[0] ? productRes.data.images[0] : ''
+                } else if (pid === order.receiverProductId) {
+                  orderData.receiverProductName  = productRes.data.name
+                  orderData.receiverProductCover = productRes.data.images && productRes.data.images[0] ? productRes.data.images[0] : ''
+                }
+              }
+            } catch (e) {}
+          }
+
+          // ===== 快递单号格式化 =====
+          if (order.initiatorTracking) {
+            orderData.initiatorTrackingText = `${order.initiatorTracking.company || ''} ${order.initiatorTracking.number || ''}`
+          }
+          if (order.receiverTracking) {
+            orderData.receiverTrackingText = `${order.receiverTracking.company || ''} ${order.receiverTracking.number || ''}`
           }
 
           return orderData
@@ -1765,9 +1823,26 @@ exports.main = async (event, context) => {
           const total = users.length
           const paged = users.slice(skip, skip + pageSize)
 
-          // 等级费率表
-          const LEVEL_RATE = { 0: 8.0, 1: 7.0, 2: 6.5, 3: 6.0, 4: 5.5, 5: 5.0, 6: 4.0 }
-          const LEVEL_NAMES = { 0: '新人', 1: '初级', 2: '进阶', 3: '资深', 4: '金牌', 5: '钻石', 6: '官方认证' }
+          // 代购等级体系 - 与daigou-level页面保持一致（Lv.1-Lv.7）
+          // level值：0=Lv.1, 1=Lv.2, ..., 6=Lv.7
+          const LEVEL_NAMES = {
+            0: '新手代购',
+            1: '见习代购',
+            2: '普通代购',
+            3: '资深代购',
+            4: '金牌代购',
+            5: '钻石代购',
+            6: '传奇代购'
+          }
+          const LEVEL_DEPOSIT = {
+            0: 0,    // Lv.1 免押金
+            1: 0,    // Lv.2 免押金
+            2: 0,    // Lv.3 免押金
+            3: 200,  // Lv.4 押金¥200
+            4: 500,  // Lv.5 押金¥500
+            5: 2000, // Lv.6 押金¥2000
+            6: 5000  // Lv.7 押金¥5000
+          }
 
           const list = paged.map(u => {
             const stats = u.daigouStats || {}
@@ -1780,8 +1855,8 @@ exports.main = async (event, context) => {
               creditScore: u.creditScore || 100,
               points: u.points || 0,
               daigouLevel: level,
-              daigouLevelName: LEVEL_NAMES[level] || '新人',
-              feeRate: LEVEL_RATE[level] || 8.0,
+              daigouLevelName: LEVEL_NAMES[level] || '新手代购',
+              requiredDeposit: LEVEL_DEPOSIT[level] || 0,
               isDaigouVerified: u.isDaigouVerified || false,
               depositPaid: stats.depositPaid || 0,
               depositBalance: stats.depositBalance !== undefined ? stats.depositBalance : (stats.depositPaid || 0),
@@ -1807,7 +1882,7 @@ exports.main = async (event, context) => {
         try {
           const { userOpenid, level, reason = '管理员调整等级' } = event
           if (!userOpenid || level === undefined) return { success: false, error: '参数不完整' }
-          if (level < 0 || level > 6) return { success: false, error: '等级范围0-6' }
+          if (level < 0 || level > 6) return { success: false, error: '等级范围0-6（对应Lv.1-Lv.7）' }
 
           // 查用户
           const userRes = await db.collection('users').where({ _openid: userOpenid }).get()
@@ -2438,7 +2513,9 @@ exports.main = async (event, context) => {
           const configKeys = [
             'invite_reward_inviter',
             'invite_reward_invitee',
-            'withdrawal_threshold'
+            'withdrawal_threshold',
+            'invite_points_inviter',
+            'invite_points_invitee'
           ]
           
           const configs = {}
@@ -2453,6 +2530,8 @@ exports.main = async (event, context) => {
                 case 'invite_reward_inviter': defaultValue = 0.3; break
                 case 'invite_reward_invitee': defaultValue = 0.1; break
                 case 'withdrawal_threshold': defaultValue = 30; break
+                case 'invite_points_inviter': defaultValue = 100; break
+                case 'invite_points_invitee': defaultValue = 50; break
                 default: defaultValue = 0
               }
               configs[key] = defaultValue
@@ -2482,26 +2561,23 @@ exports.main = async (event, context) => {
       case 'updateInviteConfig': {
         if (!isSuperAdmin) return { success: false, error: '无管理员权限' }
         try {
-          const { inviteRewardInviter, inviteRewardInvitee, withdrawalThreshold } = event
+          const { inviteRewardInviter, inviteRewardInvitee, withdrawalThreshold, invitePointsInviter, invitePointsInvitee } = event
           
           const updates = []
           if (inviteRewardInviter !== undefined) {
-            updates.push({
-              key: 'invite_reward_inviter',
-              value: parseFloat(inviteRewardInviter)
-            })
+            updates.push({ key: 'invite_reward_inviter', value: parseFloat(inviteRewardInviter) })
           }
           if (inviteRewardInvitee !== undefined) {
-            updates.push({
-              key: 'invite_reward_invitee',
-              value: parseFloat(inviteRewardInvitee)
-            })
+            updates.push({ key: 'invite_reward_invitee', value: parseFloat(inviteRewardInvitee) })
           }
           if (withdrawalThreshold !== undefined) {
-            updates.push({
-              key: 'withdrawal_threshold',
-              value: parseFloat(withdrawalThreshold)
-            })
+            updates.push({ key: 'withdrawal_threshold', value: parseFloat(withdrawalThreshold) })
+          }
+          if (invitePointsInviter !== undefined) {
+            updates.push({ key: 'invite_points_inviter', value: parseInt(invitePointsInviter) })
+          }
+          if (invitePointsInvitee !== undefined) {
+            updates.push({ key: 'invite_points_invitee', value: parseInt(invitePointsInvitee) })
           }
 
           for (const update of updates) {
@@ -2533,6 +2609,66 @@ exports.main = async (event, context) => {
             message: '邀请配置已更新'
           }
         } catch (e) {
+          return { success: false, error: e.message }
+        }
+      }
+
+      // ========== 批量重置所有用户积分 ==========
+      case 'batchResetPoints': {
+        if (!isSuperAdmin) return { success: false, error: '无超级管理员权限' }
+        try {
+          const { targetPoints = 100 } = event
+          
+          // 分批处理，每批100条
+          let totalUpdated = 0
+          let skip = 0
+          const batchSize = 100
+          
+          while (true) {
+            const usersRes = await db.collection('users')
+              .skip(skip)
+              .limit(batchSize)
+              .field({ _id: true, _openid: true, nickName: true, points: true })
+              .get()
+            
+            if (!usersRes.data || usersRes.data.length === 0) break
+            
+            // 批量更新
+            const updatePromises = usersRes.data.map(user =>
+              db.collection('users').doc(user._id).update({
+                data: {
+                  points: targetPoints,
+                  updateTime: db.serverDate()
+                }
+              })
+            )
+            await Promise.all(updatePromises)
+            
+            // 记录操作日志
+            await db.collection('admin_logs').add({
+              data: {
+                _openid: adminOpenid,
+                action: 'batchResetPoints',
+                batchCount: usersRes.data.length,
+                targetPoints,
+                batchSkip: skip,
+                createTime: db.serverDate()
+              }
+            })
+            
+            totalUpdated += usersRes.data.length
+            skip += batchSize
+            
+            if (usersRes.data.length < batchSize) break
+          }
+          
+          return {
+            success: true,
+            totalUpdated,
+            message: `已将 ${totalUpdated} 名用户积分重置为 ${targetPoints}`
+          }
+        } catch (e) {
+          console.error('[batchResetPoints]', e)
           return { success: false, error: e.message }
         }
       }

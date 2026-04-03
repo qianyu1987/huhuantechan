@@ -1014,7 +1014,7 @@ exports.main = async (event, context) => {
 
       // 获取邀请配置
       const configRes = await db.collection('system_config').where({
-        configKey: _.in(['invite_reward_inviter', 'invite_reward_invitee', 'invite_cash_reward_inviter', 'invite_cash_reward_invitee', 'first_swap_cash_reward'])
+        configKey: _.in(['invite_reward_inviter', 'invite_reward_invitee', 'invite_points_inviter', 'invite_points_invitee', 'first_swap_cash_reward', 'points_exchange_rate'])
       }).get()
       
       const configs = {}
@@ -1022,14 +1022,14 @@ exports.main = async (event, context) => {
         configs[item.configKey] = item.configValue
       })
       
-      // 设置默认值（积分奖励）
-      const INVITER_REWARD = configs['invite_reward_inviter'] || 10  // 邀请人获得10积分
-      const INVITEE_REWARD = configs['invite_reward_invitee'] || 5   // 被邀请人获得5积分
+      // 设置默认值（积分奖励，从后台配置读取）
+      const INVITER_REWARD = configs['invite_points_inviter'] || 100  // 邀请人积分
+      const INVITEE_REWARD = configs['invite_points_invitee'] || 50   // 被邀请人积分
       
       // 设置默认值（现金奖励）
-      const INVITER_CASH_REWARD = parseFloat(configs['invite_cash_reward_inviter']) || 5.00  // 邀请人获得5元现金
-      const INVITEE_CASH_REWARD = parseFloat(configs['invite_cash_reward_invitee']) || 2.00  // 被邀请人获得2元现金
-      const FIRST_SWAP_CASH_REWARD = parseFloat(configs['first_swap_cash_reward']) || 10.00  // 首次互换奖励10元现金
+      const INVITER_CASH_REWARD = parseFloat(configs['invite_reward_inviter']) || 0.30  // 邀请人现金
+      const INVITEE_CASH_REWARD = parseFloat(configs['invite_reward_invitee']) || 0.10  // 被邀请人现金
+      const FIRST_SWAP_CASH_REWARD = parseFloat(configs['first_swap_cash_reward']) || 10.00  // 首次互换奖励
 
       // 查询实际的邀请奖励记录（现金奖励）
       const inviteRewardsRes = await db.collection('invite_rewards').where({
@@ -1071,6 +1071,7 @@ exports.main = async (event, context) => {
         inviteList,
         myWalletBalance: user ? (user.walletBalance || 0) : 0,
         myPoints: user ? (user.points || 0) : 0,
+        pointsExchangeRate: configs['points_exchange_rate'] || 100,  // 100积分=1元
         rewardSummary: {
           signupRewards,
           swapRewards,
@@ -1086,6 +1087,28 @@ exports.main = async (event, context) => {
           inviteeCashReward: INVITEE_CASH_REWARD,
           firstSwapCashReward: FIRST_SWAP_CASH_REWARD
         }
+      }
+    } catch (e) {
+      return { success: false, error: e.message }
+    }
+  }
+
+  // ========== 获取客服配置 ==========
+  if (action === 'getServiceConfig') {
+    try {
+      const configRes = await db.collection('system_config').where({
+        configKey: _.in(['service_phone', 'service_wechat'])
+      }).get()
+      
+      const configs = {}
+      configRes.data.forEach(item => {
+        configs[item.configKey] = item.configValue
+      })
+      
+      return {
+        success: true,
+        servicePhone: configs['service_phone'] || '',
+        serviceWechat: configs['service_wechat'] || ''
       }
     } catch (e) {
       return { success: false, error: e.message }
@@ -1162,9 +1185,9 @@ exports.main = async (event, context) => {
         }
       })
 
-      // 获取邀请配置
+      // 获取邀请配置（与后台管理保持一致）
       const configRes = await db.collection('system_config').where({
-        configKey: _.in(['invite_reward_inviter', 'invite_reward_invitee', 'invite_cash_reward_inviter', 'invite_cash_reward_invitee'])
+        configKey: _.in(['invite_reward_inviter', 'invite_reward_invitee', 'invite_points_inviter', 'invite_points_invitee'])
       }).get()
       
       const configs = {}
@@ -1172,13 +1195,13 @@ exports.main = async (event, context) => {
         configs[item.configKey] = item.configValue
       })
       
-      // 设置默认值（积分奖励）
-      const INVITER_REWARD = configs['invite_reward_inviter'] || 10  // 邀请人获得10积分
-      const INVITEE_REWARD = configs['invite_reward_invitee'] || 5   // 被邀请人获得5积分
+      // 设置默认值（积分奖励）- 与后台管理默认配置一致
+      const INVITER_REWARD = configs['invite_points_inviter'] || 100  // 邀请人获得100积分
+      const INVITEE_REWARD = configs['invite_points_invitee'] || 50   // 被邀请人获得50积分
       
-      // 设置默认值（现金奖励）
-      const INVITER_CASH_REWARD = parseFloat(configs['invite_cash_reward_inviter']) || 5.00  // 邀请人获得5元现金
-      const INVITEE_CASH_REWARD = parseFloat(configs['invite_cash_reward_invitee']) || 2.00  // 被邀请人获得2元现金
+      // 设置默认值（现金奖励）- 与后台管理默认配置一致
+      const INVITER_CASH_REWARD = parseFloat(configs['invite_reward_inviter']) || 0.30  // 邀请人获得0.30元现金
+      const INVITEE_CASH_REWARD = parseFloat(configs['invite_reward_invitee']) || 0.10  // 被邀请人获得0.10元现金
 
       // 给邀请人增加积分奖励（用 _id 精准更新）
       await db.collection('users').doc(inviter._id).update({

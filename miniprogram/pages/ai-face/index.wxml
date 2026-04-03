@@ -1,0 +1,399 @@
+<!--pages/ai-face/index.wxml-->
+<view class="ai-face-page">
+  <!-- Tab 切换 -->
+  <view class="tab-bar">
+    <view class="tab-item {{currentTab === 'camera' ? 'active' : ''}}" bindtap="switchTab" data-tab="camera">
+      <text class="tab-icon">📷</text>
+      <text class="tab-text">拍照</text>
+    </view>
+    <view class="tab-item {{currentTab === 'calendar' ? 'active' : ''}}" bindtap="switchTab" data-tab="calendar">
+      <text class="tab-icon">📅</text>
+      <text class="tab-text">日历</text>
+    </view>
+    <view class="tab-item {{currentTab === 'settings' ? 'active' : ''}}" bindtap="switchTab" data-tab="settings">
+      <text class="tab-icon">⚙️</text>
+      <text class="tab-text">设置</text>
+    </view>
+  </view>
+
+  <!-- 拍照页面 -->
+  <view class="tab-content" wx:if="{{currentTab === 'camera'}}">
+    <view class="camera-section" wx:if="{{!analyzed}}">
+      <!-- 顶部信息栏 -->
+      <view class="top-bar">
+        <view class="balance-info" bindtap="goToWallet">
+          <text class="balance-icon">💰</text>
+          <text class="balance-text">{{balance}}元</text>
+        </view>
+        <view class="count-info">
+          <text class="count-text">今日 {{usedCount}}/{{freeCount}} 次</text>
+          <text class="count-hint" wx:if="{{needPay}}">(超出0.1元/次)</text>
+        </view>
+      </view>
+
+      <!-- 相机切换按钮 -->
+      <view class="camera-switch" bindtap="switchCamera">
+        <text class="switch-icon">🔄</text>
+      </view>
+      
+      <view class="camera-container">
+        <camera 
+          class="camera" 
+          device-position="{{cameraPosition}}" 
+          flash="off"
+        />
+        <view class="focus-frame">
+          <view class="focus-corner top-left"></view>
+          <view class="focus-corner top-right"></view>
+          <view class="focus-corner bottom-left"></view>
+          <view class="focus-corner bottom-right"></view>
+          <text class="focus-text">将脸部对准框内</text>
+        </view>
+      </view>
+      
+      <view class="camera-controls">
+        <view class="camera-btn" bindtap="takePhoto">
+          <view class="camera-btn-inner"></view>
+        </view>
+        <text class="camera-hint">点击拍照，AI 为您分析</text>
+      </view>
+      
+      <view class="album-btn" bindtap="chooseFromAlbum">
+        <text class="album-text">从相册选择</text>
+      </view>
+    </view>
+
+    <!-- 结果页 -->
+    <view class="result-section" wx:if="{{analyzed}}">
+      <view class="result-header">
+        <view class="back-btn" bindtap="retake">‹ 重新拍摄</view>
+      </view>
+      
+      <view class="photo-card">
+        <image class="result-photo" src="{{photoUrl}}" mode="aspectFill"/>
+        <view class="score-badge">
+          <text class="score-number">{{analysis.score}}</text>
+          <text class="score-label">颜值分</text>
+        </view>
+      </view>
+      
+      <view class="chart-card">
+        <view class="chart-title">五官分析</view>
+        <view class="donut-charts">
+          <view class="donut-item" wx:for="{{analysis.features}}" wx:key="name">
+            <view class="donut-ring" style="--percent: {{item.score}}; --color: {{item.color}}">
+              <view class="donut-inner">
+                <text class="donut-score">{{item.score}}</text>
+              </view>
+            </view>
+            <text class="donut-label">{{item.name}}</text>
+          </view>
+        </view>
+      </view>
+      
+      <view class="analysis-card">
+        <view class="card-title">AI 智能分析</view>
+        <view class="analysis-grid">
+          <view class="analysis-item"><text class="item-label">预估年龄</text><text class="item-value">{{analysis.age}}岁</text></view>
+          <view class="analysis-item"><text class="item-label">推测身高</text><text class="item-value">{{analysis.height}}cm</text></view>
+          <view class="analysis-item"><text class="item-label">适合职业</text><text class="item-value">{{analysis.career}}</text></view>
+          <view class="analysis-item"><text class="item-label">气质类型</text><text class="item-value">{{analysis.temperament}}</text></view>
+        </view>
+        <view class="ai-comment">
+          <text class="comment-title">AI 评语</text>
+          <text class="comment-text">{{analysis.comment}}</text>
+        </view>
+      </view>
+      
+      <!-- 今日运势 - 全新设计 -->
+      <view class="fortune-card">
+        <!-- 头部标题区 -->
+        <view class="fortune-header">
+          <view class="fortune-title-wrap">
+            <text class="fortune-icon">☯️</text>
+            <text class="fortune-title">今日运势</text>
+          </view>
+          <text class="fortune-date">{{currentDate}}</text>
+        </view>
+        
+        <!-- 幸运信息速览 -->
+        <view class="lucky-info-bar" wx:if="{{analysis.luckyInfo}}">
+          <view class="lucky-item">
+            <text class="lucky-label">卦象</text>
+            <text class="lucky-value">{{analysis.luckyInfo.hexagram}}</text>
+          </view>
+          <view class="lucky-item">
+            <text class="lucky-label">五行</text>
+            <text class="lucky-value">{{analysis.luckyInfo.wuxing}}</text>
+          </view>
+          <view class="lucky-item">
+            <text class="lucky-label">吉时</text>
+            <text class="lucky-value">{{analysis.luckyInfo.shichen}}</text>
+          </view>
+          <view class="lucky-item">
+            <text class="lucky-label">吉方</text>
+            <text class="lucky-value">{{analysis.luckyInfo.direction}}</text>
+          </view>
+        </view>
+        
+        <!-- 七日历 -->
+        <view class="calendar-grid">
+          <view class="calendar-item {{item.active ? 'active' : ''}}" wx:for="{{calendarDays}}" wx:key="day">
+            <text class="calendar-day">{{item.day}}</text>
+            <text class="calendar-week">{{item.week}}</text>
+          </view>
+        </view>
+        
+        <!-- 综合运势 -->
+        <view class="fortune-summary">
+          <view class="summary-header">
+            <text class="summary-icon">✨</text>
+            <text class="summary-title">综合运势</text>
+          </view>
+          <text class="summary-text">{{analysis.fortune}}</text>
+        </view>
+        
+        <!-- 详细运势分析 -->
+        <view class="fortune-details" wx:if="{{analysis.fortuneDetails}}">
+          <view class="detail-item" wx:for="{{analysis.fortuneDetails}}" wx:key="title">
+            <view class="detail-header">
+              <text class="detail-icon">{{item.icon}}</text>
+              <text class="detail-title">{{item.title}}</text>
+            </view>
+            <text class="detail-content">{{item.content}}</text>
+            <view class="detail-advice">
+              <text class="advice-label">💡</text>
+              <text class="advice-text">{{item.advice}}</text>
+            </view>
+          </view>
+        </view>
+        
+        <!-- 幸运提示 -->
+        <view class="lucky-tips" wx:if="{{analysis.luckyInfo}}">
+          <view class="tip-item">
+            <text class="tip-icon">🎨</text>
+            <text class="tip-text">幸运色：{{analysis.luckyInfo.color}}</text>
+          </view>
+          <view class="tip-item">
+            <text class="tip-icon">🔢</text>
+            <text class="tip-text">幸运数：{{analysis.luckyInfo.number}}</text>
+          </view>
+        </view>
+      </view>
+      
+      <view class="today-count-hint" wx:if="{{todayCount}}">
+        <text class="hint-text">今日已记录 {{todayCount}}/20 次</text>
+        <view class="hint-progress">
+          <view class="progress-fill" style="width: {{(todayCount / 20) * 100}}%"></view>
+        </view>
+      </view>
+
+      <!-- 隐藏的画布用于生成分享图片 -->
+      <canvas canvas-id="shareCanvas" style="width: 750px; height: 1330px; position: fixed; left: -9999px; top: -9999px;"></canvas>
+      
+      <view class="share-section">
+        <button class="share-btn" open-type="share">分享给好友</button>
+        <button class="save-btn" bindtap="saveResult">保存结果</button>
+        <button class="moments-btn" bindtap="shareToMoments">朋友圈</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 日历页面 -->
+  <scroll-view class="tab-content-scroll" scroll-y wx:if="{{currentTab === 'calendar'}}">
+    <view class="calendar-page">
+      <view class="calendar-header">
+        <view class="month-nav">
+          <view class="nav-btn" bindtap="prevMonth">‹</view>
+          <text class="current-month">{{currentYear}}年{{currentMonth}}月</text>
+          <view class="nav-btn" bindtap="nextMonth">›</view>
+        </view>
+        <view class="today-btn" bindtap="goToToday">今天</view>
+      </view>
+
+      <view class="week-header">
+        <text class="week-day" wx:for="{{weekDays}}" wx:key="index">{{item}}</text>
+      </view>
+
+      <view class="calendar-grid">
+        <view class="calendar-cell {{item.isCurrentMonth ? 'current-month' : 'other-month'}} {{item.isToday ? 'today' : ''}} {{item.hasData ? 'has-data' : ''}}" 
+              wx:for="{{calendarDays}}" wx:key="date" bindtap="onDayClick" data-date="{{item.date}}">
+          <text class="cell-day">{{item.day}}</text>
+          <view class="cell-mark" wx:if="{{item.hasData}}"><text class="score-mini">{{item.score}}</text></view>
+        </view>
+      </view>
+
+      <!-- 选中日期详情 -->
+      <view class="detail-card" wx:if="{{selectedDate}}">
+        <view class="detail-header">
+          <view class="detail-date-info">
+            <text class="detail-date">{{selectedDate}}</text>
+            <text class="detail-week">{{selectedWeek}}</text>
+          </view>
+          <view class="detail-count" wx:if="{{selectedDayRecords.length > 0}}">
+            <text class="count-num">{{selectedDayRecords.length}}</text>
+            <text class="count-text">次记录</text>
+          </view>
+        </view>
+        
+        <view wx:if="{{selectedDayRecords.length > 0}}" class="records-container">
+          <view class="record-indicator" wx:if="{{selectedDayRecords.length > 1}}">
+            <view class="indicator-dot {{currentRecordIndex === index ? 'active' : ''}}" 
+                  wx:for="{{selectedDayRecords}}" wx:key="_id" bindtap="switchRecord" data-index="{{index}}"/>
+          </view>
+          
+          <view class="record-item">
+            <view class="record-time">{{currentRecord.time}}</view>
+            <view class="detail-photo-section">
+              <image class="detail-photo-large" src="{{currentRecord.photoUrl}}" mode="aspectFill"/>
+              <view class="photo-score-overlay">
+                <text class="score-big">{{currentRecord.score}}</text>
+                <text class="score-unit">分</text>
+              </view>
+            </view>
+            
+            <view class="detail-info-grid">
+              <view class="info-card-wrap"><view class="info-card">
+                <view class="info-icon">🎂</view><text class="info-card-label">年龄</text><text class="info-card-value">{{currentRecord.age}}岁</text>
+              </view></view>
+              <view class="info-card-wrap"><view class="info-card">
+                <view class="info-icon">✨</view><text class="info-card-label">气质</text><text class="info-card-value">{{currentRecord.temperament}}</text>
+              </view></view>
+              <view class="info-card-wrap"><view class="info-card">
+                <view class="info-icon">💼</view><text class="info-card-label">职业</text><text class="info-card-value">{{currentRecord.career}}</text>
+              </view></view>
+              <view class="info-card-wrap"><view class="info-card">
+                <view class="info-icon">📏</view><text class="info-card-label">身高</text><text class="info-card-value">{{currentRecord.height}}cm</text>
+              </view></view>
+            </view>
+            
+            <view class="detail-comment-card">
+              <view class="comment-header">
+                <text class="comment-icon">💬</text>
+                <text class="comment-title">AI 评语</text>
+              </view>
+              <text class="comment-text">{{currentRecord.comment}}</text>
+            </view>
+          </view>
+          
+          <view class="record-nav" wx:if="{{selectedDayRecords.length > 1}}">
+            <view class="nav-btn {{currentRecordIndex === 0 ? 'disabled' : ''}}" bindtap="prevRecord">‹ 上一条</view>
+            <text class="record-page">{{currentRecordIndex + 1}} / {{selectedDayRecords.length}}</text>
+            <view class="nav-btn {{currentRecordIndex === selectedDayRecords.length - 1 ? 'disabled' : ''}}" bindtap="nextRecord">下一条 ›</view>
+          </view>
+        </view>
+        
+        <view wx:else class="empty-detail">
+          <view class="empty-icon">📷</view>
+          <text class="empty-text">这一天还没有拍照记录哦~</text>
+          <view class="take-photo-btn" bindtap="switchToCamera">去拍照</view>
+        </view>
+      </view>
+
+      <view class="stats-card">
+        <view class="stats-title">本月统计</view>
+        <view class="stats-grid">
+          <view class="stat-item"><text class="stat-num">{{monthStats.count}}</text><text class="stat-label">拍照次数</text></view>
+          <view class="stat-item"><text class="stat-num">{{monthStats.avgScore}}</text><text class="stat-label">平均分</text></view>
+          <view class="stat-item"><text class="stat-num">{{monthStats.maxScore}}</text><text class="stat-label">最高分</text></view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+  <scroll-view class="tab-content-scroll settings-scroll" scroll-y wx:if="{{currentTab === 'settings'}}">
+    <view class="settings-page">
+      <view class="header-card">
+        <view class="header-icon">⏰</view>
+        <text class="header-title">每日打卡提醒</text>
+        <text class="header-desc">每天早上{{reminderTime}}准时提醒你拍照打卡</text>
+      </view>
+
+      <view class="setting-card">
+        <view class="setting-item">
+          <view class="setting-left">
+            <view class="setting-icon icon-reminder">🔔</view>
+            <view class="setting-info">
+              <text class="setting-title">打卡提醒</text>
+              <text class="setting-desc">{{reminderEnabled ? '已开启' : '已关闭'}}</text>
+            </view>
+          </view>
+          <switch class="setting-switch" checked="{{reminderEnabled}}" bindchange="toggleReminder" color="#9CAF88" type="switch"/>
+        </view>
+      </view>
+
+      <view class="setting-card" wx:if="{{reminderEnabled}}">
+        <view class="setting-item">
+          <view class="setting-left">
+            <view class="setting-icon icon-time">🕘</view>
+            <view class="setting-info">
+              <text class="setting-title">提醒时间</text>
+              <text class="setting-desc">每天早上</text>
+            </view>
+          </view>
+          <picker mode="time" value="{{reminderTime}}" bindchange="onTimeChange">
+            <view class="time-picker">
+              <text class="time-value">{{reminderTime}}</text>
+              <text class="time-arrow">›</text>
+            </view>
+          </picker>
+        </view>
+      </view>
+
+      <view class="setting-card" wx:if="{{reminderEnabled}}">
+        <view class="setting-item">
+          <view class="setting-left">
+            <view class="setting-icon icon-subscribe">📩</view>
+            <view class="setting-info">
+              <text class="setting-title">消息订阅</text>
+              <text class="setting-desc">{{subscribed ? '已订阅' : '未订阅'}}</text>
+            </view>
+          </view>
+          <view class="subscribe-btn {{subscribed ? 'subscribed' : ''}}" bindtap="requestSubscribe">
+            {{subscribed ? '已订阅' : '立即订阅'}}
+          </view>
+        </view>
+        <view class="subscribe-hint" wx:if="{{!subscribed}}">
+          <text class="hint-text">需要订阅消息才能收到打卡提醒</text>
+        </view>
+      </view>
+
+      <view class="cost-detail-card">
+        <view class="cost-detail-title">今日消费明细</view>
+        <view class="cost-item">
+          <text class="cost-label">免费次数</text>
+          <text class="cost-value free">{{costDetail.freeUsed}}/{{freeCount}} 次</text>
+        </view>
+        <view class="cost-item">
+          <text class="cost-label">付费次数</text>
+          <text class="cost-value paid">{{costDetail.paidCount}} 次</text>
+        </view>
+        <view class="cost-item">
+          <text class="cost-label">今日消费</text>
+          <text class="cost-value paid">¥{{costDetail.totalCost}}</text>
+        </view>
+        <view class="cost-hint" wx:if="{{costDetail.paidCount > 0}}">
+          已超出免费次数，每次拍照扣除 ¥{{pricePerPhoto}}
+        </view>
+      </view>
+
+      <view class="stats-card">
+        <view class="stats-title">打卡统计</view>
+        <view class="stats-grid">
+          <view class="stat-item"><text class="stat-num">{{stats.totalDays}}</text><text class="stat-label">累计打卡</text></view>
+          <view class="stat-item"><text class="stat-num">{{stats.consecutiveDays}}</text><text class="stat-label">连续打卡</text></view>
+          <view class="stat-item"><text class="stat-num">{{stats.totalPhotos}}</text><text class="stat-label">拍照次数</text></view>
+        </view>
+      </view>
+
+      <view class="tips-card">
+        <view class="tips-title">💡 使用说明</view>
+        <view class="tips-list">
+          <view class="tips-item"><text class="tips-dot">•</text><text class="tips-text">每天免费3次拍照机会</text></view>
+          <view class="tips-item"><text class="tips-dot">•</text><text class="tips-text">超过3次每次收费0.1元</text></view>
+          <view class="tips-item"><text class="tips-dot">•</text><text class="tips-text">开启提醒后每天早上推送</text></view>
+          <view class="tips-item"><text class="tips-dot">•</text><text class="tips-text">需要订阅消息才能收到提醒</text></view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

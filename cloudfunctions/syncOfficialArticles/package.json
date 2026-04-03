@@ -1,0 +1,13 @@
+{
+  "name": "syncOfficialArticles",
+  "version": "1.0.0",
+  "description": "同步公众号文章到数据库",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": ["weixin", "cloud", "official-account"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "wx-server-sdk": "^2.6.3"
+  }
+}

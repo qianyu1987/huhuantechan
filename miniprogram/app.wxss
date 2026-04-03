@@ -116,6 +116,27 @@ page {
   --blur-lg: blur(40px);
   --blur-xl: blur(60px);
   
+  /* --- 别名变量（兼容页面使用的变量名）--- */
+  --bg-primary: var(--color-bg);
+  --bg-secondary: var(--color-bg-secondary);
+  --bg-tertiary: var(--color-bg-tertiary);
+  --bg-elevated: var(--color-bg-elevated);
+  --text-primary: var(--color-text);
+  --text-secondary: var(--color-text-secondary);
+  --text-tertiary: var(--color-text-tertiary);
+  --text-quaternary: var(--color-text-quaternary);
+  --text-inverse: var(--color-text-inverse);
+  --separator: var(--color-divider);
+  --separator-strong: var(--color-divider-strong);
+  --accent-blue: var(--color-primary);
+  --accent-green: var(--color-secondary);
+  --accent-orange: var(--color-warning);
+  --accent-red: var(--color-danger);
+  --accent-purple: var(--color-purple);
+  --accent-pink: var(--color-pink);
+  --radius-card: var(--radius-lg);
+  --radius-modal: var(--radius-2xl);
+  
   /* 页面基础 */
   background-color: var(--color-bg);
   font-family: var(--font-family);
@@ -946,24 +967,24 @@ button {
   --color-bg-secondary: #FFFFFF;
   --color-bg-tertiary: #EFEFF4;
   --color-bg-elevated: #FFFFFF;
-  --liquid-surface: rgba(255, 255, 255, 0.8);
-  --liquid-surface-hover: rgba(255, 255, 255, 0.9);
-  --liquid-surface-active: rgba(240, 240, 245, 0.95);
-  --liquid-surface-solid: rgba(255, 255, 255, 0.95);
-  --glass-primary: rgba(0, 122, 255, 0.12);
-  --glass-secondary: rgba(52, 199, 89, 0.1);
-  --glass-purple: rgba(175, 82, 222, 0.1);
-  --glass-pink: rgba(255, 45, 85, 0.1);
-  --glass-orange: rgba(255, 149, 0, 0.1);
-  --glass-teal: rgba(90, 200, 250, 0.1);
+  --liquid-surface: rgba(0, 0, 0, 0.04);
+  --liquid-surface-hover: rgba(0, 0, 0, 0.08);
+  --liquid-surface-active: rgba(0, 0, 0, 0.12);
+  --liquid-surface-solid: rgba(255, 255, 255, 0.98);
+  --glass-primary: rgba(0, 122, 255, 0.08);
+  --glass-secondary: rgba(52, 199, 89, 0.08);
+  --glass-purple: rgba(175, 82, 222, 0.08);
+  --glass-pink: rgba(255, 45, 85, 0.08);
+  --glass-orange: rgba(255, 149, 0, 0.08);
+  --glass-teal: rgba(90, 200, 250, 0.08);
   --color-text: #000000;
-  --color-text-secondary: rgba(0, 0, 0, 0.6);
-  --color-text-tertiary: rgba(0, 0, 0, 0.4);
-  --color-text-quaternary: rgba(0, 0, 0, 0.2);
+  --color-text-secondary: rgba(0, 0, 0, 0.7);
+  --color-text-tertiary: rgba(0, 0, 0, 0.5);
+  --color-text-quaternary: rgba(0, 0, 0, 0.3);
   --color-text-light: #8E8E93;
   --color-text-inverse: #FFFFFF;
-  --color-divider: rgba(0, 0, 0, 0.08);
-  --color-divider-strong: rgba(0, 0, 0, 0.15);
+  --color-divider: rgba(0, 0, 0, 0.1);
+  --color-divider-strong: rgba(0, 0, 0, 0.18);
 }
 
 /* 玫瑰红主题 - iOS 18 Rose */
@@ -988,24 +1009,24 @@ button {
   --color-bg-secondary: #2D0010;
   --color-bg-tertiary: #3D0015;
   --color-bg-elevated: #4D001A;
-  --liquid-surface: rgba(255, 59, 84, 0.12);
-  --liquid-surface-hover: rgba(255, 59, 84, 0.18);
-  --liquid-surface-active: rgba(255, 59, 84, 0.24);
-  --liquid-surface-solid: rgba(45, 0, 16, 0.95);
-  --glass-primary: rgba(255, 59, 84, 0.2);
-  --glass-secondary: rgba(48, 209, 88, 0.12);
-  --glass-purple: rgba(191, 90, 242, 0.12);
-  --glass-pink: rgba(255, 59, 84, 0.25);
-  --glass-orange: rgba(255, 159, 10, 0.12);
-  --glass-teal: rgba(100, 210, 255, 0.12);
+  --liquid-surface: rgba(255, 59, 84, 0.2);
+  --liquid-surface-hover: rgba(255, 59, 84, 0.3);
+  --liquid-surface-active: rgba(255, 59, 84, 0.4);
+  --liquid-surface-solid: rgba(45, 0, 16, 0.98);
+  --glass-primary: rgba(255, 59, 84, 0.25);
+  --glass-secondary: rgba(48, 209, 88, 0.15);
+  --glass-purple: rgba(191, 90, 242, 0.15);
+  --glass-pink: rgba(255, 59, 84, 0.35);
+  --glass-orange: rgba(255, 159, 10, 0.15);
+  --glass-teal: rgba(100, 210, 255, 0.15);
   --color-text: #FFFFFF;
-  --color-text-secondary: rgba(255, 255, 255, 0.8);
-  --color-text-tertiary: rgba(255, 255, 255, 0.5);
-  --color-text-quaternary: rgba(255, 255, 255, 0.3);
+  --color-text-secondary: rgba(255, 255, 255, 0.85);
+  --color-text-tertiary: rgba(255, 255, 255, 0.6);
+  --color-text-quaternary: rgba(255, 255, 255, 0.4);
   --color-text-light: #FFB3C1;
   --color-text-inverse: #FFFFFF;
-  --color-divider: rgba(255, 59, 84, 0.15);
-  --color-divider-strong: rgba(255, 59, 84, 0.25);
+  --color-divider: rgba(255, 59, 84, 0.25);
+  --color-divider-strong: rgba(255, 59, 84, 0.4);
 }
 
 /* 玫瑰红主题特殊效果 */
@@ -1064,23 +1085,25 @@ button {
   border-color: var(--color-divider);
 }
 
-/* 玫瑰红主题卡片 */
+/* 玫瑰红主题卡片 - 增强对比度 */
 .theme-rose .card {
-  background: linear-gradient(135deg, rgba(255, 59, 84, 0.12) 0%, rgba(255, 59, 84, 0.04) 100%);
-  border-color: rgba(255, 59, 84, 0.15);
+  background: linear-gradient(135deg, rgba(255, 59, 84, 0.18) 0%, rgba(255, 59, 84, 0.08) 100%);
+  border: 1rpx solid rgba(255, 59, 84, 0.25);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.3);
 }
 
-/* 玫瑰红主题液态玻璃 */
+/* 玫瑰红主题液态玻璃 - 增强对比度 */
 .theme-rose .liquid {
-  background: rgba(255, 59, 84, 0.1);
+  background: rgba(255, 59, 84, 0.15);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border-color: rgba(255, 59, 84, 0.2);
+  border: 1rpx solid rgba(255, 59, 84, 0.3);
 }
 
 .theme-rose .liquid-card {
-  background: linear-gradient(135deg, rgba(255, 59, 84, 0.15) 0%, rgba(255, 59, 84, 0.05) 100%);
-  border-color: rgba(255, 59, 84, 0.2);
+  background: linear-gradient(135deg, rgba(255, 59, 84, 0.22) 0%, rgba(255, 59, 84, 0.1) 100%);
+  border: 1rpx solid rgba(255, 59, 84, 0.3);
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.35);
 }
 
 /* 玫瑰红主题底部标签栏 */
@@ -1096,6 +1119,154 @@ button {
   box-shadow: 0 0 40rpx rgba(255, 59, 84, 0.4);
 }
 
+/* ============================================
+   小清新主题 - 鼠尾草绿 + 奶油黄，白色背景
+   ============================================ */
+.theme-fresh {
+  --color-primary: #7DAF8E;
+  --color-primary-light: #A8CFAF;
+  --color-primary-gradient: linear-gradient(135deg, #7DAF8E 0%, #A8CFAF 100%);
+  --color-secondary: #E8C96A;
+  --color-secondary-gradient: linear-gradient(135deg, #E8C96A 0%, #F5DFA0 100%);
+  --color-warning: #E0975A;
+  --color-warning-gradient: linear-gradient(135deg, #E0975A 0%, #F0B070 100%);
+  --color-danger: #D97070;
+  --color-danger-gradient: linear-gradient(135deg, #D97070 0%, #E88080 100%);
+  --color-purple: #A88BC9;
+  --color-purple-gradient: linear-gradient(135deg, #A88BC9 0%, #C4A8E0 100%);
+  --color-indigo: #6E7FC4;
+  --color-pink: #E0869A;
+  --color-pink-gradient: linear-gradient(135deg, #E0869A 0%, #EFA8B8 100%);
+  --color-teal: #5CAAAB;
+  --color-yellow: #E8C96A;
+  /* 白色背景 */
+  --color-bg: #F7F9F5;
+  --color-bg-secondary: #FFFFFF;
+  --color-bg-tertiary: #EEF3EA;
+  --color-bg-elevated: #FFFFFF;
+  --liquid-surface: rgba(125, 175, 142, 0.08);
+  --liquid-surface-hover: rgba(125, 175, 142, 0.14);
+  --liquid-surface-active: rgba(125, 175, 142, 0.20);
+  --liquid-surface-solid: rgba(247, 249, 245, 0.97);
+  --glass-primary: rgba(125, 175, 142, 0.12);
+  --glass-secondary: rgba(232, 201, 106, 0.12);
+  --glass-purple: rgba(168, 139, 201, 0.10);
+  --glass-pink: rgba(224, 134, 154, 0.10);
+  --glass-orange: rgba(224, 151, 90, 0.10);
+  --glass-teal: rgba(92, 170, 171, 0.10);
+  /* 深绿文字 */
+  --color-text: #2D4A34;
+  --color-text-secondary: rgba(45, 74, 52, 0.72);
+  --color-text-tertiary: rgba(45, 74, 52, 0.48);
+  --color-text-quaternary: rgba(45, 74, 52, 0.28);
+  --color-text-light: #7DAF8E;
+  --color-text-inverse: #FFFFFF;
+  --color-divider: rgba(125, 175, 142, 0.15);
+  --color-divider-strong: rgba(125, 175, 142, 0.28);
+  /* 兼容旧变量 */
+  --bg-primary: #F7F9F5;
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: #EEF3EA;
+  --text-primary: #2D4A34;
+  --text-secondary: rgba(45, 74, 52, 0.72);
+  --text-tertiary: rgba(45, 74, 52, 0.48);
+  --separator: rgba(125, 175, 142, 0.15);
+  --accent-blue: #7DAF8E;
+  --accent-green: #5CAAAB;
+  --accent-orange: #E0975A;
+  --accent-red: #D97070;
+  --accent-purple: #A88BC9;
+  --accent-teal: #5CAAAB;
+  --accent-yellow: #E8C96A;
+}
+
+/* 小清新主题：导航栏 */
+.theme-fresh .nav-bar,
+.theme-fresh .glass-nav,
+.theme-fresh .tab-bar {
+  background: rgba(247, 249, 245, 0.88);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-color: rgba(125, 175, 142, 0.18);
+}
+
+/* 小清新主题：卡片 */
+.theme-fresh .card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(238, 243, 234, 0.85) 100%);
+  border: 1rpx solid rgba(125, 175, 142, 0.18);
+  box-shadow: 0 4rpx 20rpx rgba(125, 175, 142, 0.12);
+}
+
+/* 小清新主题：液态玻璃 */
+.theme-fresh .liquid,
+.theme-fresh .liquid-card {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1rpx solid rgba(125, 175, 142, 0.20);
+}
+
+/* 小清新主题：按钮 */
+.theme-fresh .btn-primary,
+.theme-fresh .liquid-btn-primary {
+  background: var(--color-primary-gradient);
+  color: #FFFFFF;
+  box-shadow: 0 4rpx 20rpx rgba(125, 175, 142, 0.35);
+}
+
+/* 小清新主题：底部标签栏 */
+.theme-fresh .tab-bar {
+  background: linear-gradient(180deg, rgba(247, 249, 245, 0.92) 0%, rgba(238, 243, 234, 0.98) 100%);
+  border-top-color: rgba(125, 175, 142, 0.18);
+}
+
+/* 小清新主题：输入框 */
+.theme-fresh .input:focus {
+  border-color: #7DAF8E;
+  box-shadow: 0 0 0 4rpx rgba(125, 175, 142, 0.15);
+}
+
+/* 小清新主题：文字渐变 */
+.theme-fresh .gradient-text {
+  background: linear-gradient(135deg, #7DAF8E 0%, #5CAAAB 50%, #E8C96A 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 小清新主题：标签 */
+.theme-fresh .tag-blue {
+  background: rgba(125, 175, 142, 0.12);
+  color: #7DAF8E;
+  border-color: rgba(125, 175, 142, 0.25);
+}
+
+.theme-fresh .tag-green {
+  background: rgba(92, 170, 171, 0.12);
+  color: #5CAAAB;
+  border-color: rgba(92, 170, 171, 0.25);
+}
+
+/* 小清新主题：大背景 */
+.theme-fresh .bg-gradient,
+.theme-fresh .page-bg {
+  background: linear-gradient(160deg, #F7F9F5 0%, #EEF3EA 50%, #F5F0E8 100%);
+}
+
+/* 小清新主题：头像/徽章 Tab 激活指示 */
+.theme-fresh .tab-item.active .tab-icon::after {
+  background: var(--color-primary);
+  box-shadow: 0 0 10rpx rgba(125, 175, 142, 0.5);
+}
+
+/* 小清新主题：section 分区顶部装饰线 */
+.theme-fresh .section:nth-child(1)::before { background: linear-gradient(90deg, #7DAF8E, #A8CFAF); opacity: 1; }
+.theme-fresh .section:nth-child(2)::before { background: linear-gradient(90deg, #E8C96A, #F5DFA0); opacity: 1; }
+.theme-fresh .section:nth-child(3)::before { background: linear-gradient(90deg, #5CAAAB, #7DCECF); opacity: 1; }
+.theme-fresh .section:nth-child(4)::before { background: linear-gradient(90deg, #A88BC9, #C4A8E0); opacity: 1; }
+.theme-fresh .section:nth-child(5)::before { background: linear-gradient(90deg, #E0975A, #F0B070); opacity: 1; }
+.theme-fresh .section:nth-child(6)::before { background: linear-gradient(90deg, #E0869A, #EFA8B8); opacity: 1; }
+
 .theme-rose .badge {
   background: var(--color-pink-gradient);
   box-shadow: 0 2rpx 8rpx rgba(255, 59, 84, 0.3);
@@ -1108,6 +1279,114 @@ button {
 .theme-rose .menu-switch .wx-switch-input.wx-switch-input-checked {
   background: var(--color-primary) !important;
   border-color: var(--color-primary) !important;
+}
+
+/* ============================================
+   纯净白主题 - 卡片和导航栏样式覆盖
+   ============================================ */
+
+/* 纯净白主题卡片 */
+.theme-light .card {
+  background: #FFFFFF;
+  border: 1rpx solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+}
+
+/* 纯净白主题液态玻璃 */
+.theme-light .liquid {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1rpx solid rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+
+.theme-light .liquid-card {
+  background: #FFFFFF;
+  border: 1rpx solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+}
+
+/* 纯净白主题 - 我的页面卡片覆盖 */
+.theme-light .profile-card,
+.theme-light .admin-notify,
+.theme-light .section {
+  background: #FFFFFF;
+  border: 1rpx solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+}
+
+/* 纯净白主题 - 发布页面覆盖 */
+.theme-light .page-header {
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.theme-light .section {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1rpx solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+}
+
+/* 纯净白主题 - 神秘特产开关覆盖 */
+.theme-light .mystery-toggle-section {
+  background: linear-gradient(135deg, rgba(191, 90, 242, 0.08) 0%, rgba(98, 40, 215, 0.08) 100%) !important;
+  border: 1rpx solid rgba(191, 90, 242, 0.2) !important;
+}
+
+.theme-light .mystery-toggle-title {
+  color: #000000 !important;
+}
+
+.theme-light .mystery-toggle-desc {
+  color: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* 纯净白主题 - 分割线覆盖 */
+.theme-light .divider,
+.theme-light .menu-item,
+.theme-light .deposit-bar {
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 纯净白主题 - 功能未开放提示 */
+.theme-light .feature-disabled-title {
+  color: #000000 !important;
+}
+
+.theme-light .feature-disabled-desc {
+  color: rgba(0, 0, 0, 0.5) !important;
+}
+
+.theme-light .feature-disabled-btn {
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+/* 纯净白主题导航栏 */
+.theme-light .nav-bar,
+.theme-light .glass-nav {
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+
+/* 纯净白主题底部标签栏 */
+.theme-light .tab-bar {
+  background: rgba(255, 255, 255, 0.98);
+  border-top: 1rpx solid rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+
+/* 纯净白主题玻璃效果 */
+.theme-light .glass-primary {
+  background: rgba(0, 122, 255, 0.1);
+}
+
+.theme-light .glass-secondary {
+  background: rgba(52, 199, 89, 0.1);
 }
 
 /* ============================================

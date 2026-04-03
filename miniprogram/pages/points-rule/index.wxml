@@ -98,6 +98,10 @@
 
   <!-- 底部按钮 -->
   <view class="bottom-action">
+    <view class="action-btn secondary" bindtap="goExchange">
+      <text class="action-btn-icon">💎</text>
+      <text class="action-btn-text">积分兑换</text>
+    </view>
     <view class="action-btn" bindtap="goInvite">
       <text class="action-btn-icon">🎁</text>
       <text class="action-btn-text">邀请好友赚积分</text>

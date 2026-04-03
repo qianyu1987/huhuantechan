@@ -1,0 +1,212 @@
+/* pages/tutorial/index.wxss */
+.tutorial-page {
+  min-height: 100vh;
+  background: var(--bg-primary, #000000);
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.tutorial-header {
+  padding: 48rpx 32rpx 32rpx;
+  text-align: center;
+}
+
+.tutorial-title {
+  display: block;
+  font-size: 40rpx;
+  font-weight: 700;
+  color: var(--text-primary, #FFFFFF);
+  margin-bottom: 12rpx;
+}
+
+.tutorial-subtitle {
+  display: block;
+  font-size: 26rpx;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+}
+
+.tutorial-list {
+  padding: 0 32rpx;
+}
+
+.tutorial-section {
+  margin-bottom: 32rpx;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.section-icon {
+  font-size: 36rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--text-primary, #FFFFFF);
+}
+
+.tutorial-items {
+  background: var(--bg-secondary, #1C1C1E);
+  border-radius: 24rpx;
+  overflow: hidden;
+}
+
+.tutorial-item {
+  display: flex;
+  align-items: center;
+  padding: 28rpx 24rpx;
+  border-bottom: 1rpx solid var(--separator, rgba(255, 255, 255, 0.1));
+}
+
+.tutorial-item:last-child {
+  border-bottom: none;
+}
+
+.item-number {
+  width: 56rpx;
+  height: 56rpx;
+  background: linear-gradient(135deg, #0A84FF 0%, #5AC8FA 100%);
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+}
+
+.item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 500;
+  color: var(--text-primary, #FFFFFF);
+  margin-bottom: 8rpx;
+}
+
+.item-desc {
+  display: block;
+  font-size: 24rpx;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+}
+
+.item-arrow {
+  font-size: 36rpx;
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.4));
+  margin-left: 16rpx;
+}
+
+.bottom-safe {
+  height: calc(60rpx + env(safe-area-inset-bottom));
+}
+
+/* 弹窗样式 */
+.modal-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 100;
+}
+
+.modal-mask.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-content {
+  position: fixed;
+  left: 32rpx;
+  right: 32rpx;
+  bottom: 32rpx;
+  background: linear-gradient(135deg, #1C1C1E 0%, #2C2C2E 100%);
+  border-radius: 32rpx;
+  padding: 40rpx;
+  transform: translateY(100%);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 101;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.5), 0 0 0 1rpx rgba(255, 255, 255, 0.1);
+}
+
+.modal-content.show {
+  transform: translateY(0);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32rpx;
+  padding-bottom: 24rpx;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #FFFFFF;
+  background: linear-gradient(135deg, #0A84FF 0%, #5AC8FA 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.modal-close {
+  width: 56rpx;
+  height: 56rpx;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.modal-body {
+  flex: 1;
+  max-height: 50vh;
+}
+
+.modal-text {
+  display: block;
+  font-size: 30rpx;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+.modal-footer {
+  margin-top: 32rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-btn {
+  background: linear-gradient(135deg, #0A84FF 0%, #5AC8FA 100%);
+  color: #FFFFFF;
+  font-size: 32rpx;
+  font-weight: 600;
+  text-align: center;
+  padding: 28rpx 0;
+  border-radius: 16rpx;
+  box-shadow: 0 8rpx 24rpx rgba(10, 132, 255, 0.3);
+}

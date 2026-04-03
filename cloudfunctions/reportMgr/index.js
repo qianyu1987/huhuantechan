@@ -184,9 +184,22 @@ exports.main = async (event, context) => {
   // ========== 管理员获取举报列表 ==========
   if (action === 'adminGetReports') {
     try {
-      // 检查权限
-      const adminRes = await db.collection('admin_users').where({ openid }).limit(1).get()
-      if (adminRes.data.length === 0) {
+      // 检查权限：通过 system_config 中的 superAdmins 列表验证
+      let isAdmin = false
+      try {
+        const cfgRes = await db.collection('system_config').where({ configKey: 'superAdmins' }).get()
+        const superAdmins = (cfgRes.data.length > 0 && cfgRes.data[0].configValue) ? cfgRes.data[0].configValue : []
+        isAdmin = superAdmins.includes(openid)
+      } catch (e) {
+        // 也尝试旧的 admins 集合
+        try {
+          const adminsRes = await db.collection('admins').where({ openid }).limit(1).get()
+          isAdmin = adminsRes.data.length > 0
+        } catch (e2) {
+          console.error('权限检查失败:', e2)
+        }
+      }
+      if (!isAdmin) {
         return { success: false, error: '无权限' }
       }
 
@@ -236,8 +249,18 @@ exports.main = async (event, context) => {
   if (action === 'adminHandleReport') {
     try {
       // 检查权限
-      const adminRes = await db.collection('admin_users').where({ openid }).limit(1).get()
-      if (adminRes.data.length === 0) {
+      let isAdmin = false
+      try {
+        const cfgRes = await db.collection('system_config').where({ configKey: 'superAdmins' }).get()
+        const superAdmins = (cfgRes.data.length > 0 && cfgRes.data[0].configValue) ? cfgRes.data[0].configValue : []
+        isAdmin = superAdmins.includes(openid)
+      } catch (e) {
+        try {
+          const adminsRes = await db.collection('admins').where({ openid }).limit(1).get()
+          isAdmin = adminsRes.data.length > 0
+        } catch (e2) {}
+      }
+      if (!isAdmin) {
         return { success: false, error: '无权限' }
       }
 
@@ -298,8 +321,18 @@ exports.main = async (event, context) => {
   if (action === 'adminRejectReport') {
     try {
       // 检查权限
-      const adminRes = await db.collection('admin_users').where({ openid }).limit(1).get()
-      if (adminRes.data.length === 0) {
+      let isAdmin = false
+      try {
+        const cfgRes = await db.collection('system_config').where({ configKey: 'superAdmins' }).get()
+        const superAdmins = (cfgRes.data.length > 0 && cfgRes.data[0].configValue) ? cfgRes.data[0].configValue : []
+        isAdmin = superAdmins.includes(openid)
+      } catch (e) {
+        try {
+          const adminsRes = await db.collection('admins').where({ openid }).limit(1).get()
+          isAdmin = adminsRes.data.length > 0
+        } catch (e2) {}
+      }
+      if (!isAdmin) {
         return { success: false, error: '无权限' }
       }
 

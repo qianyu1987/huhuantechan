@@ -696,10 +696,13 @@
   background: var(--color-surface-solid);
   border-radius: 32rpx 32rpx 0 0;
   max-height: 85vh;
+  height: auto;
+  min-height: 50vh;
   display: flex;
   flex-direction: column;
   transform: translateY(100%);
   transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  width: 100%;
 }
 
 .rules-overlay.show .rules-sheet {
@@ -743,7 +746,9 @@
 .rules-body {
   flex: 1;
   padding: 0 24rpx;
-  max-height: 60vh;
+  max-height: 65vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ===== 规则卡片 ===== */

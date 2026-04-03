@@ -1,0 +1,381 @@
+/* pages/points-exchange/index.wxss - 积分兑换页面 */
+
+.page-container {
+  min-height: 100vh;
+  background: var(--color-bg, #0d0d0d);
+  padding-bottom: 160rpx;
+}
+
+/* ===== 头部 ===== */
+.header {
+  position: relative;
+  padding-top: 100rpx;
+  padding-bottom: 40rpx;
+}
+
+.header-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 300rpx;
+  background: linear-gradient(135deg, #BF5AF2 0%, #9B59B6 100%);
+  border-radius: 0 0 40rpx 40rpx;
+}
+
+.header-content {
+  position: relative;
+  padding: 0 32rpx;
+}
+
+.back-btn {
+  width: 64rpx;
+  height: 64rpx;
+  background: rgba(255,255,255,0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24rpx;
+}
+
+.back-icon {
+  font-size: 40rpx;
+  color: #fff;
+  font-weight: 300;
+}
+
+.header-title {
+  font-size: 48rpx;
+  font-weight: 700;
+  color: #fff;
+  display: block;
+}
+
+.header-subtitle {
+  font-size: 28rpx;
+  color: rgba(255,255,255,0.8);
+  margin-top: 8rpx;
+  display: block;
+}
+
+/* ===== 积分卡片 ===== */
+.points-card {
+  margin: -60rpx 32rpx 32rpx;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 24rpx;
+  padding: 40rpx;
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0,0,0,0.3);
+  border: 1rpx solid rgba(255,255,255,0.1);
+}
+
+.points-icon {
+  font-size: 64rpx;
+}
+
+.points-info {
+  flex: 1;
+}
+
+.points-label {
+  font-size: 26rpx;
+  color: #8E8E93;
+  display: block;
+}
+
+.points-value {
+  font-size: 56rpx;
+  font-weight: 700;
+  color: #BF5AF2;
+  display: block;
+  margin-top: 8rpx;
+}
+
+/* ===== 兑换区域 ===== */
+.exchange-section {
+  margin: 0 32rpx 32rpx;
+  background: var(--color-surface, #1c1c1e);
+  border-radius: 24rpx;
+  padding: 32rpx;
+  border: 1rpx solid rgba(255,255,255,0.06);
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--color-text, #fff);
+  margin-bottom: 8rpx;
+}
+
+.section-subtitle {
+  font-size: 24rpx;
+  color: #8E8E93;
+  margin-bottom: 32rpx;
+  display: block;
+}
+
+/* 预设选项 */
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16rpx;
+  margin-bottom: 32rpx;
+}
+
+.preset-item {
+  background: rgba(255,255,255,0.05);
+  border-radius: 16rpx;
+  padding: 24rpx 16rpx;
+  text-align: center;
+  border: 2rpx solid transparent;
+  transition: all 0.2s ease;
+}
+
+.preset-item.selected {
+  background: rgba(191, 90, 242, 0.15);
+  border-color: #BF5AF2;
+}
+
+.preset-points {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: var(--color-text, #fff);
+  display: block;
+}
+
+.preset-label {
+  font-size: 22rpx;
+  color: #8E8E93;
+  display: block;
+  margin-top: 4rpx;
+}
+
+.preset-amount {
+  font-size: 24rpx;
+  color: #BF5AF2;
+  display: block;
+  margin-top: 8rpx;
+  font-weight: 600;
+}
+
+/* 自定义输入 */
+.custom-input-wrap {
+  background: rgba(255,255,255,0.03);
+  border-radius: 16rpx;
+  padding: 24rpx;
+}
+
+.input-label {
+  font-size: 26rpx;
+  color: #8E8E93;
+  display: block;
+  margin-bottom: 16rpx;
+}
+
+.input-box {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,0.05);
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  height: 88rpx;
+}
+
+.points-input {
+  flex: 1;
+  font-size: 32rpx;
+  color: var(--color-text, #fff);
+  height: 88rpx;
+}
+
+.input-unit {
+  font-size: 28rpx;
+  color: #8E8E93;
+  margin-left: 16rpx;
+}
+
+.input-hint {
+  font-size: 24rpx;
+  color: #BF5AF2;
+  margin-top: 12rpx;
+  display: block;
+}
+
+/* ===== 兑换说明 ===== */
+.tips-section {
+  margin: 0 32rpx;
+  background: rgba(255,255,255,0.03);
+  border-radius: 16rpx;
+  padding: 24rpx;
+}
+
+.tips-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--color-text, #fff);
+  margin-bottom: 16rpx;
+  display: block;
+}
+
+.tips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.tips-item {
+  font-size: 24rpx;
+  color: #8E8E93;
+  line-height: 1.5;
+}
+
+/* ===== 底部操作栏 ===== */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--color-surface, #1c1c1e);
+  border-top: 1rpx solid rgba(255,255,255,0.06);
+  padding: 24rpx 32rpx;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.price-info {
+  flex: 1;
+}
+
+.price-label {
+  font-size: 24rpx;
+  color: #8E8E93;
+  display: block;
+}
+
+.price-value {
+  font-size: 44rpx;
+  font-weight: 700;
+  color: #BF5AF2;
+  display: block;
+}
+
+.exchange-btn {
+  width: 280rpx;
+  height: 88rpx;
+  background: linear-gradient(135deg, #BF5AF2 0%, #9B59B6 100%);
+  border-radius: 44rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+}
+
+.exchange-btn::after {
+  border: none;
+}
+
+.exchange-btn.disabled {
+  background: rgba(255,255,255,0.1);
+  color: #8E8E93;
+}
+
+/* ===== 弹窗 ===== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: var(--color-surface, #1c1c1e);
+  border-radius: 24rpx;
+  padding: 48rpx;
+  text-align: center;
+  width: 80%;
+  max-width: 560rpx;
+}
+
+.modal-icon {
+  font-size: 64rpx;
+  margin-bottom: 24rpx;
+}
+
+.modal-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--color-text, #fff);
+  display: block;
+  margin-bottom: 12rpx;
+}
+
+.modal-desc {
+  font-size: 26rpx;
+  color: #8E8E93;
+  display: block;
+  margin-bottom: 32rpx;
+}
+
+.modal-btn {
+  height: 80rpx;
+  background: linear-gradient(135deg, #BF5AF2 0%, #9B59B6 100%);
+  border-radius: 40rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===== 浅色主题适配 ===== */
+.theme-light .page-container {
+  background: #f5f5f7;
+}
+
+.theme-light .exchange-section,
+.theme-light .bottom-bar {
+  background: #fff;
+  border-color: rgba(0,0,0,0.06);
+}
+
+.theme-light .preset-item {
+  background: #f5f5f7;
+}
+
+.theme-light .preset-item.selected {
+  background: rgba(191, 90, 242, 0.1);
+}
+
+.theme-light .custom-input-wrap,
+.theme-light .tips-section {
+  background: #f5f5f7;
+}
+
+.theme-light .input-box {
+  background: #fff;
+  border: 1rpx solid rgba(0,0,0,0.08);
+}
+
+.theme-light .exchange-btn.disabled {
+  background: #e5e5ea;
+  color: #8e8e93;
+}
+
+.theme-light .modal-content {
+  background: #fff;
+}

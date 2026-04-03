@@ -437,26 +437,47 @@
         <text class="empty-emoji">📋</text>
         <text class="empty-label">暂无订单记录</text>
       </view>
-      <view class="order-card-v3" wx:for="{{orders}}" wx:key="_id" bindtap="goToOrderDetail" data-id="{{item._id}}">
+      <view class="order-card-v3" wx:for="{{orders}}" wx:key="_id">
         <view class="lc-index">{{item.orderIndex}}</view>
+        <!-- 订单头部：状态 + 时间 -->
         <view class="ocv3-header">
-          <text class="ocv3-id">{{item._id}}</text>
+          <text class="ocv3-id">{{item._id ? item._id.substr(-8) : ''}}</text>
           <view class="status-pill pill-status-{{item.status}}">{{item.statusText}}</view>
         </view>
-        <view class="ocv3-body">
-          <image class="ocv3-img" src="{{item.productCover || '/images/default-product.png'}}" mode="aspectFill"/>
-          <view class="ocv3-info">
-            <text class="ocv3-name">{{item.productName || '特产'}}</text>
-            <text class="ocv3-loc">📍 {{item.productProvince || ''}}</text>
+        <!-- 双方用户信息 -->
+        <view style="display:flex;align-items:stretch;gap:12rpx;margin:16rpx 0;padding:0 4rpx;">
+          <!-- 发起者 -->
+          <view style="flex:1;background:rgba(10,132,255,0.08);border-radius:16rpx;padding:16rpx 14rpx;">
+            <view style="display:flex;align-items:center;gap:10rpx;margin-bottom:8rpx;">
+              <image src="{{item.initiatorAvatar || item.requesterAvatar || '/images/default-avatar.png'}}" mode="aspectFill" style="width:48rpx;height:48rpx;border-radius:50%;flex-shrink:0;"/>
+              <text style="font-size:24rpx;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{item.initiatorNick || item.requesterNick || '发起者'}}</text>
+            </view>
+            <text wx:if="{{item.initiatorPhone}}" style="font-size:22rpx;color:rgba(255,255,255,0.5);display:block;">📱 {{item.initiatorPhone}}</text>
+            <text wx:if="{{item.initiatorAddress}}" style="font-size:20rpx;color:rgba(255,255,255,0.4);display:block;margin-top:4rpx;word-break:break-all;">📍 {{item.initiatorAddress}}</text>
+            <text wx:if="{{item.initiatorProductName}}" style="font-size:21rpx;color:#0A84FF;display:block;margin-top:6rpx;">🎁 {{item.initiatorProductName}}</text>
+            <text wx:if="{{item.initiatorTrackingText}}" style="font-size:20rpx;color:rgba(255,255,255,0.4);display:block;margin-top:4rpx;">🚚 {{item.initiatorTrackingText}}</text>
+          </view>
+          <!-- 箭头 -->
+          <view style="display:flex;align-items:center;justify-content:center;padding:0 4rpx;">
+            <text style="font-size:32rpx;color:rgba(255,255,255,0.3);">⇄</text>
+          </view>
+          <!-- 接收者 -->
+          <view style="flex:1;background:rgba(48,209,88,0.08);border-radius:16rpx;padding:16rpx 14rpx;">
+            <view style="display:flex;align-items:center;gap:10rpx;margin-bottom:8rpx;">
+              <image src="{{item.receiverAvatar || '/images/default-avatar.png'}}" mode="aspectFill" style="width:48rpx;height:48rpx;border-radius:50%;flex-shrink:0;"/>
+              <text style="font-size:24rpx;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{item.receiverNick || '接收者'}}</text>
+            </view>
+            <text wx:if="{{item.receiverPhone}}" style="font-size:22rpx;color:rgba(255,255,255,0.5);display:block;">📱 {{item.receiverPhone}}</text>
+            <text wx:if="{{item.receiverAddress}}" style="font-size:20rpx;color:rgba(255,255,255,0.4);display:block;margin-top:4rpx;word-break:break-all;">📍 {{item.receiverAddress}}</text>
+            <text wx:if="{{item.receiverProductName}}" style="font-size:21rpx;color:#30D158;display:block;margin-top:6rpx;">🎁 {{item.receiverProductName}}</text>
+            <text wx:if="{{item.receiverTrackingText}}" style="font-size:20rpx;color:rgba(255,255,255,0.4);display:block;margin-top:4rpx;">🚚 {{item.receiverTrackingText}}</text>
           </view>
         </view>
+        <!-- 底部：时间 + 操作 -->
         <view class="ocv3-footer">
-          <view class="ocv3-user">
-            <image class="ocv3-avatar" src="{{item.requesterAvatar || '/images/default-avatar.png'}}" mode="aspectFill"/>
-            <text class="ocv3-uname">{{item.requesterNick || '用户'}}</text>
-          </view>
-          <view class="ocv3-right">
-            <text class="ocv3-time">{{item.createTimeStr || ''}}</text>
+          <text class="ocv3-time">🕐 {{item.createTimeStr || ''}}</text>
+          <view style="display:flex;gap:12rpx;">
+            <view class="act-btn" style="background:rgba(10,132,255,0.18);color:#0A84FF;border-radius:12rpx;padding:8rpx 20rpx;font-size:22rpx;" bindtap="goToOrderDetail" data-id="{{item._id}}">详情 ›</view>
             <view class="act-btn act-del" catchtap="deleteOrder" data-id="{{item._id}}" wx:if="{{isSuperAdmin}}">🗑️</view>
           </view>
         </view>
@@ -598,6 +619,18 @@
         <view class="src-item">
           <text class="src-num src-green">{{pointsStats.avgPoints || 0}}</text>
           <text class="src-label">人均积分</text>
+        </view>
+      </view>
+
+      <!-- 批量重置积分 -->
+      <view style="padding:16rpx 32rpx;margin-bottom:8rpx;">
+        <view bindtap="batchResetAllPoints" style="display:flex;align-items:center;gap:16rpx;padding:24rpx 28rpx;background:rgba(255,159,10,0.1);border:1rpx solid rgba(255,159,10,0.25);border-radius:20rpx;">
+          <text style="font-size:36rpx;">🔄</text>
+          <view style="flex:1;">
+            <text style="display:block;font-size:28rpx;font-weight:600;color:#FF9F0A;">批量恢复所有用户积分</text>
+            <text style="display:block;font-size:24rpx;color:rgba(255,255,255,0.5);margin-top:4rpx;">将全平台用户积分统一重置为 100</text>
+          </view>
+          <text style="font-size:28rpx;color:rgba(255,255,255,0.3);">›</text>
         </view>
       </view>
       <view class="search-bar">
@@ -1048,7 +1081,72 @@
     </block>
   </block>
 
-  <!-- ===== 功能开关（Tab=13）===== -->
+  <!-- ===== 积分兑换管理（Tab=13）===== -->
+  <block wx:if="{{currentTab === 13}}">
+    <view wx:if="{{!isSuperAdmin}}" class="empty-state">
+      <text class="empty-emoji">🔐</text>
+      <text class="empty-label">需要超级管理员权限</text>
+    </view>
+    <block wx:else>
+      <!-- 统计概览 -->
+      <view class="stats-row-card">
+        <view class="src-item"><text class="src-num src-orange">{{pointsExchangeStats.pending || 0}}</text><text class="src-label">待支付</text></view>
+        <view class="src-div"></view>
+        <view class="src-item"><text class="src-num src-green">{{pointsExchangeStats.success || 0}}</text><text class="src-label">已完成</text></view>
+        <view class="src-div"></view>
+        <view class="src-item"><text class="src-num src-blue">{{pointsExchangeStats.totalPoints || 0}}</text><text class="src-label">总兑换积分</text></view>
+      </view>
+      <!-- 筛选chips -->
+      <view class="chip-bar">
+        <view class="chip {{pointsExchangeFilter === 'all' ? 'chip-active' : ''}}" bindtap="changePointsExchangeFilter" data-filter="all">全部</view>
+        <view class="chip {{pointsExchangeFilter === 'pending' ? 'chip-active' : ''}}" bindtap="changePointsExchangeFilter" data-filter="pending">⏳ 待支付</view>
+        <view class="chip {{pointsExchangeFilter === 'success' ? 'chip-active' : ''}}" bindtap="changePointsExchangeFilter" data-filter="success">✅ 已完成</view>
+        <view class="chip {{pointsExchangeFilter === 'failed' ? 'chip-active' : ''}}" bindtap="changePointsExchangeFilter" data-filter="failed">❌ 失败</view>
+      </view>
+      <!-- 积分兑换列表 -->
+      <view class="list-wrap">
+        <view wx:if="{{pointsExchangeList.length === 0 && !pointsExchangeLoading}}" class="empty-state">
+          <text class="empty-emoji">💎</text>
+          <text class="empty-label">暂无积分兑换记录</text>
+        </view>
+        <view class="verify-card" wx:for="{{pointsExchangeList}}" wx:key="_id">
+          <view class="vc-header">
+            <view class="vc-user-row">
+              <image class="vc-avatar" src="{{item.userInfo.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"/>
+              <text class="vc-name">{{item.userInfo.nickName || '用户'}}</text>
+            </view>
+            <view class="status-pill pill-{{item.status}}">
+              <text>{{item.statusText}}</text>
+            </view>
+          </view>
+          <view class="vc-body">
+            <view class="vc-row">
+              <text class="vc-label">兑换积分</text>
+              <text class="vc-value vc-amount-highlight" style="color: #BF5AF2;">{{item.points}}分</text>
+            </view>
+            <view class="vc-row">
+              <text class="vc-label">支付金额</text>
+              <text class="vc-value">¥{{item.amount}}</text>
+            </view>
+            <view class="vc-row">
+              <text class="vc-label">订单号</text>
+              <text class="vc-value vc-mono">{{item.orderNo}}</text>
+            </view>
+            <view class="vc-row">
+              <text class="vc-label">兑换时间</text>
+              <text class="vc-value vc-time">{{item.createTime}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view wx:if="{{pointsExchangeLoading}}" class="loading-row">⏳ 加载中...</view>
+      <view class="load-more-row" wx:if="{{pointsExchangeList.length > 0 && !pointsExchangeNoMore}}">
+        <view class="load-more-btn" bindtap="loadMorePointsExchange">加载更多</view>
+      </view>
+    </block>
+  </block>
+
+  <!-- ===== 功能开关（Tab=14）===== -->
   <block wx:if="{{currentTab === 13}}">
     <view wx:if="{{!isSuperAdmin}}" class="empty-state">
       <text class="empty-emoji">🔐</text>
@@ -1077,6 +1175,23 @@
         </view>
       </view>
 
+      <!-- 积分汇率配置 -->
+      <view style="margin:24rpx 0rpx 0;background:#fff;border-radius:24rpx;padding:32rpx;box-shadow:0 2rpx 12rpx rgba(0,0,0,0.06);">
+        <text style="font-size:32rpx;font-weight:700;color:#1C1C1E;display:block;margin-bottom:8rpx;">💎 积分汇率配置</text>
+        <text style="font-size:24rpx;color:#8E8E93;display:block;margin-bottom:28rpx;">设置积分与人民币的兑换比例</text>
+        <view style="margin-bottom:28rpx;">
+          <text style="font-size:26rpx;font-weight:500;color:#636366;display:block;margin-bottom:10rpx;">积分汇率（多少积分=1元）</text>
+          <view style="display:flex;align-items:center;height:88rpx;">
+            <input style="flex:1;height:88rpx;padding:0 24rpx;background:rgba(0,0,0,0.03);border:1rpx solid rgba(0,0,0,0.08);border-radius:16rpx;font-size:30rpx;color:#1C1C1E;box-sizing:border-box;" type="number" placeholder="100" bindinput="onPointsRateInput" value="{{pointsExchangeRate}}" />
+            <text style="margin:0 16rpx;color:#8E8E93;font-size:28rpx;">积分 = 1元</text>
+          </view>
+          <text style="font-size:22rpx;color:#8E8E93;margin-top:8rpx;display:block;">当前设置：{{pointsExchangeRate || 100}}积分 = 1元</text>
+        </view>
+        <view catchtap="savePointsRate" style="height:88rpx;border-radius:44rpx;background:linear-gradient(135deg,#BF5AF2 0%,#9B59B6 100%);display:flex;align-items:center;justify-content:center;font-size:30rpx;font-weight:600;color:#fff;">
+          保存汇率配置
+        </view>
+      </view>
+
       <!-- 客服配置 -->
       <view style="margin:24rpx 0rpx 0;background:#fff;border-radius:24rpx;padding:32rpx;box-shadow:0 2rpx 12rpx rgba(0,0,0,0.06);">
         <text style="font-size:32rpx;font-weight:700;color:#1C1C1E;display:block;margin-bottom:8rpx;">📞 客服联系方式</text>
@@ -1096,14 +1211,15 @@
     </block>
   </block>
 
-  <!-- ===== 等级管理（Tab=14）===== -->
+  <!-- ===== 等级管理（Tab=15）===== -->
+  <block wx:if="{{currentTab === 15}}">
   <block wx:if="{{currentTab === 14}}">
     <view wx:if="{{!isSuperAdmin}}" class="empty-state">
       <text class="empty-emoji">🔐</text>
       <text class="empty-label">需要超级管理员权限</text>
     </view>
     <block wx:else>
-      <!-- 等级体系说明 -->
+      <!-- 等级体系说明 - 与前端daigou-level页面一致 -->
       <view class="level-system-card-v3">
         <text class="lsv3-title">🏅 代购等级体系</text>
         <view class="level-table-v3">
@@ -1112,17 +1228,17 @@
             <text class="ltc ltc-name">名称</text>
             <text class="ltc ltc-deposit">押金</text>
             <text class="ltc ltc-rate">费率</text>
-            <text class="ltc ltc-limit">每日</text>
+            <text class="ltc ltc-limit">单笔限额</text>
           </view>
-          <view class="lt-row"><text class="ltc ltc-lv lv0">🆕 LV0</text><text class="ltc ltc-name">新人</text><text class="ltc ltc-deposit gray">—</text><text class="ltc ltc-rate lv0">8.0%</text><text class="ltc ltc-limit">2件</text></view>
-          <view class="lt-row"><text class="ltc ltc-lv lv1">🌱 LV1</text><text class="ltc ltc-name">初级</text><text class="ltc ltc-deposit">¥50</text><text class="ltc ltc-rate lv1">7.0%</text><text class="ltc ltc-limit">5件</text></view>
-          <view class="lt-row"><text class="ltc ltc-lv lv2">🌿 LV2</text><text class="ltc ltc-name">进阶</text><text class="ltc ltc-deposit">¥100</text><text class="ltc ltc-rate lv2">6.5%</text><text class="ltc ltc-limit">10件</text></view>
-          <view class="lt-row"><text class="ltc ltc-lv lv3">🔥 LV3</text><text class="ltc ltc-name">资深</text><text class="ltc ltc-deposit">¥200</text><text class="ltc ltc-rate lv3">6.0%</text><text class="ltc ltc-limit">20件</text></view>
-          <view class="lt-row"><text class="ltc ltc-lv lv4">🥇 LV4</text><text class="ltc ltc-name">金牌</text><text class="ltc ltc-deposit">¥500</text><text class="ltc ltc-rate lv4">5.5%</text><text class="ltc ltc-limit">50件</text></view>
-          <view class="lt-row"><text class="ltc ltc-lv lv5">💎 LV5</text><text class="ltc ltc-name">钻石</text><text class="ltc ltc-deposit">¥1000</text><text class="ltc ltc-rate lv5">5.0%</text><text class="ltc ltc-limit">100件</text></view>
-          <view class="lt-row"><text class="ltc ltc-lv lv6">✅ LV6</text><text class="ltc ltc-name">官方认证</text><text class="ltc ltc-deposit gray">—</text><text class="ltc ltc-rate lv6">4.0%</text><text class="ltc ltc-limit">不限</text></view>
+          <view class="lt-row"><text class="ltc ltc-lv lv0">🌱 Lv.1</text><text class="ltc ltc-name">新手代购</text><text class="ltc ltc-deposit gray">免押金</text><text class="ltc ltc-rate lv0">—</text><text class="ltc ltc-limit">¥200</text></view>
+          <view class="lt-row"><text class="ltc ltc-lv lv1">🌿 Lv.2</text><text class="ltc ltc-name">见习代购</text><text class="ltc ltc-deposit gray">免押金</text><text class="ltc ltc-rate lv1">—</text><text class="ltc ltc-limit">¥500</text></view>
+          <view class="lt-row"><text class="ltc ltc-lv lv2">⭐ Lv.3</text><text class="ltc ltc-name">普通代购</text><text class="ltc ltc-deposit gray">免押金</text><text class="ltc ltc-rate lv2">—</text><text class="ltc ltc-limit">¥1000</text></view>
+          <view class="lt-row"><text class="ltc ltc-lv lv3">💫 Lv.4</text><text class="ltc ltc-name">资深代购</text><text class="ltc ltc-deposit">¥200</text><text class="ltc ltc-rate lv3">—</text><text class="ltc ltc-limit">¥3000</text></view>
+          <view class="lt-row"><text class="ltc ltc-lv lv4">🥇 Lv.5</text><text class="ltc ltc-name">金牌代购</text><text class="ltc ltc-deposit">¥500</text><text class="ltc ltc-rate lv4">—</text><text class="ltc ltc-limit">¥10000</text></view>
+          <view class="lt-row"><text class="ltc ltc-lv lv5">💎 Lv.6</text><text class="ltc ltc-name">钻石代购</text><text class="ltc ltc-deposit">¥2000</text><text class="ltc ltc-rate lv5">—</text><text class="ltc ltc-limit">¥50000</text></view>
+          <view class="lt-row"><text class="ltc ltc-lv lv6">👑 Lv.7</text><text class="ltc ltc-name">传奇代购</text><text class="ltc ltc-deposit">¥5000</text><text class="ltc ltc-rate lv6">—</text><text class="ltc ltc-limit">不限</text></view>
         </view>
-        <text class="lsv3-note">💡 费率从押金余额中扣取，无需微信支付</text>
+        <text class="lsv3-note">💡 自由代购(Lv.1-4)：靠积累订单自然升级 | 平台认证(Lv.5-7)：需管理员人工认定</text>
       </view>
       <view class="search-bar">
         <text class="search-icon-emoji">🔍</text>
@@ -1156,7 +1272,7 @@
             <view class="luv3-stat"><text class="luv3-stat-val">¥{{item.depositPaid || 0}}</text><text class="luv3-stat-label">总押金</text></view>
             <view class="luv3-stat"><text class="luv3-stat-val {{item.depositBalance > 0 ? 'ok' : 'low'}}">¥{{item.depositBalance || 0}}</text><text class="luv3-stat-label">余额</text></view>
             <view class="luv3-stat"><text class="luv3-stat-val">{{item.completedOrders || 0}}</text><text class="luv3-stat-label">成交</text></view>
-            <view class="luv3-stat"><text class="luv3-stat-val rate">{{item.feeRate}}%</text><text class="luv3-stat-label">费率</text></view>
+            <view class="luv3-stat"><text class="luv3-stat-val {{item.requiredDeposit > 0 ? 'need' : 'free'}}">¥{{item.requiredDeposit || 0}}</text><text class="luv3-stat-label">需押金</text></view>
           </view>
           <view class="luv3-deposit-row">
             <text class="luv3-deposit-label">💰 押金管理</text>
@@ -1173,8 +1289,8 @@
     </block>
   </block>
 
-  <!-- ===== 邀请裂变配置（Tab=15）===== -->
-  <block wx:if="{{currentTab === 15}}">
+  <!-- ===== 邀请裂变配置（Tab=16）===== -->
+  <block wx:if="{{currentTab === 16}}">
     <view wx:if="{{!isSuperAdmin}}" class="empty-state">
       <text class="empty-emoji">🔐</text>
       <text class="empty-label">需要超级管理员权限</text>
@@ -1275,8 +1391,8 @@
     </block>
   </block>
 
-  <!-- ===== 纠纷处理（Tab=17）===== -->
-  <block wx:if="{{currentTab === 17}}">
+  <!-- ===== 纠纷处理（Tab=18）===== -->
+  <block wx:if="{{currentTab === 18}}">
     <view wx:if="{{!isSuperAdmin}}" class="empty-state">
       <text class="empty-emoji">🔐</text>
       <text class="empty-label">需要超级管理员权限</text>
@@ -1314,25 +1430,19 @@
       <!-- 纠纷列表 -->
       <view class="dispute-list">
         <view wx:for="{{disputeList}}" wx:key="_id" class="dispute-item">
-          <!-- 头部：状态和时间 -->
-          <view class="dispute-header">
+          <!-- 头部：状态和时间（可点击查看详情） -->
+          <view class="dispute-header" bindtap="showDisputeDetail" data-item="{{item}}" style="cursor:pointer;">
             <view class="dispute-header-left">
               <text class="dispute-status {{item.status}}">{{item.statusLabel}}</text>
               <text class="dispute-type" wx:if="{{item.type}}">{{item.type}}</text>
             </view>
-            <text class="dispute-time">{{item.createTimeText}}</text>
-          </view>
-          
-          <!-- 用户信息 -->
-          <view class="dispute-user" wx:if="{{item.userInfo}}">
-            <image class="dispute-user-avatar" src="{{item.userInfo.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"/>
-            <view class="dispute-user-info">
-              <text class="dispute-user-name">{{item.userInfo.nickName || '未知用户'}}</text>
-              <text class="dispute-user-id" wx:if="{{item.userId}}">ID: {{item.userId}}</text>
+            <view style="display:flex;align-items:center;gap:12rpx;">
+              <text class="dispute-time">{{item.createTimeText}}</text>
+              <text style="font-size:26rpx;color:#0A84FF;font-weight:600;">查看 ›</text>
             </view>
           </view>
           
-          <!-- 纠纷内容 -->
+          <!-- 纠纷简要信息（始终显示） -->
           <view class="dispute-content">
             <view class="dispute-reason-wrap">
               <text class="dispute-reason-label">纠纷原因：</text>
@@ -1340,52 +1450,8 @@
             </view>
             <view class="dispute-desc-wrap" wx:if="{{item.description}}">
               <text class="dispute-desc-label">详细描述：</text>
-              <text class="dispute-desc">{{item.description}}</text>
+              <text class="dispute-desc" style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;">{{item.description}}</text>
             </view>
-          </view>
-          
-          <!-- 凭证图片 -->
-          <view class="dispute-images" wx:if="{{item.images && item.images.length > 0}}">
-            <text class="dispute-images-label">凭证图片：</text>
-            <view class="dispute-images-list">
-              <image wx:for="{{item.images}}" wx:for-item="img" wx:key="*this" 
-                     class="dispute-image" src="{{img}}" mode="aspectFill" 
-                     bindtap="previewDisputeImage" data-url="{{img}}"/>
-            </view>
-          </view>
-          
-          <!-- 关联订单 -->
-          <view class="dispute-order" wx:if="{{item.orderInfo}}">
-            <view class="dispute-order-header">
-              <text class="dispute-order-title">📦 关联订单</text>
-              <text class="dispute-order-status {{item.orderInfo.status}}">{{item.orderInfo.statusText || item.orderInfo.status}}</text>
-            </view>
-            <view class="dispute-order-products" wx:if="{{item.orderInfo.productA || item.orderInfo.productB}}">
-              <view class="dispute-product" wx:if="{{item.orderInfo.productA}}">
-                <image class="dispute-product-img" src="{{item.orderInfo.productA.images[0] || '/images/default-product.png'}}" mode="aspectFill"/>
-                <text class="dispute-product-name">{{item.orderInfo.productA.name || '特产A'}}</text>
-              </view>
-              <text class="dispute-product-exchange">⇄</text>
-              <view class="dispute-product" wx:if="{{item.orderInfo.productB}}">
-                <image class="dispute-product-img" src="{{item.orderInfo.productB.images[0] || '/images/default-product.png'}}" mode="aspectFill"/>
-                <text class="dispute-product-name">{{item.orderInfo.productB.name || '特产B'}}</text>
-              </view>
-            </view>
-            <view class="dispute-order-id-wrap">
-              <text class="dispute-order-id-label">订单编号：</text>
-              <text class="dispute-order-id">{{item.orderInfo._id}}</text>
-              <text class="dispute-order-copy" bindtap="copyOrderId" data-id="{{item.orderInfo._id}}">复制</text>
-            </view>
-          </view>
-          
-          <!-- 处理结果（已处理） -->
-          <view class="dispute-result" wx:if="{{item.result || item.note}}">
-            <view class="dispute-result-header">
-              <text class="dispute-result-title">✓ 处理结果</text>
-              <text class="dispute-handle-time" wx:if="{{item.handleTimeText}}">{{item.handleTimeText}}</text>
-            </view>
-            <text class="dispute-result-text" wx:if="{{item.result}}">{{item.result}}</text>
-            <text class="dispute-note" wx:if="{{item.note}}">备注：{{item.note}}</text>
           </view>
           
           <!-- 操作按钮 -->
@@ -1586,6 +1652,86 @@
       <view style="display:flex;gap:16rpx;padding:24rpx 32rpx 36rpx;background:#fff;border-top:1rpx solid rgba(0,0,0,0.05);">
         <view catchtap="closeReportModal" style="flex:1;height:92rpx;border-radius:46rpx;display:flex;align-items:center;justify-content:center;font-size:30rpx;font-weight:600;background:rgba(0,0,0,0.06);color:#636366;">取消</view>
         <view catchtap="submitReportHandle" style="flex:1;height:92rpx;border-radius:46rpx;display:flex;align-items:center;justify-content:center;font-size:30rpx;font-weight:600;background:{{reportModalAction === 'handle' ? 'linear-gradient(135deg,#30D158 0%,#28B148 100%)' : 'linear-gradient(135deg,#FF3B30 0%,#E62E24 100%)'}};color:#fff;">确认{{reportModalAction === 'handle' ? '处理' : '驳回'}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 纠纷详情弹窗 -->
+  <view wx:if="{{disputeDetailVisible}}" catchtap="closeDisputeDetail" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:999999;display:flex;align-items:center;justify-content:center;">
+    <view catchtap="stopPropagation" style="width:92%;max-width:700rpx;max-height:88vh;background:#1C1C1E;border-radius:32rpx;box-shadow:0 20rpx 60rpx rgba(0,0,0,0.5);display:flex;flex-direction:column;overflow:hidden;" wx:if="{{disputeDetailItem}}">
+      <!-- 弹窗头部 -->
+      <view style="display:flex;align-items:center;justify-content:space-between;padding:32rpx 32rpx 24rpx;border-bottom:1rpx solid rgba(255,255,255,0.08);">
+        <view style="display:flex;align-items:center;gap:16rpx;">
+          <text style="font-size:36rpx;">⚖️</text>
+          <text style="font-size:32rpx;font-weight:700;color:#fff;">纠纷详情</text>
+        </view>
+        <view catchtap="closeDisputeDetail" style="width:60rpx;height:60rpx;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:28rpx;color:rgba(255,255,255,0.6);">✕</view>
+      </view>
+      <!-- 弹窗内容 -->
+      <scroll-view scroll-y style="flex:1;padding:28rpx 32rpx;overflow-y:auto;">
+        <!-- 状态 -->
+        <view style="display:flex;align-items:center;gap:16rpx;margin-bottom:24rpx;">
+          <text class="dispute-status {{disputeDetailItem.status}}" style="font-size:26rpx;">{{disputeDetailItem.statusLabel}}</text>
+          <text style="font-size:24rpx;color:rgba(255,255,255,0.4);">{{disputeDetailItem.createTimeText}}</text>
+        </view>
+
+        <!-- 发起人信息 -->
+        <view wx:if="{{disputeDetailItem.userInfo}}" style="display:flex;align-items:center;gap:16rpx;padding:20rpx 24rpx;background:rgba(255,255,255,0.06);border-radius:20rpx;margin-bottom:16rpx;">
+          <image src="{{disputeDetailItem.userInfo.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill" style="width:72rpx;height:72rpx;border-radius:50%;"/>
+          <view>
+            <text style="font-size:28rpx;font-weight:600;color:#fff;display:block;">{{disputeDetailItem.userInfo.nickName || '未知用户'}}</text>
+            <text style="font-size:24rpx;color:rgba(255,255,255,0.4);display:block;">纠纷发起人</text>
+          </view>
+        </view>
+
+        <!-- 纠纷原因 -->
+        <view style="margin-bottom:16rpx;">
+          <text style="font-size:24rpx;color:rgba(255,255,255,0.4);display:block;margin-bottom:8rpx;">纠纷原因</text>
+          <text style="font-size:28rpx;color:#fff;display:block;">{{disputeDetailItem.reason}}</text>
+        </view>
+
+        <!-- 详细描述 -->
+        <view wx:if="{{disputeDetailItem.description}}" style="margin-bottom:16rpx;padding:16rpx 20rpx;background:rgba(255,255,255,0.04);border-radius:16rpx;">
+          <text style="font-size:24rpx;color:rgba(255,255,255,0.4);display:block;margin-bottom:8rpx;">详细描述</text>
+          <text style="font-size:28rpx;color:rgba(255,255,255,0.85);display:block;line-height:1.6;">{{disputeDetailItem.description}}</text>
+        </view>
+
+        <!-- 凭证图片 -->
+        <view wx:if="{{disputeDetailItem.images && disputeDetailItem.images.length > 0}}" style="margin-bottom:16rpx;">
+          <text style="font-size:24rpx;color:rgba(255,255,255,0.4);display:block;margin-bottom:12rpx;">凭证图片</text>
+          <view style="display:flex;flex-wrap:wrap;gap:12rpx;">
+            <image wx:for="{{disputeDetailItem.images}}" wx:for-item="img" wx:key="*this"
+                   src="{{img}}" mode="aspectFill"
+                   style="width:160rpx;height:160rpx;border-radius:12rpx;"
+                   bindtap="previewDisputeImage" data-url="{{img}}"/>
+          </view>
+        </view>
+
+        <!-- 关联订单 -->
+        <view wx:if="{{disputeDetailItem.orderInfo}}" style="margin-bottom:16rpx;padding:16rpx 20rpx;background:rgba(10,132,255,0.08);border-radius:16rpx;border:1rpx solid rgba(10,132,255,0.2);">
+          <text style="font-size:24rpx;color:#0A84FF;display:block;margin-bottom:12rpx;">📦 关联订单</text>
+          <view style="display:flex;align-items:center;gap:12rpx;margin-bottom:8rpx;">
+            <text style="font-size:26rpx;color:rgba(255,255,255,0.6);">状态：</text>
+            <text style="font-size:26rpx;color:#fff;">{{disputeDetailItem.orderInfo.statusText || disputeDetailItem.orderInfo.status}}</text>
+          </view>
+          <view style="display:flex;align-items:center;gap:12rpx;">
+            <text style="font-size:24rpx;color:rgba(255,255,255,0.4);">订单：{{disputeDetailItem.orderInfo._id}}</text>
+            <text bindtap="copyOrderId" data-id="{{disputeDetailItem.orderInfo._id}}" style="font-size:22rpx;color:#0A84FF;">复制</text>
+          </view>
+        </view>
+
+        <!-- 处理结果 -->
+        <view wx:if="{{disputeDetailItem.result || disputeDetailItem.note}}" style="margin-bottom:16rpx;padding:16rpx 20rpx;background:rgba(48,209,88,0.08);border-radius:16rpx;">
+          <text style="font-size:24rpx;color:#30D158;display:block;margin-bottom:8rpx;">✓ 处理结果</text>
+          <text wx:if="{{disputeDetailItem.result}}" style="font-size:28rpx;color:#fff;display:block;">{{disputeDetailItem.result}}</text>
+          <text wx:if="{{disputeDetailItem.note}}" style="font-size:24rpx;color:rgba(255,255,255,0.5);display:block;margin-top:8rpx;">备注：{{disputeDetailItem.note}}</text>
+          <text wx:if="{{disputeDetailItem.handleTimeText}}" style="font-size:22rpx;color:rgba(255,255,255,0.3);display:block;margin-top:4rpx;">处理时间：{{disputeDetailItem.handleTimeText}}</text>
+        </view>
+      </scroll-view>
+      <!-- 底部操作 -->
+      <view wx:if="{{disputeDetailItem.status === 'pending' || disputeDetailItem.status === 'processing'}}" style="display:flex;gap:16rpx;padding:24rpx 32rpx 40rpx;border-top:1rpx solid rgba(255,255,255,0.08);">
+        <view catchtap="showDisputeModalFromDetail" data-action="close" style="flex:1;height:88rpx;border-radius:44rpx;display:flex;align-items:center;justify-content:center;font-size:28rpx;font-weight:600;background:rgba(255,69,58,0.15);color:#FF453A;">关闭纠纷</view>
+        <view catchtap="showDisputeModalFromDetail" data-action="resolve" style="flex:1;height:88rpx;border-radius:44rpx;display:flex;align-items:center;justify-content:center;font-size:28rpx;font-weight:600;background:linear-gradient(135deg,#30D158,#28B148);color:#fff;">解决纠纷</view>
       </view>
     </view>
   </view>

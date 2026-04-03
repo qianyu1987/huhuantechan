@@ -1,0 +1,9 @@
+{
+  "name": "aiFaceReminder",
+  "version": "1.0.0",
+  "description": "AI颜值每日打卡提醒",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "^2.6.3"
+  }
+}

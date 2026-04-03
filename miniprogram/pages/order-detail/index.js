@@ -143,6 +143,24 @@ Page({
       toast('订单ID错误')
       setTimeout(() => wx.navigateBack(), 1500)
     }
+    
+    // 加载客服配置
+    this.loadServiceConfig()
+  },
+
+  // 加载客服配置
+  async loadServiceConfig() {
+    try {
+      const res = await callCloud('userInit', { action: 'getServiceConfig' })
+      if (res && res.success) {
+        this.setData({
+          servicePhone: res.servicePhone || '',
+          serviceWechat: res.serviceWechat || ''
+        })
+      }
+    } catch (e) {
+      console.error('加载客服配置失败', e)
+    }
   },
 
   onPullDownRefresh() {

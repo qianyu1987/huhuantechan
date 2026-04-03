@@ -138,6 +138,54 @@ const THEMES = {
     navBg: 'rgba(45, 0, 16, 0.7)',
     cardBg: 'linear-gradient(135deg, rgba(255, 59, 84, 0.15) 0%, rgba(255, 59, 84, 0.05) 100%)',
     cardBorder: 'rgba(255, 59, 84, 0.2)'
+  },
+  // ===== 小清新主题：鼠尾草绿 + 奶油黄，白色背景，现代轻盈 =====
+  fresh: {
+    id: 'fresh',
+    name: '小清新',
+    primary: '#7DAF8E',           // 鼠尾草绿（主色）
+    primaryLight: '#A8CFAF',
+    primaryGradient: 'linear-gradient(135deg, #7DAF8E 0%, #A8CFAF 100%)',
+    secondary: '#E8C96A',          // 奶油黄（辅色）
+    secondaryGradient: 'linear-gradient(135deg, #E8C96A 0%, #F5DFA0 100%)',
+    warning: '#E0975A',
+    warningGradient: 'linear-gradient(135deg, #E0975A 0%, #F0B070 100%)',
+    danger: '#D97070',
+    dangerGradient: 'linear-gradient(135deg, #D97070 0%, #E88080 100%)',
+    purple: '#A88BC9',
+    purpleGradient: 'linear-gradient(135deg, #A88BC9 0%, #C4A8E0 100%)',
+    indigo: '#6E7FC4',
+    pink: '#E0869A',
+    pinkGradient: 'linear-gradient(135deg, #E0869A 0%, #EFA8B8 100%)',
+    teal: '#5CAAAB',
+    yellow: '#E8C96A',
+    // 白色背景系列
+    bg: '#F7F9F5',
+    bgSecondary: '#FFFFFF',
+    bgTertiary: '#EEF3EA',
+    bgElevated: '#FFFFFF',
+    liquidSurface: 'rgba(125, 175, 142, 0.08)',
+    liquidSurfaceHover: 'rgba(125, 175, 142, 0.14)',
+    liquidSurfaceActive: 'rgba(125, 175, 142, 0.20)',
+    liquidSurfaceSolid: 'rgba(247, 249, 245, 0.97)',
+    glassPrimary: 'rgba(125, 175, 142, 0.12)',
+    glassSecondary: 'rgba(232, 201, 106, 0.10)',
+    glassPurple: 'rgba(168, 139, 201, 0.10)',
+    glassPink: 'rgba(224, 134, 154, 0.10)',
+    glassOrange: 'rgba(224, 151, 90, 0.10)',
+    glassTeal: 'rgba(92, 170, 171, 0.10)',
+    // 深色文字（白底）
+    text: '#2D4A34',
+    textSecondary: 'rgba(45, 74, 52, 0.70)',
+    textTertiary: 'rgba(45, 74, 52, 0.45)',
+    textQuaternary: 'rgba(45, 74, 52, 0.25)',
+    textLight: '#7DAF8E',
+    textInverse: '#FFFFFF',
+    divider: 'rgba(125, 175, 142, 0.15)',
+    dividerStrong: 'rgba(125, 175, 142, 0.25)',
+    navBg: 'rgba(247, 249, 245, 0.85)',
+    cardBg: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(238, 243, 234, 0.80) 100%)',
+    cardBorder: 'rgba(125, 175, 142, 0.18)'
   }
 }
 
@@ -158,7 +206,7 @@ App({
     themes: THEMES // 主题配置
   },
 
-onLaunch() {
+  onLaunch() {
     // 获取平台信息（支持三端）
     const platformInfo = platformUtil.getPlatformInfo()
     this.globalData.platform = platformInfo.platform

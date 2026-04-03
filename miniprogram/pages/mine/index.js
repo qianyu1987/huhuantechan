@@ -931,6 +931,21 @@ Page({
     wx.navigateTo({ url: '/pages/settings/index' })
   },
 
+  // 跳转使用教程
+  goToTutorial() {
+    wx.navigateTo({ url: '/pages/tutorial/index' })
+  },
+
+  // 跳转活动公告
+  goToAnnouncements() {
+    wx.navigateTo({ url: '/pages/article-list/index' })
+  },
+
+  // 跳转AI颜值分析
+  goToAIFace() {
+    wx.navigateTo({ url: '/pages/ai-face/index' })
+  },
+
   // 跳转关于我们
   goToAbout() {
     wx.navigateTo({ url: '/pages/about/index' })
@@ -967,14 +982,90 @@ Page({
     wx.navigateTo({ url: '/pages/my-reviews/index' })
   },
 
-  // 代购订单
+  // 代购订单 - 提供买家/卖家双视图选择
   goToDaigouOrders() {
-    wx.navigateTo({ url: '/pages/daigou-order-list/index' })
+    // 所有用户都可以选择角色：买家或卖家视图
+    wx.showActionSheet({
+      itemList: ['我买的代购订单', '我卖的代购订单'],
+      success: (res) => {
+        const role = res.tapIndex === 1 ? 'seller' : 'buyer'
+        wx.navigateTo({ url: `/pages/daigou-order-list/index?role=${role}` })
+      },
+      fail: () => {
+        // 用户取消，默认进入买家视图
+        wx.navigateTo({ url: '/pages/daigou-order-list/index?role=buyer' })
+      }
+    })
   },
 
   // 钱包
   goToWallet() {
     wx.navigateTo({ url: '/pages/wallet/index' })
+  },
+
+  // 跳转文章管理
+  goToAdminArticleList() {
+    wx.navigateTo({ url: '/pages/admin-article-list/index' })
+  },
+
+  // 跳转文章列表
+  goToArticleList() {
+    wx.navigateTo({ url: '/pages/article-list/index' })
+  },
+
+  // 跳转文章管理（管理员）
+  goToArticleAdmin() {
+    wx.navigateTo({ url: '/pages/admin-article-list/index' })
+  },
+
+  // 同步服务号文章（拉取最新50篇文章标题）
+  async syncOfficialArticles() {
+    wx.showModal({
+      title: '同步服务号文章',
+      content: '将从服务号拉取最新文章到平台，仅同步标题信息。是否继续？',
+      confirmText: '开始同步',
+      cancelText: '取消',
+      success: async (modalRes) => {
+        if (!modalRes.confirm) return
+        wx.showLoading({ title: '同步中...', mask: true })
+        try {
+          const res = await callCloud('syncOfficialArticles', {
+            action: 'syncFromWechat',
+            limit: 50
+          })
+          wx.hideLoading()
+          if (res && res.success) {
+            wx.showToast({
+              title: `同步成功 ${res.synced || 0} 篇`,
+              icon: 'success',
+              duration: 2000
+            })
+          } else {
+            // 同步功能说明
+            wx.showModal({
+              title: '同步说明',
+              content: '服务号文章同步需要配置微信服务号 AppID 和 AppSecret。\n\n当前可在"文章管理"页面手动添加文章链接来导入。\n\n如需自动同步，请前往管理后台配置服务号信息。',
+              showCancel: false,
+              confirmText: '去文章管理',
+              success: (r) => {
+                if (r.confirm) wx.navigateTo({ url: '/pages/admin-article-list/index' })
+              }
+            })
+          }
+        } catch (e) {
+          wx.hideLoading()
+          wx.showModal({
+            title: '同步说明',
+            content: '服务号文章自动同步需要在云函数配置公众号 AppID 和 AppSecret。\n\n您可以：\n1. 在"文章管理"手动添加文章\n2. 联系开发者配置自动同步',
+            showCancel: false,
+            confirmText: '去文章管理',
+            success: (r) => {
+              if (r.confirm) wx.navigateTo({ url: '/pages/admin-article-list/index' })
+            }
+          })
+        }
+      }
+    })
   },
 
   // 押金管理

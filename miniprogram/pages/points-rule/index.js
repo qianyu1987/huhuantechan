@@ -29,6 +29,10 @@ Page({
     wx.navigateTo({ url: '/pages/invitedFriends/index' })
   },
 
+  goExchange() {
+    wx.navigateTo({ url: '/pages/points-exchange/index' })
+  },
+
   goBack() {
     wx.navigateBack()
   }

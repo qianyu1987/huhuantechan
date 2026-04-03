@@ -1,0 +1,9 @@
+{
+  "name": "getIP",
+  "version": "1.0.0",
+  "description": "获取云函数出口IP",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "^2.6.3"
+  }
+}

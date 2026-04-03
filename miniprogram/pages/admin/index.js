@@ -5,7 +5,7 @@ const { PROVINCES, PRODUCT_CATEGORIES, VALUE_RANGES, DEFAULT_FEATURE_FLAGS } = r
 Page({
   data: {
     currentTab: 0,
-    tabs: ['概览', '用户', '特产', '订单', '审核', '日志', '积分', '信用', '神秘特产', '代购', '押金审批', '提现审批', '充值审批', '功能开关', '等级管理', '邀请裂变', '数据看板', '纠纷处理', '举报管理', '消息测试'],
+    tabs: ['概览', '用户', '特产', '订单', '审核', '日志', '积分', '信用', '神秘特产', '代购', '押金审批', '提现审批', '充值审批', '积分兑换', '功能开关', '等级管理', '邀请裂变', '数据看板', '纠纷处理', '举报管理', '消息测试'],
     verifyTabIndex: 99, // 超管后更新为 5
     isSuperAdmin: false,
     defaultAvatar: '/images/default-avatar.png',
@@ -174,8 +174,19 @@ Page({
       inviterPoints: 0,
       inviteePoints: 0
     },
+    // ===== 积分汇率 =====
+    pointsExchangeRate: 100,
     levelModalUser: null,
-    levelOptions: ['LV0 新人（待认证）', 'LV1 初级代购', 'LV2 进阶代购', 'LV3 资深代购', 'LV4 金牌代购', 'LV5 钻石代购', 'LV6 官方认证代购'],
+    // 代购等级选项 - 与daigou-level页面保持一致（Lv.1-Lv.7）
+    levelOptions: [
+      'Lv.1 新手代购（免押金）',
+      'Lv.2 见习代购（免押金）',
+      'Lv.3 普通代购（免押金）',
+      'Lv.4 资深代购（押金¥200）',
+      'Lv.5 金牌代购（押金¥500）',
+      'Lv.6 钻石代购（押金¥2000）',
+      'Lv.7 传奇代购（押金¥5000）'
+    ],
     levelPickerIndex: 0,
     levelReason: '',
     // 录入押金弹窗
@@ -197,6 +208,13 @@ Page({
     rechargeModalItem: null,
     rechargeModalAction: 'approve',  // approve / reject
     rechargeAdminNote: '',
+    // ===== 积分兑换管理 =====
+    pointsExchangeList: [],
+    pointsExchangePage: 1,
+    pointsExchangeLoading: false,
+    pointsExchangeNoMore: false,
+    pointsExchangeFilter: 'all',   // all / pending / success / failed
+    pointsExchangeStats: { pending: 0, success: 0, failed: 0, totalPoints: 0 },
     // ===== 提现审批 =====
     withdrawalList: [],
     withdrawalPage: 1,
@@ -237,6 +255,9 @@ Page({
     disputePunishmentType: 'none',  // none / points / credit / deposit
     disputePunishmentValue: '',
     disputeResponsibleParty: '',  // initiator / responder / both
+    // 纠纷详情弹窗
+    disputeDetailVisible: false,
+    disputeDetailItem: null,
     // ===== 举报管理 =====
     reportList: [],
     reportPage: 1,
@@ -409,6 +430,37 @@ Page({
     const filter = e.currentTarget.dataset.filter
     this.setData({ disputeFilter: filter })
     this.loadDisputes(true)
+  },
+
+  // 显示纠纷详情弹窗
+  showDisputeDetail(e) {
+    const item = e.currentTarget.dataset.item
+    this.setData({ disputeDetailVisible: true, disputeDetailItem: item })
+  },
+
+  // 关闭纠纷详情弹窗
+  closeDisputeDetail() {
+    this.setData({ disputeDetailVisible: false, disputeDetailItem: null })
+  },
+
+  // 从详情弹窗跳转到处理弹窗
+  showDisputeModalFromDetail(e) {
+    const action = e.currentTarget.dataset.action
+    const item = this.data.disputeDetailItem
+    if (!item) return
+    this.setData({ disputeDetailVisible: false })
+    setTimeout(() => {
+      this.setData({
+        disputeModalVisible: true,
+        disputeModalItem: item,
+        disputeModalAction: action,
+        disputeResult: '',
+        disputeNote: '',
+        disputePunishmentType: 'none',
+        disputePunishmentValue: '',
+        disputeResponsibleParty: ''
+      })
+    }, 300)
   },
 
   // 显示纠纷处理弹窗
@@ -601,7 +653,7 @@ Page({
       // Tab顺序：概览(0) 用户(1) 特产(2) 订单(3) 审核(4) 实名(5) 积分(6) 信用(7) 神秘特产(8) 代购(9) 押金(10) 提现(11) 充值(12) 开关(13) 等级管理(14) 邀请裂变(15) 数据看板(16) 纠纷处理(17)
       if (res.isSuperAdmin) {
         this.setData({
-          tabs: ['概览', '用户', '特产', '订单', '审核', '实名', '积分', '信用', '神秘特产', '代购', '押金', '提现', '充值', '开关', '等级管理', '邀请裂变', '数据看板', '纠纷处理'],
+          tabs: ['概览', '用户', '特产', '订单', '审核', '实名', '积分', '信用', '神秘特产', '代购', '押金', '提现', '充值', '积分兑换', '开关', '等级管理', '邀请裂变', '数据看板', '纠纷处理'],
           verifyTabIndex: 5
         })
         // 权限确认后再加载实名审核统计
@@ -1465,9 +1517,57 @@ Page({
   },
 
   // ========== 积分管理 ==========
+  // 批量重置所有用户积分为100
+  async batchResetAllPoints() {
+    const { isSuperAdmin } = this.data
+    if (!isSuperAdmin) {
+      toast('需要超级管理员权限', 'error')
+      return
+    }
+
+    wx.showModal({
+      title: '⚠️ 危险操作确认',
+      content: '此操作将把平台所有用户积分重置为 100 分，该操作不可逆！\n\n请再次确认是否继续？',
+      confirmText: '确认重置',
+      confirmColor: '#FF3B30',
+      cancelText: '取消',
+      success: async (res) => {
+        if (!res.confirm) return
+        wx.showModal({
+          title: '最后确认',
+          content: '即将重置全平台积分为 100，是否继续？',
+          confirmText: '立即执行',
+          confirmColor: '#FF3B30',
+          cancelText: '取消',
+          success: async (res2) => {
+            if (!res2.confirm) return
+            wx.showLoading({ title: '重置中，请稍候...', mask: true })
+            try {
+              const result = await callCloud('adminMgr', {
+                action: 'batchResetPoints',
+                targetPoints: 100
+              })
+              wx.hideLoading()
+              if (result && result.success) {
+                wx.showToast({ title: `已重置 ${result.totalUpdated} 人`, icon: 'success', duration: 3000 })
+                this.setData({ pointsUsers: [], pointsPage: 1, pointsNoMore: false })
+                this.loadPointsUsers()
+              } else {
+                toast(result.error || '重置失败', 'error')
+              }
+            } catch (e) {
+              wx.hideLoading()
+              toast('操作失败，请重试', 'error')
+            }
+          }
+        })
+      }
+    })
+  },
+
   // 加载积分用户列表
   async loadPointsUsers() {
-    if (this.data.pointsLoading || this.data.pointsNoMore) return
+
 
     this.setData({ pointsLoading: true })
     try {
@@ -2963,7 +3063,8 @@ Page({
       if (res && res.success) {
         this.setData({
           'serviceConfig.phone': res.configs.service_phone || '',
-          'serviceConfig.wechat': res.configs.service_wechat || ''
+          'serviceConfig.wechat': res.configs.service_wechat || '',
+          pointsExchangeRate: res.configs.points_exchange_rate || 100
         })
       }
     } catch (e) {
@@ -2979,6 +3080,37 @@ Page({
 
   onServiceWechatInput(e) {
     this.setData({ 'serviceConfig.wechat': e.detail.value })
+  },
+
+  onPointsRateInput(e) {
+    this.setData({ pointsExchangeRate: e.detail.value })
+  },
+
+  async savePointsRate() {
+    const rate = parseInt(this.data.pointsExchangeRate) || 100
+    if (rate <= 0) {
+      toast('汇率必须大于0', 'error')
+      return
+    }
+    wx.showLoading({ title: '保存中...' })
+    try {
+      const res = await callCloud('adminMgr', {
+        action: 'updateSystemConfig',
+        configKey: 'points_exchange_rate',
+        configValue: rate
+      })
+      wx.hideLoading()
+      if (res.success) {
+        toast('汇率配置已保存', 'success')
+        this.setData({ pointsExchangeRate: rate })
+      } else {
+        toast(res.error || '保存失败', 'error')
+      }
+    } catch (e) {
+      wx.hideLoading()
+      console.error('[savePointsRate]', e)
+      toast('保存失败', 'error')
+    }
   },
 
   async saveServiceConfig() {

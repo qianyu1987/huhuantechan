@@ -177,9 +177,10 @@ Page({
     if (this.data.submitting) return
 
     this.setData({ submitting: true })
-    showLoading('提交中...')
+    showLoading('创建订单...')
 
     try {
+      // 第一步：创建订单（状态为 pending_payment）
       const res = await callCloud('daigouMgr', {
         action: 'createOrder',
         productId: this.data.productId,
@@ -191,28 +192,158 @@ Page({
 
       hideLoading()
 
-      if (res.success) {
-        // 扣减本地积分余额
-        if (this.data.usePoints && this.data.pointsDeductible > 0) {
-          app.globalData.points = Math.max(0, (app.globalData.points || 0) - this.data.pointsDeductible)
-        }
+      if (!res.success) {
+        toast(res.message || '下单失败，请重试')
+        this.setData({ submitting: false })
+        return
+      }
 
+      // 扣减本地积分显示
+      if (this.data.usePoints && this.data.pointsDeductible > 0) {
+        app.globalData.points = Math.max(0, (app.globalData.points || 0) - this.data.pointsDeductible)
+      }
+
+      const orderId = res.orderId
+      const orderNo = res.orderNo
+      const actualPrice = res.actualPrice || this.data.actualPrice
+
+      // 第二步：如果实际支付金额 > 0，唤起微信支付
+      if (actualPrice > 0) {
+        showLoading('获取支付参数...')
+        try {
+          const payRes = await callCloud('daigouMgr', {
+            action: 'createDaigouPayOrder',
+            orderId
+          })
+          hideLoading()
+
+          if (payRes && payRes.success && payRes.paymentParams) {
+            // 唤起微信支付
+            await this._callWxPayment(payRes.paymentParams, orderId, payRes.wxPayOrderId)
+          } else {
+            // 支付参数获取失败，跳转到订单详情让用户手动支付
+            wx.showModal({
+              title: '支付参数获取失败',
+              content: '订单已创建，请在订单详情页重新发起支付',
+              showCancel: false,
+              success: () => {
+                wx.redirectTo({ url: `/pages/daigou-order/index?orderId=${orderId}` })
+              }
+            })
+          }
+        } catch (payErr) {
+          hideLoading()
+          console.error('[daigou-checkout] 获取支付参数失败', payErr)
+          wx.showModal({
+            title: '支付发起失败',
+            content: '订单已创建，请在订单详情页重新发起支付',
+            showCancel: false,
+            success: () => {
+              wx.redirectTo({ url: `/pages/daigou-order/index?orderId=${orderId}` })
+            }
+          })
+        }
+      } else {
+        // actualPrice 为 0（全额积分抵扣），直接确认支付
+        await callCloud('daigouMgr', { action: 'confirmDaigouPayment', orderId })
         wx.showToast({ title: '下单成功！', icon: 'success', duration: 1200 })
         setTimeout(() => {
-          wx.redirectTo({
-            url: `/pages/daigou-order/index?orderId=${res.orderId}`,
-            fail: () => wx.navigateBack()
-          })
+          wx.redirectTo({ url: `/pages/daigou-order/index?orderId=${orderId}` })
         }, 1000)
-      } else {
-        toast(res.message || '下单失败，请重试')
       }
     } catch (e) {
       hideLoading()
       toast('下单失败，请重试')
       console.error('[daigou-checkout] submitOrder error', e)
-    } finally {
       this.setData({ submitting: false })
     }
+  },
+
+  // 调起微信支付
+  async _callWxPayment(paymentParams, orderId, wxPayOrderId) {
+    const that = this
+    wx.showLoading({ title: '正在调起支付...' })
+
+    wx.requestPayment({
+      ...paymentParams,
+      success: async (payRes) => {
+        console.log('[代购支付成功]', payRes)
+        wx.hideLoading()
+        wx.showLoading({ title: '确认支付结果...' })
+
+        try {
+          // 通知云函数支付成功，将订单推进到 pending_shipment
+          const confirmRes = await callCloud('daigouMgr', {
+            action: 'confirmDaigouPayment',
+            orderId,
+            wxPayOrderId: wxPayOrderId || ''
+          })
+          wx.hideLoading()
+
+          if (confirmRes && confirmRes.success) {
+            wx.showToast({ title: '支付成功！', icon: 'success', duration: 1500 })
+            setTimeout(() => {
+              that.setData({ submitting: false })
+              wx.redirectTo({ url: `/pages/daigou-order/index?orderId=${orderId}` })
+            }, 1500)
+          } else {
+            // 确认失败，但支付已成功 → 跳到订单页
+            wx.showModal({
+              title: '支付成功',
+              content: '支付已完成，请在订单详情中查看最新状态',
+              showCancel: false,
+              success: () => {
+                that.setData({ submitting: false })
+                wx.redirectTo({ url: `/pages/daigou-order/index?orderId=${orderId}` })
+              }
+            })
+          }
+        } catch (confirmErr) {
+          wx.hideLoading()
+          console.error('[代购支付] 确认支付结果失败', confirmErr)
+          wx.showModal({
+            title: '支付成功',
+            content: '支付已完成，请在订单详情中查看最新状态',
+            showCancel: false,
+            success: () => {
+              that.setData({ submitting: false })
+              wx.redirectTo({ url: `/pages/daigou-order/index?orderId=${orderId}` })
+            }
+          })
+        }
+      },
+      fail: (payErr) => {
+        wx.hideLoading()
+        that.setData({ submitting: false })
+        console.error('[代购支付取消或失败]', payErr)
+
+        if (payErr.errMsg && payErr.errMsg.includes('cancel')) {
+          // 用户取消支付 → 跳到订单详情，可以重新支付
+          wx.showModal({
+            title: '支付已取消',
+            content: '您可以在订单详情页重新发起支付',
+            confirmText: '查看订单',
+            cancelText: '稍后再说',
+            success: (modalRes) => {
+              if (modalRes.confirm) {
+                wx.redirectTo({ url: `/pages/daigou-order/index?orderId=${orderId}` })
+              }
+            }
+          })
+        } else {
+          wx.showModal({
+            title: '支付失败',
+            content: '支付未成功，可在订单详情页重新发起支付',
+            confirmText: '查看订单',
+            cancelText: '返回',
+            success: (modalRes) => {
+              if (modalRes.confirm) {
+                wx.redirectTo({ url: `/pages/daigou-order/index?orderId=${orderId}` })
+              }
+            }
+          })
+        }
+      }
+    })
   }
 })

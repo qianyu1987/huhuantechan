@@ -32,16 +32,26 @@ page {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* 页面内容区 */
+/* 页面内容�?*/
 .mine-content {
-  padding: 0 32rpx;
+  padding: 0;
+}
+
+/* 所有卡片统一间距 */
+.profile-card,
+.admin-notify,
+.section,
+.service-account-section {
+  margin-bottom: 20rpx;
+  border-radius: 24rpx;
+  overflow: hidden;
 }
 
 /* ===== 个人资料卡片 ===== */
 .profile-card {
   background: var(--bg-secondary);
-  border-radius: var(--radius-card);
-  margin: 16rpx 0;
+  border-radius: 24rpx;
+  margin-bottom: 20rpx;
   overflow: hidden;
 }
 
@@ -165,7 +175,7 @@ page {
   flex-shrink: 0;
 }
 
-/* ===== 分割线 ===== */
+/* ===== 分割�?===== */
 .divider {
   height: 1rpx;
   background: var(--separator);
@@ -270,8 +280,8 @@ page {
 /* ===== 管理员通知 ===== */
 .admin-notify {
   background: var(--bg-secondary);
-  border-radius: var(--radius-card);
-  margin-bottom: 16rpx;
+  border-radius: 24rpx;
+  margin-bottom: 20rpx;
   padding: 24rpx 32rpx;
 }
 
@@ -324,21 +334,99 @@ page {
   color: var(--text-secondary);
 }
 
+/* 管理员快捷操作栏 */
+.notify-actions {
+  display: flex;
+  gap: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid var(--separator);
+  margin-top: 16rpx;
+}
+
+.notify-action-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  padding: 16rpx 8rpx;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 16rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+}
+
+.notify-action-btn.accent {
+  background: rgba(10, 132, 255, 0.12);
+  border-color: rgba(10, 132, 255, 0.2);
+}
+
+.notify-action-btn.sync {
+  background: rgba(48, 209, 88, 0.12);
+  border-color: rgba(48, 209, 88, 0.2);
+}
+
+.notify-action-icon {
+  font-size: 32rpx;
+}
+
+.notify-action-label {
+  font-size: 22rpx;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
 /* ===== 区块卡片 ===== */
 .section {
   background: var(--bg-secondary);
-  border-radius: var(--radius-card);
-  margin-bottom: 16rpx;
+  border-radius: 24rpx;
+  margin-bottom: 20rpx;
   overflow: hidden;
 }
 
+/* iOS 26 Liquid Glass 风格标题 */
 .section-title {
-  font-size: 26rpx;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.55);
   text-transform: uppercase;
-  letter-spacing: 1rpx;
-  padding: 24rpx 32rpx 16rpx;
+  letter-spacing: 0.5px;
+  padding: 20rpx 32rpx 12rpx;
+  background: transparent;
+  border-radius: 0;
+  margin: 0;
+  box-shadow: none;
+}
+
+/* section 卡片顶部彩色细线装饰（iOS26 风格） */
+.section {
+  position: relative;
+}
+.section::before {
+  content: '';
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2rpx;
+  border-radius: 24rpx 24rpx 0 0;
+  opacity: 0;
+}
+
+/* 各区块不同色调 */
+.section:nth-child(1)::before { background: linear-gradient(90deg, #0A84FF, #30D158); opacity: 1; }
+.section:nth-child(2)::before { background: linear-gradient(90deg, #BF5AF2, #FF375F); opacity: 1; }
+.section:nth-child(3)::before { background: linear-gradient(90deg, #FF9F0A, #FFD60A); opacity: 1; }
+.section:nth-child(4)::before { background: linear-gradient(90deg, #30D158, #5AC8FA); opacity: 1; }
+.section:nth-child(5)::before { background: linear-gradient(90deg, #5AC8FA, #0A84FF); opacity: 1; }
+.section:nth-child(6)::before { background: linear-gradient(90deg, #FF453A, #FF9F0A); opacity: 1; }
+
+.theme-light .section-title {
+  color: rgba(60, 60, 67, 0.45);
+}
+
+.theme-rose .section-title {
+  color: rgba(60, 60, 67, 0.45);
 }
 
 .section-header {
@@ -510,9 +598,9 @@ page {
   border-top: 1rpx solid var(--separator);
 }
 
-/* ===== 底部安全区 ===== */
+/* ===== 底部安全�?===== */
 .bottom-safe {
-  height: calc(180rpx + env(safe-area-inset-bottom));
+  height: calc(60rpx + env(safe-area-inset-bottom));
 }
 
 /* ===== 客服面板 ===== */
@@ -523,13 +611,13 @@ page {
   right: 0;
   bottom: 0;
   z-index: 1000;
-  pointer-events: none;
+  visibility: hidden;
   opacity: 0;
-  transition: opacity 0.3s;
+  transition: opacity 0.3s, visibility 0.3s;
 }
 
 .service-panel.show {
-  pointer-events: auto;
+  visibility: visible;
   opacity: 1;
 }
 
@@ -543,17 +631,20 @@ page {
 }
 
 .service-content {
-  position: absolute;
+  position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
   background: var(--bg-secondary);
-  border-radius: 24rpx 24rpx 0 0;
+  border-radius: 32rpx 32rpx 0 0;
   transform: translateY(100%);
-  transition: transform 0.3s;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
-  max-height: 80vh;
+  height: 70vh;
+  max-height: 800rpx;
+  padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
+  z-index: 1001;
 }
 
 .service-panel.show .service-content {
@@ -587,7 +678,8 @@ page {
 .service-messages {
   flex: 1;
   padding: 24rpx 32rpx;
-  max-height: 600rpx;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .message {
@@ -667,6 +759,8 @@ page {
   padding: 0 32rpx;
   font-size: 28rpx;
   color: var(--text-primary);
+  min-height: 72rpx;
+  line-height: 72rpx;
 }
 
 .service-send {
@@ -813,4 +907,401 @@ page {
 .guide-btn.save.active {
   color: white;
   background: var(--accent-blue);
+}
+
+/* ===== 纯净白主题适配 ===== */
+.theme-light .profile-card,
+.theme-light .admin-notify,
+.theme-light .section {
+  background: #FFFFFF;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+  margin-bottom: 20rpx;
+  border-radius: 24rpx;
+}
+
+.theme-light .service-account-section {
+  margin-bottom: 20rpx;
+}
+
+.theme-light .divider,
+.theme-light .deposit-bar,
+.theme-light .menu-item {
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.theme-light .edit-btn {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.theme-light .settings-btn {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.theme-light .icon-gift { background: rgba(255, 159, 10, 0.12); }
+.theme-light .icon-heart { background: rgba(255, 69, 58, 0.12); }
+.theme-light .icon-swap { background: rgba(10, 132, 255, 0.12); }
+.theme-light .icon-star { background: rgba(255, 159, 10, 0.12); }
+.theme-light .icon-box { background: rgba(191, 90, 242, 0.12); }
+.theme-light .icon-verify { background: rgba(48, 209, 88, 0.12); }
+.theme-light .icon-wallet { background: rgba(10, 132, 255, 0.12); }
+
+/* ===== 玫瑰红主题适配 ===== */
+.theme-rose .profile-card,
+.theme-rose .admin-notify,
+.theme-rose .section {
+  background: #2D0010;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.3);
+}
+
+.theme-rose .divider,
+.theme-rose .deposit-bar,
+.theme-rose .menu-item {
+  border-color: rgba(255, 59, 84, 0.15);
+}
+
+/* 最后一个section无底部间�?*/
+.section.section-last {
+  margin-bottom: 20rpx;
+}
+
+/* ===== 服务号内容展示栏 ===== */
+.service-account-section {
+  background: var(--bg-secondary);
+  border-radius: 24rpx;
+  margin-bottom: 20rpx;
+  padding: 32rpx;
+  overflow: hidden;
+}
+
+.sa-header {
+  text-align: center;
+  margin-bottom: 24rpx;
+}
+
+.sa-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8rpx;
+}
+
+.sa-subtitle {
+  display: block;
+  font-size: 24rpx;
+  color: var(--text-secondary);
+}
+
+.sa-content {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 24rpx;
+}
+
+.sa-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.sa-icon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40rpx;
+}
+
+.sa-name {
+  font-size: 24rpx;
+  color: var(--text-secondary);
+}
+
+.sa-qrcode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  padding-top: 24rpx;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.sa-qr-placeholder {
+  width: 160rpx;
+  height: 160rpx;
+  background: var(--bg-tertiary);
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+}
+
+.sa-hint {
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+}
+
+/* 纯净白主题适配 */
+.theme-light page {
+  --bg-primary: #FFFFFF;
+  --bg-secondary: rgba(255, 255, 255, 0.85);
+  --bg-tertiary: rgba(0, 0, 0, 0.04);
+  --separator: rgba(0, 0, 0, 0.08);
+  --text-primary: #000000;
+  --text-secondary: rgba(0, 0, 0, 0.6);
+  --text-tertiary: rgba(0, 0, 0, 0.4);
+}
+
+/* 纯净白主�?- 全局文字颜色覆盖 */
+.theme-light text,
+.theme-light .profile-name,
+.theme-light .stat-value,
+.theme-light .stat-label,
+.theme-light .deposit-title,
+.theme-light .deposit-sub,
+.theme-light .deposit-amount,
+.theme-light .deposit-total,
+.theme-light .notify-title,
+.theme-light .notify-num,
+.theme-light .notify-label,
+.theme-light .section-title,
+.theme-light .menu-title,
+.theme-light .menu-desc,
+.theme-light .menu-text,
+.theme-light .tool-label,
+.theme-light .sa-title,
+.theme-light .sa-subtitle,
+.theme-light .sa-name,
+.theme-light .badge-name,
+.theme-light .footer-info text,
+.theme-light .copyright,
+.theme-light .location-tag text,
+.theme-light .badge-count,
+.theme-light .menu-arrow,
+.theme-light .arrow,
+.theme-light .expand-icon,
+.theme-light .level-tag text,
+.theme-light .version,
+.theme-light .settings-btn text,
+.theme-light .faq-text,
+.theme-light .service-input,
+.theme-light .service-send {
+  color: #000000 !important;
+}
+
+/* 纯净白主�?- 次要文字 */
+.theme-light .location-tag text,
+.theme-light .stat-label,
+.theme-light .deposit-sub,
+.theme-light .deposit-total,
+.theme-light .badge-count,
+.theme-light .menu-desc,
+.theme-light .sa-subtitle,
+.theme-light .level-tag text,
+.theme-light .version,
+.theme-light .settings-btn text,
+.theme-light .expand-icon,
+.theme-light .arrow,
+.theme-light .copyright,
+.theme-light .footer-info text,
+.theme-light .notify-label,
+.theme-light .menu-desc {
+  color: rgba(0, 0, 0, 0.6) !important;
+}
+
+/* 纯净白主�?- 信用分和积分特殊颜色 */
+.theme-light .stat-value.credit {
+  color: #34C759 !important;
+}
+
+.theme-light .stat-value.points {
+  color: #FF9500 !important;
+}
+
+.theme-light .deposit-amount.ok {
+  color: #34C759 !important;
+}
+
+.theme-light .deposit-amount.low {
+  color: #FF3B30 !important;
+}
+
+/* 纯净白主�?- 标签颜色 */
+.theme-light .admin-tag,
+.theme-light .level-tag.daigou,
+.theme-light .level-tag.swap,
+.theme-light .notify-count {
+  color: #000000 !important;
+}
+
+.theme-light .menu-badge {
+  color: #FFFFFF !important;
+}
+
+.theme-light .badge-circle text {
+  color: #000000;
+}
+
+.theme-light .guide-btn.save.active {
+  color: #FFFFFF !important;
+  background: #007AFF !important;
+}
+
+.theme-light .deposit-amount.low {
+  color: #FF3B30 !important;
+}
+
+.theme-light .admin-tag,
+.theme-light .level-tag.daigou,
+.theme-light .level-tag.swap {
+  color: #000000 !important;
+}
+
+.theme-light .notify-count {
+  color: #FF3B30 !important;
+}
+
+.theme-light .menu-badge {
+  color: #FFFFFF !important;
+}
+
+.theme-light .stat-label {
+  color: rgba(0, 0, 0, 0.6) !important;
+}
+
+.theme-light .deposit-title,
+.theme-light .notify-title,
+.theme-light .section-title,
+.theme-light .menu-title,
+.theme-light .menu-text,
+.theme-light .tool-label,
+.theme-light .sa-title,
+.theme-light .sa-name {
+  color: #000000 !important;
+}
+
+/* 纯净白主�?- 次要文字 */
+.theme-light .location-tag text,
+.theme-light .deposit-sub,
+.theme-light .deposit-total,
+.theme-light .badge-count,
+.theme-light .menu-arrow,
+.theme-light .menu-desc,
+.theme-light .sa-subtitle {
+  color: rgba(0, 0, 0, 0.6) !important;
+}
+
+/* 纯净白主�?- 第三层级文字 */
+.theme-light .level-tag text,
+.theme-light .expand-icon,
+.theme-light .arrow,
+.theme-light .footer-info text,
+.theme-light .copyright {
+  color: rgba(0, 0, 0, 0.4) !important;
+}
+
+.theme-light .profile-card,
+.theme-light .admin-notify,
+.theme-light .section,
+.theme-light .service-account-section {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1rpx solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+  border-radius: 24rpx;
+  overflow: hidden;
+  margin-bottom: 20rpx;
+}
+
+.theme-light .menu-item {
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+.theme-light .divider,
+.theme-light .deposit-bar {
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+.theme-light .edit-btn {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.theme-light .settings-btn {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.theme-light .icon-gift { background: rgba(255, 159, 0, 0.1); }
+.theme-light .icon-heart { background: rgba(255, 69, 58, 0.1); }
+.theme-light .icon-swap { background: rgba(0, 122, 255, 0.1); }
+.theme-light .icon-star { background: rgba(255, 159, 0, 0.1); }
+.theme-light .icon-box { background: rgba(191, 90, 242, 0.1); }
+.theme-light .icon-verify { background: rgba(48, 209, 88, 0.1); }
+.theme-light .icon-wallet { background: rgba(0, 122, 255, 0.1); }
+.theme-light .icon-orange { background: rgba(255, 149, 0, 0.1); }
+
+.theme-light .service-account-section {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1rpx solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+}
+
+/* 账号与安全渐变背�?*/
+.security-section {
+  background: linear-gradient(135deg, rgba(10, 132, 255, 0.15) 0%, rgba(48, 209, 88, 0.1) 100%) !important;
+  border: 1rpx solid rgba(10, 132, 255, 0.2);
+}
+
+.theme-light .security-section {
+  background: linear-gradient(135deg, rgba(0, 122, 255, 0.08) 0%, rgba(52, 199, 89, 0.05) 100%) !important;
+  border: 1rpx solid rgba(0, 122, 255, 0.15);
+}
+
+.theme-light .security-section .section-title {
+  color: #34C759 !important;
+}
+
+.theme-light .sa-icon {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.theme-light .sa-qr-placeholder {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* 玫瑰红主题适配 */
+.theme-rose page {
+  --bg-primary: #1A0008;
+  --bg-secondary: #2D0010;
+  --bg-tertiary: #3D0015;
+  --separator: rgba(255, 59, 84, 0.2);
+  --text-primary: #FFFFFF;
+  --text-secondary: rgba(255, 255, 255, 0.8);
+  --text-tertiary: rgba(255, 255, 255, 0.5);
+}
+
+.theme-rose .profile-card,
+.theme-rose .admin-notify,
+.theme-rose .section {
+  background: #2D0010;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.3);
+  border-radius: 24rpx;
+  overflow: hidden;
+  margin-bottom: 20rpx;
+}
+
+.theme-rose .service-account-section {
+  background: #2D0010;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.3);
+  border-radius: 24rpx;
+  overflow: hidden;
+  margin-bottom: 20rpx;
 }

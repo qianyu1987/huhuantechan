@@ -881,8 +881,7 @@ exports.main = async (event, context) => {
             detail: address.detailAddress || address.detail || ''
           },
           remark,
-          status: 'pending_shipment',
-          payTime: db.serverDate(),
+          status: 'pending_payment',  // 先进入待付款状态，支付成功后再转为 pending_shipment
           createTime: db.serverDate(),
           updateTime: db.serverDate(),
           buyerReviewed: false,
@@ -916,17 +915,221 @@ exports.main = async (event, context) => {
         })
       }
 
+      // ★ 下单成功后：写入卖家待处理通知（存入 user_notifications 集合）
+      try {
+        const sellerOpenidForNotify = product.openid || product._openid
+        if (sellerOpenidForNotify) {
+          await db.collection('user_notifications').add({
+            data: {
+              _openid: sellerOpenidForNotify,
+              type: 'new_daigou_order',
+              title: '有新的代购订单',
+              content: `买家 ${buyer.nickName || '用户'} 下单了您的 ${product.name}，请及时发货！`,
+              orderId,
+              orderNo,
+              isRead: false,
+              createTime: db.serverDate()
+            }
+          })
+        }
+      } catch (notifyErr) {
+        console.warn('[daigouMgr/createOrder] 发送通知失败（不影响下单）:', notifyErr.message)
+      }
+
       return {
         success: true,
         orderId,
         orderNo,
         actualPrice,
         pointsUsed: actualPointsUsed,
-        message: '下单成功，等待卖家发货'
+        message: '订单已创建，请完成支付'
       }
     } catch (e) {
       console.error('[daigouMgr/createOrder]', e)
       return { success: false, message: e.message || '下单失败' }
+    }
+  }
+
+  // ──────────────────────────────────────────────────
+  // 1b. 创建代购微信支付订单（订单创建后调用，唤起支付）
+  // ──────────────────────────────────────────────────
+  if (action === 'createDaigouPayOrder') {
+    try {
+      const { orderId } = event
+      if (!orderId) return { success: false, message: '缺少订单ID' }
+
+      // 获取订单信息
+      let order
+      try {
+        const res = await db.collection('daigouOrders').doc(orderId).get()
+        order = res.data
+      } catch (e) {
+        return { success: false, message: '订单不存在' }
+      }
+
+      // 验证买家身份
+      if (order.buyerOpenid !== openid) {
+        return { success: false, message: '无权操作' }
+      }
+
+      // 只有待付款状态才能发起支付
+      if (order.status !== 'pending_payment') {
+        return { success: false, message: order.status === 'pending_shipment' ? '订单已支付，等待发货' : '当前状态不支持支付' }
+      }
+
+      // 调用 paymentMgr 云函数创建微信支付订单
+      const payRes = await cloud.callFunction({
+        name: 'paymentMgr',
+        data: {
+          action: 'createDaigouWxPayOrder',
+          orderId: orderId,
+          orderNo: order.orderNo,
+          amount: order.actualPrice || order.price,
+          productName: order.productName || '特产代购',
+          buyerOpenid: openid
+        }
+      })
+
+      const payData = payRes.result
+      if (!payData || !payData.success) {
+        return { success: false, message: (payData && payData.message) || '支付订单创建失败' }
+      }
+
+      return {
+        success: true,
+        paymentParams: payData.paymentParams,
+        wxPayOrderId: payData.wxPayOrderId,
+        message: '支付参数获取成功'
+      }
+    } catch (e) {
+      console.error('[daigouMgr/createDaigouPayOrder]', e)
+      return { success: false, message: e.message || '支付创建失败' }
+    }
+  }
+
+  // ──────────────────────────────────────────────────
+  // 1c. 支付成功回调处理：将订单从 pending_payment → pending_shipment
+  // ──────────────────────────────────────────────────
+  if (action === 'confirmDaigouPayment') {
+    try {
+      const { orderId, wxPayOrderId } = event
+      if (!orderId) return { success: false, message: '缺少订单ID' }
+
+      let order
+      try {
+        const res = await db.collection('daigouOrders').doc(orderId).get()
+        order = res.data
+      } catch (e) {
+        return { success: false, message: '订单不存在' }
+      }
+
+      if (order.buyerOpenid !== openid) {
+        return { success: false, message: '无权操作' }
+      }
+
+      if (order.status !== 'pending_payment') {
+        // 已经确认支付了，直接返回成功
+        return { success: true, message: '订单状态已更新' }
+      }
+
+      // 更新订单状态为待发货
+      await db.collection('daigouOrders').doc(orderId).update({
+        data: {
+          status: 'pending_shipment',
+          payTime: db.serverDate(),
+          payMethod: 'wechat_pay',
+          wxPayOrderId: wxPayOrderId || '',
+          updateTime: db.serverDate()
+        }
+      })
+
+      // 通知卖家有新订单
+      try {
+        const sellerOpenidForNotify = order.sellerOpenid
+        const buyer = await findUser(openid)
+        if (sellerOpenidForNotify) {
+          await db.collection('user_notifications').add({
+            data: {
+              _openid: sellerOpenidForNotify,
+              type: 'new_daigou_order',
+              title: '买家已付款，请尽快发货',
+              content: `买家 ${(buyer && buyer.nickName) || '用户'} 已完成付款，订单 ${order.productName}，请及时发货！`,
+              orderId,
+              orderNo: order.orderNo,
+              isRead: false,
+              createTime: db.serverDate()
+            }
+          })
+        }
+      } catch (notifyErr) {
+        console.warn('[daigouMgr/confirmDaigouPayment] 发送通知失败:', notifyErr.message)
+      }
+
+      return { success: true, message: '支付确认成功，等待卖家发货' }
+    } catch (e) {
+      console.error('[daigouMgr/confirmDaigouPayment]', e)
+      return { success: false, message: e.message || '确认失败' }
+    }
+  }
+
+  // ──────────────────────────────────────────────────
+  // 1d. 查询代购订单支付状态（前端轮询用）
+  // ──────────────────────────────────────────────────
+  if (action === 'getDaigouPayStatus') {
+    try {
+      const { orderId, wxPayOrderId } = event
+      if (!orderId) return { success: false, message: '缺少订单ID' }
+
+      let order
+      try {
+        const res = await db.collection('daigouOrders').doc(orderId).get()
+        order = res.data
+      } catch (e) {
+        return { success: false, message: '订单不存在' }
+      }
+
+      if (order.buyerOpenid !== openid) {
+        return { success: false, message: '无权查询' }
+      }
+
+      // 调用 paymentMgr 查询微信支付状态
+      if (wxPayOrderId && order.status === 'pending_payment') {
+        try {
+          const queryRes = await cloud.callFunction({
+            name: 'paymentMgr',
+            data: {
+              action: 'queryDaigouPayResult',
+              orderId: orderId,
+              wxPayOrderId: wxPayOrderId
+            }
+          })
+          const queryData = queryRes.result
+          if (queryData && queryData.paid) {
+            // 微信支付已完成，更新订单状态
+            await db.collection('daigouOrders').doc(orderId).update({
+              data: {
+                status: 'pending_shipment',
+                payTime: db.serverDate(),
+                payMethod: 'wechat_pay',
+                wxPayOrderId: wxPayOrderId,
+                updateTime: db.serverDate()
+              }
+            })
+            return { success: true, paid: true, status: 'pending_shipment' }
+          }
+        } catch (e) {
+          console.warn('[getDaigouPayStatus] 查询支付状态失败:', e.message)
+        }
+      }
+
+      return {
+        success: true,
+        paid: order.status !== 'pending_payment',
+        status: order.status
+      }
+    } catch (e) {
+      console.error('[daigouMgr/getDaigouPayStatus]', e)
+      return { success: false, message: e.message || '查询失败' }
     }
   }
 
